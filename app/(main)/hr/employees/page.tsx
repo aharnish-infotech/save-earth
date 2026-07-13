@@ -134,7 +134,7 @@ export default function EmployeesPage() {
                         <div style={{ width:36, height:36, borderRadius:"50%", background:avatarColor, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:700, fontSize:11, flexShrink:0 }}>{emp.avatar}</div>
                         <div>
                           <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap" as const }}>
-                            <span style={{ fontWeight:700, color:"#1e1b4b", fontSize:13 }}>{emp.name}</span>
+                            <Link href={`/hr/employees/${globalIdx+1}`} style={{ fontWeight:700, color:"#1e1b4b", fontSize:13, textDecoration:"none" }} onMouseEnter={e=>(e.currentTarget.style.color="#7c3aed")} onMouseLeave={e=>(e.currentTarget.style.color="#1e1b4b")}>{emp.name}</Link>
                             {emp.longStanding && <span style={{ fontSize:10, fontWeight:700, color:"#ca8a04", background:"#fef9c3", borderRadius:20, padding:"1px 7px" }}>Long Standing</span>}
                           </div>
                           <div style={{ fontSize:11, color:"#9ca3af" }}>{emp.designation} · {emp.id}</div>

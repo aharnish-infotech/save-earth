@@ -613,13 +613,17 @@ export default function EmployeeProfilePage() {
   const emp = getEmp(id);
   const [activeTab, setActiveTab] = useState("Employee Details");
 
-  const bg      = avatarBg(emp.id);
-  const COUNTRY_CODES: Record<string,string> = { "India":"in","United States":"us","United Kingdom":"gb","Canada":"ca","UAE":"ae" };
-  const ccCode  = COUNTRY_CODES[emp.country] ?? "un";
-  const flagImg = `https://flagcdn.com/w20/${ccCode}.png`;
-  const sts     = emp.status==="Active"
-    ? { background:"rgba(22,163,74,0.12)", color:"#16a34a", border:"1px solid rgba(22,163,74,0.25)" }
-    : { background:"rgba(220,38,38,0.10)", color:"#dc2626", border:"1px solid rgba(220,38,38,0.25)" };
+  const bg = avatarBg(emp.id);
+
+  const COUNTRY_CODES: Record<string, string> = {
+    India: "in", "United States": "us", "United Kingdom": "gb", Canada: "ca", UAE: "ae",
+  };
+  const ccCode = COUNTRY_CODES[emp.country] ?? "un";
+  const flagImg = "https://flagcdn.com/w20/" + ccCode + ".png";
+
+  const stsStyle = emp.status === "Active"
+    ? { background: "rgba(22,163,74,0.12)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.25)" }
+    : { background: "rgba(220,38,38,0.10)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.25)" };
 
   return (
     <div>
@@ -643,10 +647,10 @@ export default function EmployeeProfilePage() {
         </div>
       </div>
 
-      {/* Two-column layout — identical to student view */}
+      {/* Two-column layout */}
       <div style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:"1rem",alignItems:"start"}}>
 
-        {/* ── LEFT PANEL ── */}
+        {/* LEFT PANEL */}
         <div style={{display:"flex",flexDirection:"column" as const,gap:"0.875rem"}}>
 
           {/* Profile Card */}
@@ -666,7 +670,7 @@ export default function EmployeeProfilePage() {
               <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:"0.75rem"}}>{emp.designation} · {emp.department}</div>
               <div style={{display:"flex",justifyContent:"center",gap:6,flexWrap:"wrap" as const}}>
                 <span style={{background:"rgba(108,95,252,0.1)",color:"var(--primary-color)",border:"1px solid rgba(108,95,252,0.2)",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>{emp.userRole}</span>
-                <span style={{...sts,fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>{emp.status}</span>
+                <span style={{...stsStyle,fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>{emp.status}</span>
               </div>
             </div>
           </div>
@@ -713,10 +717,12 @@ export default function EmployeeProfilePage() {
               <span style={{fontSize:12,fontWeight:700,color:"var(--default-text-color)",textTransform:"uppercase" as const,letterSpacing:"0.05em"}}>Primary Contact</span>
             </div>
             <div className="card-body" style={{padding:"0.75rem 1rem",display:"flex",flexDirection:"column" as const,gap:10}}>
-              {[{label:"Phone Number",value:emp.mobile,icon:"ri-phone-line",bg:"rgba(108,95,252,0.1)",ic:"var(--primary-color)"},
-                {label:"Email Address",value:emp.email,icon:"ri-mail-line",bg:"rgba(16,185,129,0.1)",ic:"#10b981"}].map(({label,value,icon,bg,ic})=>(
+              {([
+                {label:"Phone Number",value:emp.mobile,icon:"ri-phone-line",ibg:"rgba(108,95,252,0.1)",ic:"var(--primary-color)"},
+                {label:"Email Address",value:emp.email,icon:"ri-mail-line",ibg:"rgba(16,185,129,0.1)",ic:"#10b981"},
+              ]).map(({label,value,icon,ibg,ic})=>(
                 <div key={label} style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:32,height:32,borderRadius:8,background:bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <div style={{width:32,height:32,borderRadius:8,background:ibg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <i className={icon} style={{fontSize:14,color:ic}}/>
                   </div>
                   <div>
@@ -734,7 +740,12 @@ export default function EmployeeProfilePage() {
               <span style={{fontSize:12,fontWeight:700,color:"var(--default-text-color)",textTransform:"uppercase" as const,letterSpacing:"0.05em"}}>This Month Stats</span>
             </div>
             <div className="card-body" style={{padding:"0.5rem 1rem"}}>
-              {([["Present Days",emp.attendance.thisMonth.present,"#16a34a"],["Late Entries",emp.lateAttendance,"#db2777"],["Leaves Taken",emp.leavesTaken,"#0284c7"],["Open Tasks",emp.openTasks,"#4f46e5"],["Hours Logged",emp.hoursLogged+" hrs","#7c3aed"]] as [string,any,string][]).map(([label,value,color],i,arr)=>(
+              {([ ["Present Days",emp.attendance.thisMonth.present,"#16a34a"],
+                  ["Late Entries",emp.lateAttendance,"#db2777"],
+                  ["Leaves Taken",emp.leavesTaken,"#0284c7"],
+                  ["Open Tasks",emp.openTasks,"#4f46e5"],
+                  ["Hours Logged",emp.hoursLogged+" hrs","#7c3aed"],
+              ] as [string,any,string][]).map(([label,value,color],i,arr)=>(
                 <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:i<arr.length-1?"1px dashed var(--default-border)":"none",fontSize:12}}>
                   <span style={{color:"var(--text-muted)",fontWeight:500}}>{label}</span>
                   <span style={{fontWeight:800,color}}>{value}</span>
@@ -749,7 +760,7 @@ export default function EmployeeProfilePage() {
               <span style={{fontSize:12,fontWeight:700,color:"var(--default-text-color)",textTransform:"uppercase" as const,letterSpacing:"0.05em"}}>Emergency Contact</span>
             </div>
             <div className="card-body" style={{padding:"0.5rem 1rem"}}>
-              {[["Name",emp.emergencyContact.name],["Relation",emp.emergencyContact.relation],["Phone",emp.emergencyContact.phone],["Email",emp.emergencyContact.email]].map(([l,v])=>(
+              {([["Name",emp.emergencyContact.name],["Relation",emp.emergencyContact.relation],["Phone",emp.emergencyContact.phone],["Email",emp.emergencyContact.email]] as [string,string][]).map(([l,v])=>(
                 <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"5px 0",borderBottom:"1px dashed var(--default-border)",fontSize:12}}>
                   <span style={{color:"var(--text-muted)",fontWeight:500}}>{l}</span>
                   <span style={{color:"var(--default-text-color)",fontWeight:600,textAlign:"right"}}>{v}</span>
@@ -763,7 +774,7 @@ export default function EmployeeProfilePage() {
           </button>
         </div>
 
-        {/* ── RIGHT PANEL ── */}
+        {/* RIGHT PANEL */}
         <div className="card custom-card mb-0" style={{overflow:"hidden"}}>
           {/* Tab bar */}
           <div style={{borderBottom:"1px solid var(--default-border)",padding:"0 1rem",display:"flex",overflowX:"auto" as const,scrollbarWidth:"none" as any}}>
@@ -782,5 +793,17 @@ export default function EmployeeProfilePage() {
           </div>
           {/* Tab content */}
           <div>
-                        {activeTab==="Employee Details"  && <EmployeeDetailsTab emp={emp}/>}
-            {a
+            {activeTab==="Employee Details"  && <EmployeeDetailsTab emp={emp}/>}
+            {activeTab==="Reporting"         && <ReportingTab emp={emp}/>}
+            {activeTab==="Attendance"        && <AttendanceTab emp={emp}/>}
+            {activeTab==="Payroll"           && <PayrollTab emp={emp}/>}
+            {activeTab==="Documents"         && <DocumentsTab emp={emp}/>}
+            {activeTab==="Leave Management"  && <LeaveTab emp={emp}/>}
+            {activeTab==="Tasks"             && <TasksTab emp={emp}/>}
+            {activeTab==="Activity"          && <ActivityTab/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,556 +1,304 @@
 "use client";
-
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 
-// ── Types ────────────────────────────────────────────────────────────────────
-type FollowUpStatus = "Pending" | "Contacted" | "Converted" | "No Response" | "Rescheduled";
-type Priority = "High" | "Medium" | "Low";
+// ── Types ─────────────────────────────────────────────────────────
+type FUStatus = "Pending" | "Contacted" | "Converted" | "No Response" | "Rescheduled";
+type Priority = "Critical" | "High" | "Medium" | "Low";
+type DueBucket = "Overdue" | "Due Today" | "Upcoming" | "All";
 
 interface FollowUp {
-  id: string;
-  studentId: string;
-  studentName: string;
-  phone: string;
-  course: string;
-  enquiryDate: string;
-  lastContact: string;
-  nextFollowUp: string;
-  status: FollowUpStatus;
-  priority: Priority;
-  counselor: string;
-  notes: string;
-  attemptCount: number;
-  category: string;
+  id: string; studentName: string; phone: string; email: string;
+  course: string; counselor: string; enquiryDate: string;
+  lastContact: string; nextFollowUp: string; dueLabel: string;
+  status: FUStatus; priority: Priority; attempts: number; maxAttempts: number;
+  notes: string; source: string; stage: string; daysOverdue: number;
 }
 
-// ── Data Generator ────────────────────────────────────────────────────────────
-const FIRST_NAMES = ["Priya","Rahul","Anjali","Suresh","Meena","Deepak","Kavita","Arjun","Sunita","Vikram","Pooja","Karan","Nisha","Rohit","Sneha","Amit","Ritu","Sanjay","Divya","Mohit","Anita","Gaurav","Swati","Nitin","Rekha","Vishal","Shweta","Arun","Geeta","Rajan","Sapna","Hemant","Poonam","Rajesh","Neha","Sunil","Mamta","Vijay","Reena","Ashok","Usha","Prakash","Lata","Mahesh","Seema","Rakesh","Manju","Dinesh","Asha","Naresh"];
-const LAST_NAMES  = ["Sharma","Verma","Patel","Kumar","Singh","Gupta","Joshi","Mehta","Tiwari","Yadav","Chauhan","Malhotra","Agarwal","Rajput","Pandey","Shah","Soni","Mishra","Dubey","Nair","Pillai","Reddy","Iyer","Chopra","Bose","Das","Ghosh","Roy","Sen","Mukherjee","Kapoor","Khanna","Arora","Sethi","Bhatia","Anand","Saxena","Bansal","Garg","Mittal"];
-const COURSES     = ["BCA","B.Com","B.Sc","BBA","MBA","B.Tech","M.Com","MCA","M.Sc","BA","MA","BBA LLB","B.Pharm"];
-const CATEGORIES  = ["General","Management","Science","Commerce","Engineering","Arts","Pharmacy"];
-const COUNSELORS  = ["Riya Sharma","Amit Verma","Neha Shah","Raj Patel","Sunita Nair"];
-const STATUSES: FollowUpStatus[] = ["Pending","Contacted","Converted","No Response","Rescheduled"];
-const PRIORITIES: Priority[] = ["High","Medium","Low"];
-const NOTES_POOL  = [
-  "Interested, waiting for parent approval","Not picking calls — try WhatsApp","Asked to call after 14th July","Very interested, sending brochure","Admission confirmed, fee pending","Comparing with other colleges","Will decide after results","Dropped call twice","Out of town, will call back","Urgent follow-up needed","Interested in evening batch","Needs scholarship info","Documents submitted","Campus visit scheduled","Fee concession requested","Wants hostel facility info","Enquired about distance learning","Asked about placement record","Parents want to visit campus","Needs more time to decide",
-];
+// ── Data ──────────────────────────────────────────────────────────
+const FNAMES=["Priya","Rahul","Anjali","Suresh","Meena","Deepak","Kavita","Arjun","Sunita","Vikram","Pooja","Karan","Nisha","Rohit","Sneha","Amit","Ritu","Sanjay","Divya","Mohit","Anita","Gaurav","Swati","Nitin","Rekha","Vishal","Shweta","Arun","Geeta","Rajan","Sapna","Hemant","Poonam","Rajesh","Neha","Sunil","Mamta","Vijay","Reena","Ashok","Usha","Prakash","Lata","Mahesh","Seema","Rakesh","Manju","Dinesh","Asha","Naresh"];
+const LNAMES=["Sharma","Verma","Patel","Kumar","Singh","Gupta","Joshi","Mehta","Tiwari","Yadav","Chauhan","Malhotra","Agarwal","Rajput","Pandey","Shah","Soni","Mishra","Dubey","Nair","Pillai","Reddy","Iyer","Chopra","Bose","Das","Ghosh","Roy","Sen","Mukherjee"];
+const COURSES=["BCA","B.Com","B.Sc","BBA","MBA","B.Tech CSE","B.Tech ECE","M.Com","MCA","M.Sc","BA","BBA LLB","B.Pharm","B.Tech Mech"];
+const COUNSELORS=["Ananya Kapoor","Rohit Verma","Sunita Nair","Deepak Joshi","Meena Pillai"];
+const STATUSES:FUStatus[]=["Pending","Contacted","Converted","No Response","Rescheduled"];
+const PRIORITIES:Priority[]=["Critical","High","Medium","Low"];
+const STAGES=["New Enquiry","Contacted","Interested","Application Sent"];
+const SOURCES=["Walk-in","Website","Phone","Social Media","Referral"];
+const DUE_DATES = ["08 Jul 2026","09 Jul 2026","10 Jul 2026","11 Jul 2026","12 Jul 2026","13 Jul 2026","14 Jul 2026","14 Jul 2026","14 Jul 2026","15 Jul 2026","16 Jul 2026","17 Jul 2026","18 Jul 2026","19 Jul 2026","20 Jul 2026"];
+const NOTES=["Called twice, no response","Interested, waiting for parents approval","Needs scholarship info urgently","Left voicemail","WhatsApp message sent","Visited campus, very interested","Application partially filled","Requested fee structure","College brochure sent","Awaiting documents","Will call back tomorrow","Seems interested in BCA","Asked about hostel facility","Wants to compare with other colleges","Parents want to visit"];
 
-function rng(seed: number) {
-  // Simple deterministic pseudo-random
-  let s = seed;
-  return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
-}
+function rnd(seed:number,max:number){return((seed*1103515245+12345)&0x7fffffff)%max;}
 
-function pad2(n: number) { return n < 10 ? "0" + n : "" + n; }
-const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const TODAY="14 Jul 2026";
+const FOLLOWUPS:FollowUp[]=Array.from({length:75},(_,i)=>{
+  const due=DUE_DATES[rnd(i*7+1,DUE_DATES.length)];
+  const daysOverdue=due<TODAY?rnd(i*11+2,15)+1:0;
+  const bucket:DueBucket=due<TODAY?"Overdue":due===TODAY?"Due Today":"Upcoming";
+  const priority:Priority=daysOverdue>7?"Critical":daysOverdue>0?"High":bucket==="Due Today"?"High":PRIORITIES[rnd(i*13+3,PRIORITIES.length)];
+  const attempts=rnd(i*17+4,5)+1;
+  return {
+    id:`FU-${(i+1).toString().padStart(4,"0")}`,
+    studentName:`${FNAMES[rnd(i*7+1,FNAMES.length)]} ${LNAMES[rnd(i*13+3,LNAMES.length)]}`,
+    phone:`+91-${9700000000+i*31+555}`,
+    email:`student${i}@email.com`,
+    course:COURSES[rnd(i*19+5,COURSES.length)],
+    counselor:COUNSELORS[rnd(i*23+6,COUNSELORS.length)],
+    enquiryDate:`${(rnd(i*29+7,25)+1).toString().padStart(2,"0")} Jun 2026`,
+    lastContact:`${(rnd(i*31+8,13)+1).toString().padStart(2,"0")} Jul 2026`,
+    nextFollowUp:due,
+    dueLabel:bucket,
+    status:STATUSES[rnd(i*37+9,STATUSES.length)],
+    priority,
+    attempts,
+    maxAttempts:6,
+    notes:NOTES[rnd(i*41+10,NOTES.length)],
+    source:SOURCES[rnd(i*43+11,SOURCES.length)],
+    stage:STAGES[rnd(i*47+12,STAGES.length)],
+    daysOverdue,
+  };
+});
 
-function randomDate(rand: () => number, base: Date, minDays: number, maxDays: number): string {
-  const offset = Math.floor(rand() * (maxDays - minDays) + minDays);
-  const d = new Date(base.getTime() + offset * 86400000);
-  return `${pad2(d.getDate())} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-const BASE_DATE = new Date(2026, 5, 1); // 1 Jun 2026
-const TODAY_DATE = new Date(2026, 6, 12); // 12 Jul 2026
-
-const ALL_FOLLOWUPS: FollowUp[] = (() => {
-  const result: FollowUp[] = [];
-  for (let i = 0; i < 3000; i++) {
-    const rand = rng(i * 9999 + 7);
-    const firstName = FIRST_NAMES[Math.floor(rand() * FIRST_NAMES.length)];
-    const lastName  = LAST_NAMES[Math.floor(rand() * LAST_NAMES.length)];
-    const courseIdx = Math.floor(rand() * COURSES.length);
-    const course    = COURSES[courseIdx];
-    const status    = STATUSES[Math.floor(rand() * STATUSES.length)];
-    const priority  = PRIORITIES[Math.floor(rand() * PRIORITIES.length)];
-    const counselor = COUNSELORS[Math.floor(rand() * COUNSELORS.length)];
-    const category  = CATEGORIES[Math.min(courseIdx, CATEGORIES.length - 1)];
-    const attempts  = Math.floor(rand() * 5) + 1;
-    const note      = NOTES_POOL[Math.floor(rand() * NOTES_POOL.length)];
-    const phone     = `9${Math.floor(rand() * 900000000 + 100000000)}`;
-    const enquiryDate   = randomDate(rand, BASE_DATE, 0, 40);
-    const lastContact   = randomDate(rand, TODAY_DATE, -10, 0);
-    // nextFollowUp: mix of overdue, today, upcoming
-    const fuOffset = Math.floor(rand() * 20) - 5; // -5 to +15 days from today
-    const nextFollowUp  = randomDate(rand, TODAY_DATE, fuOffset, fuOffset + 1);
-
-    // First record links to our demo student; rest get generated IDs
-    const studentId = i === 0 ? "ZF2526001" : `ZF2526${String(i + 2).padStart(3, "0")}`;
-    result.push({
-      id: `FU${String(i + 1).padStart(5, "0")}`,
-      studentId,
-      studentName: `${firstName} ${lastName}`,
-      phone,
-      course,
-      enquiryDate,
-      lastContact,
-      nextFollowUp,
-      status,
-      priority,
-      counselor,
-      notes: note,
-      attemptCount: attempts,
-      category,
-    });
-  }
-  return result;
-})();
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-const PAGE_SIZE = 15;
-const TODAY_STR = "12 Jul 2026";
-
-const STATUS_CONFIG: Record<FollowUpStatus, { color: string; bg: string; icon: string }> = {
-  "Pending":      { color: "#d97706", bg: "#fffbeb", icon: "ri-time-line" },
-  "Contacted":    { color: "#2563eb", bg: "#eff6ff", icon: "ri-phone-line" },
-  "Converted":    { color: "#16a34a", bg: "#f0fdf4", icon: "ri-checkbox-circle-line" },
-  "No Response":  { color: "#dc2626", bg: "#fef2f2", icon: "ri-phone-off-line" },
-  "Rescheduled":  { color: "#7c3aed", bg: "#f5f3ff", icon: "ri-calendar-line" },
+// ── Config ────────────────────────────────────────────────────────
+const PRIO_CFG:Record<Priority,{color:string;bg:string;border:string}> = {
+  Critical:{color:"#dc2626",bg:"#fee2e2",border:"#fca5a5"},
+  High:    {color:"#d97706",bg:"#fef3c7",border:"#fcd34d"},
+  Medium:  {color:"#6366f1",bg:"rgba(99,102,241,0.1)",border:"#a5b4fc"},
+  Low:     {color:"#6b7280",bg:"#f3f4f6",border:"#d1d5db"},
+};
+const STATUS_CFG:Record<FUStatus,{color:string;bg:string}> = {
+  "Pending":     {color:"#6366f1",bg:"rgba(99,102,241,0.1)"},
+  "Contacted":   {color:"#0284c7",bg:"rgba(2,132,199,0.1)"},
+  "Converted":   {color:"#16a34a",bg:"rgba(22,163,74,0.1)"},
+  "No Response": {color:"#dc2626",bg:"rgba(220,38,38,0.1)"},
+  "Rescheduled": {color:"#7c3aed",bg:"rgba(124,58,237,0.1)"},
+};
+const BUCKET_CFG:Record<string,{color:string;bg:string;icon:string}> = {
+  "Overdue":  {color:"#dc2626",bg:"#fee2e2",icon:"ri-alarm-warning-line"},
+  "Due Today":{color:"#d97706",bg:"#fef3c7",icon:"ri-time-line"},
+  "Upcoming": {color:"#0284c7",bg:"#dbeafe",icon:"ri-calendar-line"},
 };
 
-const PRIORITY_CONFIG: Record<Priority, { color: string; bg: string }> = {
-  "High":   { color: "#dc2626", bg: "#fef2f2" },
-  "Medium": { color: "#d97706", bg: "#fffbeb" },
-  "Low":    { color: "#16a34a", bg: "#f0fdf4" },
-};
-
-const ALL_STATUSES: ("All" | FollowUpStatus)[] = ["All","Pending","Contacted","Converted","No Response","Rescheduled"];
-const ALL_PRIORITIES: ("All" | Priority)[] = ["All","High","Medium","Low"];
-const ALL_COUNSELORS = ["All Counselors", ...COUNSELORS];
-
-function parseDateStr(s: string): Date {
-  const [d, m, y] = s.split(" ");
-  const mIdx = MONTH_NAMES.indexOf(m);
-  return new Date(parseInt(y), mIdx, parseInt(d));
-}
-
-function isOverdue(dateStr: string) {
-  return parseDateStr(dateStr) < new Date(2026, 6, 12);
-}
-function isDueToday(dateStr: string) {
-  return dateStr === TODAY_STR;
-}
-
-// ── KPI Card ──────────────────────────────────────────────────────────────────
-function KpiCard({ icon, label, value, sub, color }: { icon: string; label: string; value: number | string; sub?: string; color: string }) {
+function AttemptDots({done,max}:{done:number;max:number}) {
   return (
-    <div style={{ background:"#fff", borderRadius:14, padding:"18px 22px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", border:"1px solid rgba(0,0,0,0.06)", display:"flex", alignItems:"center", gap:16, flex:1, minWidth:0 }}>
-      <div style={{ width:48, height:48, borderRadius:12, background:color+"18", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-        <i className={icon} style={{ fontSize:22, color }} />
-      </div>
-      <div style={{ minWidth:0 }}>
-        <div style={{ fontSize:24, fontWeight:800, color:"var(--default-text-color)", lineHeight:1.1 }}>{value.toLocaleString()}</div>
-        <div style={{ fontSize:12, color:"var(--text-muted)", marginTop:2 }}>{label}</div>
-        {sub && <div style={{ fontSize:11, color, marginTop:2, fontWeight:600 }}>{sub}</div>}
-      </div>
+    <div style={{display:"flex",gap:2,alignItems:"center"}}>
+      {Array.from({length:max},(_,i)=>(
+        <div key={i} style={{width:7,height:7,borderRadius:"50%",background:i<done?"#7c3aed":"#e5e7eb"}}/>
+      ))}
+      <span style={{fontSize:10,color:"#9ca3af",marginLeft:3}}>{done}/{max}</span>
     </div>
   );
 }
 
-// ── Pagination ────────────────────────────────────────────────────────────────
-function Pagination({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (p: number) => void }) {
-  const pages: (number | "…")[] = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (page > 3) pages.push("…");
-    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
-    if (page < totalPages - 2) pages.push("…");
-    pages.push(totalPages);
-  }
-
-  const btn = (label: React.ReactNode, disabled: boolean, onClick: () => void, active = false): React.ReactNode => (
-    <button
-      key={String(label)}
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        minWidth: 32, height: 32, borderRadius: 8,
-        border: active ? "none" : "1px solid var(--default-border)",
-        background: active ? "var(--primary-color,#6c5ffc)" : disabled ? "var(--default-background)" : "#fff",
-        color: active ? "#fff" : disabled ? "var(--text-muted)" : "var(--default-text-color)",
-        fontWeight: active ? 700 : 500,
-        fontSize: 13, cursor: disabled ? "default" : "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "0 6px",
-        transition: "all 0.15s",
-      }}
-    >
-      {label}
-    </button>
-  );
-
-  return (
-    <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-      {btn(<i className="ri-arrow-left-s-line" />, page === 1, () => onPage(page - 1))}
-      {pages.map((p, i) =>
-        p === "…"
-          ? <span key={`e${i}`} style={{ width:32, textAlign:"center", color:"var(--text-muted)", fontSize:13 }}>…</span>
-          : btn(p, false, () => onPage(p as number), p === page)
-      )}
-      {btn(<i className="ri-arrow-right-s-line" />, page === totalPages, () => onPage(page + 1))}
-    </div>
-  );
-}
-
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────
 export default function FollowUpsPage() {
-  const [search, setSearch]           = useState("");
-  const [statusFilter, setStatus]     = useState<"All" | FollowUpStatus>("All");
-  const [priorityFilter, setPriority] = useState<"All" | Priority>("All");
-  const [counselorFilter, setCounselor] = useState("All Counselors");
-  const [page, setPage]               = useState(1);
-  const [selectedIds, setSelected]    = useState<Set<string>>(new Set());
-  const [showNotes, setShowNotes]     = useState<string | null>(null);
+  const [bucket,setBucket]=useState<DueBucket>("All");
+  const [search,setSearch]=useState("");
+  const [prioFilter,setPrioFilter]=useState<Priority|"All">("All");
+  const [statusFilter,setStatusFilter]=useState<FUStatus|"All">("All");
+  const [counselorFilter,setCounselorFilter]=useState("All Counselors");
+  const [page,setPage]=useState(1);
+  const PAGE_SIZE=15;
 
-  // Reset to page 1 on filter change
-  const setStatusAndReset  = useCallback((v: "All" | FollowUpStatus) => { setStatus(v); setPage(1); setSelected(new Set()); }, []);
-  const setPriorityAndReset = useCallback((v: "All" | Priority) => { setPriority(v); setPage(1); setSelected(new Set()); }, []);
-  const setCounselorAndReset = useCallback((v: string) => { setCounselor(v); setPage(1); setSelected(new Set()); }, []);
-  const setSearchAndReset  = useCallback((v: string) => { setSearch(v); setPage(1); setSelected(new Set()); }, []);
+  const overdue  = useMemo(()=>FOLLOWUPS.filter(f=>f.dueLabel==="Overdue"),[]);
+  const dueToday = useMemo(()=>FOLLOWUPS.filter(f=>f.dueLabel==="Due Today"),[]);
+  const upcoming = useMemo(()=>FOLLOWUPS.filter(f=>f.dueLabel==="Upcoming"),[]);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return ALL_FOLLOWUPS.filter((f) => {
-      if (q && !f.studentName.toLowerCase().includes(q) && !f.phone.includes(q) && !f.course.toLowerCase().includes(q) && !f.id.toLowerCase().includes(q)) return false;
-      if (statusFilter !== "All" && f.status !== statusFilter) return false;
-      if (priorityFilter !== "All" && f.priority !== priorityFilter) return false;
-      if (counselorFilter !== "All Counselors" && f.counselor !== counselorFilter) return false;
-      return true;
-    });
-  }, [search, statusFilter, priorityFilter, counselorFilter]);
+  const filtered = useMemo(()=>{
+    let base = bucket==="Overdue"?overdue:bucket==="Due Today"?dueToday:bucket==="Upcoming"?upcoming:FOLLOWUPS;
+    const q=search.toLowerCase();
+    if(q) base=base.filter(f=>f.studentName.toLowerCase().includes(q)||f.phone.includes(q)||f.course.toLowerCase().includes(q)||f.id.toLowerCase().includes(q));
+    if(prioFilter!=="All") base=base.filter(f=>f.priority===prioFilter);
+    if(statusFilter!=="All") base=base.filter(f=>f.status===statusFilter);
+    if(counselorFilter!=="All Counselors") base=base.filter(f=>f.counselor===counselorFilter);
+    return base;
+  },[bucket,search,prioFilter,statusFilter,counselorFilter,overdue,dueToday,upcoming]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage   = Math.min(page, totalPages);
-  const pageData   = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const paged=filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);
+  const pages=Math.ceil(filtered.length/PAGE_SIZE);
 
-  const kpis = useMemo(() => ({
-    total:      ALL_FOLLOWUPS.length,
-    dueToday:   ALL_FOLLOWUPS.filter((f) => isDueToday(f.nextFollowUp) && f.status !== "Converted").length,
-    overdue:    ALL_FOLLOWUPS.filter((f) => isOverdue(f.nextFollowUp) && f.status !== "Converted").length,
-    converted:  ALL_FOLLOWUPS.filter((f) => f.status === "Converted").length,
-    noResponse: ALL_FOLLOWUPS.filter((f) => f.status === "No Response").length,
-  }), []);
+  const kpis=[
+    {label:"Total Follow-ups",value:FOLLOWUPS.length,icon:"ri-phone-line",color:"#7c3aed",bg:"rgba(124,58,237,0.1)"},
+    {label:"Overdue",value:overdue.length,icon:"ri-alarm-warning-line",color:"#dc2626",bg:"rgba(220,38,38,0.1)"},
+    {label:"Due Today",value:dueToday.length,icon:"ri-time-line",color:"#d97706",bg:"rgba(217,119,6,0.1)"},
+    {label:"Upcoming",value:upcoming.length,icon:"ri-calendar-line",color:"#0284c7",bg:"rgba(2,132,199,0.1)"},
+    {label:"Converted",value:FOLLOWUPS.filter(f=>f.status==="Converted").length,icon:"ri-checkbox-circle-line",color:"#16a34a",bg:"rgba(22,163,74,0.1)"},
+    {label:"Critical",value:FOLLOWUPS.filter(f=>f.priority==="Critical").length,icon:"ri-error-warning-line",color:"#dc2626",bg:"rgba(220,38,38,0.1)"},
+  ];
 
-  const statusCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    ALL_FOLLOWUPS.forEach((f) => { m[f.status] = (m[f.status] ?? 0) + 1; });
-    return m;
-  }, []);
+  const BUCKETS:Array<{key:DueBucket;label:string;count:number;icon:string}> = [
+    {key:"All",label:"All",count:FOLLOWUPS.length,icon:"ri-list-check"},
+    {key:"Overdue",label:"Overdue",count:overdue.length,icon:"ri-alarm-warning-line"},
+    {key:"Due Today",label:"Due Today",count:dueToday.length,icon:"ri-time-line"},
+    {key:"Upcoming",label:"Upcoming",count:upcoming.length,icon:"ri-calendar-line"},
+  ];
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  };
-  const toggleAll = () => {
-    setSelected((prev) => prev.size === pageData.length ? new Set() : new Set(pageData.map((f) => f.id)));
-  };
+  const SL:React.CSSProperties={padding:"6px 10px",borderRadius:8,border:"1.5px solid #e5e7eb",fontSize:12,background:"#fafafa",color:"#374151",outline:"none"};
 
   return (
-    <div style={{ padding:"24px 28px", minHeight:"100%", background:"var(--default-background,#f8f9fa)" }}>
-
-      {/* Breadcrumb */}
-      <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, color:"var(--text-muted)", marginBottom:6 }}>
-        <Link href="/dashboard" style={{ color:"var(--text-muted)", textDecoration:"none" }}>Dashboard</Link>
-        <i className="ri-arrow-right-s-line" />
-        <span style={{ color:"var(--text-muted)" }}>Admission CRM</span>
-        <i className="ri-arrow-right-s-line" />
-        <span style={{ color:"var(--default-text-color)", fontWeight:600 }}>Follow-ups</span>
-      </div>
-
-      {/* Title row */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
+    <div>
+      {/* Header */}
+      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
         <div>
-          <h1 style={{ fontSize:22, fontWeight:800, color:"var(--default-text-color)", margin:0 }}>Follow-ups</h1>
-          <p style={{ fontSize:13, color:"var(--text-muted)", margin:"3px 0 0" }}>Track and manage enquiry follow-ups across all counselors</p>
+          <h4 style={{fontSize:18,fontWeight:800,color:"var(--default-text-color)",marginBottom:2}}>Follow-ups</h4>
+          <nav><ol className="breadcrumb mb-0" style={{fontSize:12}}>
+            <li className="breadcrumb-item"><Link href="/dashboard">Dashboard</Link></li>
+            <li className="breadcrumb-item active">Follow-ups</li>
+          </ol></nav>
         </div>
-        <div style={{ display:"flex", gap:10 }}>
-          <button style={outlineBtn}><i className="ri-download-line" style={{ fontSize:14 }} /> Export</button>
-          <button style={primaryBtn}><i className="ri-add-line" style={{ fontSize:14 }} /> Add Follow-up</button>
+        <div className="d-flex gap-2">
+          <button style={{padding:"7px 14px",borderRadius:8,border:"1.5px solid #e5e7eb",background:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,color:"#374151"}}><i className="ri-download-2-line"/>Export</button>
+          <button style={{padding:"7px 14px",borderRadius:8,border:"none",background:"#7c3aed",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}><i className="ri-add-line"/>Add Follow-up</button>
         </div>
       </div>
 
       {/* KPIs */}
-      <div style={{ display:"flex", gap:16, marginBottom:24, flexWrap:"wrap" }}>
-        <KpiCard icon="ri-calendar-check-line" label="Total Follow-ups"  value={kpis.total}      color="#6c5ffc" />
-        <KpiCard icon="ri-alarm-line"          label="Due Today"         value={kpis.dueToday}   color="#f59e0b" sub="Action required" />
-        <KpiCard icon="ri-error-warning-line"  label="Overdue"           value={kpis.overdue}    color="#ef4444" sub="Needs attention" />
-        <KpiCard icon="ri-checkbox-circle-line" label="Converted"        value={kpis.converted}  color="#10b981" />
-        <KpiCard icon="ri-phone-off-line"      label="No Response"       value={kpis.noResponse} color="#8b5cf6" />
-      </div>
-
-      {/* Status tabs */}
-      <div style={{ display:"flex", gap:6, marginBottom:20, flexWrap:"wrap" }}>
-        {ALL_STATUSES.map((s) => (
-          <button key={s} onClick={() => setStatusAndReset(s)} style={{
-            padding:"6px 16px", borderRadius:8, border:"1px solid", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.15s",
-            ...(statusFilter === s
-              ? { background:"var(--primary-color,#6c5ffc)", color:"#fff", borderColor:"var(--primary-color,#6c5ffc)" }
-              : { background:"#fff", color:"var(--text-muted)", borderColor:"var(--default-border)" }),
-          }}>
-            {s}
-            {s !== "All" && (
-              <span style={{ marginLeft:6, background: statusFilter===s ? "rgba(255,255,255,0.25)" : "var(--default-background)", borderRadius:10, padding:"1px 7px", fontSize:10 }}>
-                {statusCounts[s] ?? 0}
-              </span>
-            )}
-          </button>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:"0.75rem",marginBottom:"1.25rem"}}>
+        {kpis.map(k=>(
+          <div key={k.label} className="card custom-card mb-0" style={{padding:"0.875rem 1rem"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:36,height:36,borderRadius:9,background:k.bg,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <i className={k.icon} style={{fontSize:16,color:k.color}}/>
+              </div>
+              <div>
+                <div style={{fontSize:18,fontWeight:800,color:"var(--default-text-color)",lineHeight:1}}>{k.value}</div>
+                <div style={{fontSize:11,color:"var(--text-muted)",marginTop:2}}>{k.label}</div>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Filter bar */}
-      <div style={{ background:"#fff", borderRadius:12, padding:"14px 18px", border:"1px solid var(--default-border)", display:"flex", gap:12, alignItems:"center", marginBottom:16, flexWrap:"wrap" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, background:"var(--default-background)", border:"1px solid var(--default-border)", borderRadius:8, padding:"0 12px", flex:"1 1 220px", minWidth:200 }}>
-          <i className="ri-search-line" style={{ color:"var(--text-muted)", fontSize:14 }} />
-          <input
-            type="text" placeholder="Search by name, phone, ID, course…"
-            value={search} onChange={(e) => setSearchAndReset(e.target.value)}
-            style={{ border:"none", background:"transparent", outline:"none", fontSize:13, color:"var(--default-text-color)", padding:"8px 0", width:"100%" }}
-          />
-          {search && <button onClick={() => setSearchAndReset("")} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", padding:0 }}><i className="ri-close-line" /></button>}
-        </div>
-        <select value={priorityFilter} onChange={(e) => setPriorityAndReset(e.target.value as "All" | Priority)} style={selectStyle}>
-          {ALL_PRIORITIES.map((p) => <option key={p}>{p}</option>)}
-        </select>
-        <select value={counselorFilter} onChange={(e) => setCounselorAndReset(e.target.value)} style={selectStyle}>
-          {ALL_COUNSELORS.map((c) => <option key={c}>{c}</option>)}
-        </select>
-        <div style={{ fontSize:12, color:"var(--text-muted)", marginLeft:"auto", whiteSpace:"nowrap" }}>
-          <strong>{filtered.length.toLocaleString()}</strong> of <strong>{ALL_FOLLOWUPS.length.toLocaleString()}</strong> records
-        </div>
-      </div>
-
-      {/* Bulk actions */}
-      {selectedIds.size > 0 && (
-        <div style={{ background:"rgba(108,95,252,0.06)", border:"1px solid rgba(108,95,252,0.2)", borderRadius:10, padding:"10px 16px", display:"flex", alignItems:"center", gap:12, marginBottom:12, fontSize:13 }}>
-          <span style={{ fontWeight:600, color:"var(--primary-color)" }}>{selectedIds.size} selected</span>
-          <div style={{ width:1, height:18, background:"rgba(108,95,252,0.3)" }} />
-          <button style={{ ...bulkBtn, color:"#16a34a" }}><i className="ri-checkbox-circle-line" /> Mark Contacted</button>
-          <button style={{ ...bulkBtn, color:"#2563eb" }}><i className="ri-calendar-line" /> Reschedule</button>
-          <button style={{ ...bulkBtn, color:"#d97706" }}><i className="ri-user-follow-line" /> Reassign</button>
-          <button style={{ ...bulkBtn, color:"#dc2626" }}><i className="ri-close-circle-line" /> Mark Lost</button>
-          <button onClick={() => setSelected(new Set())} style={{ ...bulkBtn, marginLeft:"auto", color:"var(--text-muted)" }}><i className="ri-close-line" /> Clear</button>
+      {/* Overdue alert banner */}
+      {overdue.length>0 && (
+        <div style={{background:"#fff5f5",border:"1.5px solid #fca5a5",borderRadius:10,padding:"0.75rem 1rem",marginBottom:"1rem",display:"flex",alignItems:"center",gap:10}}>
+          <i className="ri-alarm-warning-fill" style={{fontSize:18,color:"#dc2626",flexShrink:0}}/>
+          <div>
+            <span style={{fontWeight:700,color:"#dc2626",fontSize:13}}>{overdue.length} overdue follow-up{overdue.length!==1?"s":""}</span>
+            <span style={{fontSize:12,color:"#6b7280",marginLeft:8}}>Please prioritise these to avoid losing leads.</span>
+          </div>
+          <button onClick={()=>{setBucket("Overdue");setPage(1);}} style={{marginLeft:"auto",padding:"5px 12px",borderRadius:7,border:"1.5px solid #dc2626",background:"#dc2626",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>View Overdue</button>
         </div>
       )}
 
-      {/* Table */}
-      <div style={{ background:"#fff", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse" }}>
-            <thead>
-              <tr style={{ background:"var(--default-background,#f8f9fa)", borderBottom:"1px solid var(--default-border)" }}>
-                <Th style={{ width:40 }}>
-                  <input type="checkbox" checked={selectedIds.size===pageData.length && pageData.length>0} onChange={toggleAll} style={{ cursor:"pointer" }} />
-                </Th>
-                <Th style={{ width:40 }}>#</Th>
-                <Th>Student</Th>
-                <Th>Course</Th>
-                <Th>Next Follow-up</Th>
-                <Th>Last Contact</Th>
-                <Th>Attempts</Th>
-                <Th>Status</Th>
-                <Th>Priority</Th>
-                <Th>Counselor</Th>
-                <Th style={{ width:110 }}>Actions</Th>
+      {/* Tabs + Table */}
+      <div className="card custom-card mb-0">
+        {/* Tab bar */}
+        <div style={{borderBottom:"1px solid var(--default-border)",padding:"0 1rem",display:"flex",gap:0}}>
+          {BUCKETS.map(b=>{
+            const bc=BUCKET_CFG[b.key]??{color:"#6b7280",bg:"#f3f4f6",icon:""};
+            return (
+              <button key={b.key} onClick={()=>{setBucket(b.key);setPage(1);}} style={{
+                padding:"11px 16px",background:"none",border:"none",cursor:"pointer",whiteSpace:"nowrap" as const,fontSize:13,
+                fontWeight:bucket===b.key?700:500,color:bucket===b.key?"#7c3aed":"#6b7280",
+                borderBottom:bucket===b.key?"2px solid #7c3aed":"2px solid transparent",marginBottom:-1,
+                display:"flex",alignItems:"center",gap:6,
+              }}>
+                <i className={b.icon} style={{fontSize:13,color:bucket===b.key?"#7c3aed":bc.color}}/>
+                {b.label}
+                <span style={{background:bucket===b.key?"#7c3aed":bc.bg,color:bucket===b.key?"#fff":bc.color,fontSize:10,fontWeight:700,borderRadius:20,padding:"1px 6px"}}>{b.count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Filters */}
+        <div style={{padding:"0.75rem 1rem",borderBottom:"1px solid #f3f4f6",display:"flex",gap:8,flexWrap:"wrap" as const,alignItems:"center"}}>
+          <div style={{position:"relative",flex:1,minWidth:180}}>
+            <i className="ri-search-line" style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"#9ca3af",fontSize:13}}/>
+            <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Search student, phone, course, ID…"
+              style={{width:"100%",padding:"6px 10px 6px 30px",borderRadius:8,border:"1.5px solid #e5e7eb",fontSize:12,outline:"none",background:"#fafafa"}}/>
+          </div>
+          <select value={prioFilter} onChange={e=>{setPrioFilter(e.target.value as any);setPage(1);}} style={SL}>
+            <option value="All">All Priority</option>
+            {PRIORITIES.map(p=><option key={p}>{p}</option>)}
+          </select>
+          <select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value as any);setPage(1);}} style={SL}>
+            <option value="All">All Status</option>
+            {STATUSES.map(s=><option key={s}>{s}</option>)}
+          </select>
+          <select value={counselorFilter} onChange={e=>{setCounselorFilter(e.target.value);setPage(1);}} style={SL}>
+            <option>All Counselors</option>
+            {COUNSELORS.map(c=><option key={c}>{c}</option>)}
+          </select>
+          <span style={{marginLeft:"auto",fontSize:12,color:"#9ca3af"}}>{filtered.length} follow-up{filtered.length!==1?"s":""}</span>
+        </div>
+
+        {/* Table */}
+        <div className="table-responsive">
+          <table className="table table-hover mb-0" style={{fontSize:13}}>
+            <thead style={{background:"#f9fafb",borderBottom:"1px solid #e5e7eb"}}>
+              <tr>
+                {["ID","Student","Course","Due Date","Last Contact","Counselor","Priority","Attempts","Status","Actions"].map(h=>(
+                  <th key={h} style={{padding:"10px 14px",fontWeight:700,fontSize:11,color:"#6b7280",whiteSpace:"nowrap" as const}}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {pageData.length === 0 ? (
-                <tr>
-                  <td colSpan={11} style={{ textAlign:"center", padding:"60px 20px", color:"var(--text-muted)" }}>
-                    <i className="ri-calendar-check-line" style={{ fontSize:40, display:"block", marginBottom:10, opacity:0.3 }} />
-                    No follow-ups found
-                  </td>
-                </tr>
-              ) : pageData.map((f, i) => {
-                const overdue  = isOverdue(f.nextFollowUp) && f.status !== "Converted";
-                const dueToday = isDueToday(f.nextFollowUp) && f.status !== "Converted";
-                const sc  = STATUS_CONFIG[f.status];
-                const pc  = PRIORITY_CONFIG[f.priority];
-                const checked = selectedIds.has(f.id);
-                const rowNum  = (safePage - 1) * PAGE_SIZE + i + 1;
-
+              {paged.map(f=>{
+                const pc=PRIO_CFG[f.priority];
+                const sc=STATUS_CFG[f.status];
+                const bc=BUCKET_CFG[f.dueLabel]??{color:"#6b7280",bg:"#f3f4f6",icon:""};
                 return (
-                  <tr
-                    key={f.id}
-                    style={{
-                      borderBottom:"1px solid var(--default-border)",
-                      background: checked ? "rgba(108,95,252,0.04)" : (i%2===0 ? "#fff" : "rgba(0,0,0,0.01)"),
-                      transition:"background 0.1s",
-                    }}
-                    onMouseEnter={(e) => { if(!checked)(e.currentTarget as HTMLElement).style.background="rgba(108,95,252,0.03)"; }}
-                    onMouseLeave={(e) => { if(!checked)(e.currentTarget as HTMLElement).style.background=i%2===0?"#fff":"rgba(0,0,0,0.01)"; }}
-                  >
-                    <Td><input type="checkbox" checked={checked} onChange={() => toggleSelect(f.id)} style={{ cursor:"pointer" }} /></Td>
-
-                    {/* Row number */}
-                    <Td><span style={{ fontSize:11, color:"var(--text-muted)", fontWeight:500 }}>{rowNum}</span></Td>
-
-                    {/* Student */}
-                    <Td>
-                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                        <div style={{
-                          width:34, height:34, borderRadius:"50%",
-                          background:`hsl(${(f.id.charCodeAt(2)*37+f.id.charCodeAt(4)*19)%360},65%,88%)`,
-                          display:"flex", alignItems:"center", justifyContent:"center",
-                          fontWeight:700, fontSize:12,
-                          color:`hsl(${(f.id.charCodeAt(2)*37+f.id.charCodeAt(4)*19)%360},55%,32%)`,
-                          flexShrink:0,
-                        }}>
-                          {f.studentName.split(" ").map((n)=>n[0]).join("").slice(0,2)}
-                        </div>
-                        <div>
-                          <Link
-                            href={`/students/${f.studentId}`}
-                            style={{ fontWeight:600, fontSize:13, color:"var(--primary-color,#6c5ffc)", whiteSpace:"nowrap", textDecoration:"none" }}
-                            title="View student profile"
-                          >
-                            {f.studentName}
-                            <i className="ri-external-link-line" style={{ fontSize:10, marginLeft:4, opacity:0.6 }} />
-                          </Link>
-                          <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:1 }}>
-                            <i className="ri-phone-line" style={{ fontSize:10 }} /> {f.phone}
-                          </div>
-                        </div>
+                  <tr key={f.id} style={{borderBottom:"1px solid #f9fafb",background:f.dueLabel==="Overdue"?"#fff9f9":f.dueLabel==="Due Today"?"#fffdf5":"transparent"}}>
+                    <td style={{padding:"10px 14px"}}><span style={{fontFamily:"monospace",fontSize:11,color:"#7c3aed",fontWeight:700}}>{f.id}</span></td>
+                    <td style={{padding:"10px 14px"}}>
+                      <div style={{fontWeight:700,color:"#1e1b4b",fontSize:13}}>{f.studentName}</div>
+                      <div style={{fontSize:11,color:"#9ca3af"}}>{f.phone}</div>
+                    </td>
+                    <td style={{padding:"10px 14px",fontSize:12,color:"#374151"}}>{f.course}</td>
+                    <td style={{padding:"10px 14px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:5}}>
+                        <span style={{fontSize:10,padding:"2px 6px",borderRadius:20,background:bc.bg,color:bc.color,fontWeight:700,display:"flex",alignItems:"center",gap:3}}>
+                          <i className={bc.icon} style={{fontSize:9}}/>{f.dueLabel}
+                        </span>
                       </div>
-                    </Td>
-
-                    {/* Course */}
-                    <Td>
-                      <span style={{ fontSize:12, fontWeight:600, color:"var(--default-text-color)" }}>{f.course}</span>
-                      <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:1 }}>Enq: {f.enquiryDate}</div>
-                    </Td>
-
-                    {/* Next Follow-up */}
-                    <Td>
-                      {overdue && (
-                        <div>
-                          <span style={{ fontSize:11, fontWeight:700, color:"#dc2626", background:"#fef2f2", padding:"2px 7px", borderRadius:6 }}>
-                            <i className="ri-error-warning-fill" style={{ fontSize:10, marginRight:2 }} />OVERDUE
-                          </span>
-                          <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:2 }}>{f.nextFollowUp}</div>
-                        </div>
-                      )}
-                      {dueToday && !overdue && (
-                        <div>
-                          <span style={{ fontSize:11, fontWeight:700, color:"#d97706", background:"#fef3c7", padding:"2px 7px", borderRadius:6 }}>
-                            <i className="ri-alarm-fill" style={{ fontSize:10, marginRight:2 }} />TODAY
-                          </span>
-                          <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:2 }}>{f.nextFollowUp}</div>
-                        </div>
-                      )}
-                      {!overdue && !dueToday && (
-                        <span style={{ fontSize:12, color:"var(--default-text-color)", fontWeight:500 }}>{f.nextFollowUp}</span>
-                      )}
-                    </Td>
-
-                    {/* Last Contact */}
-                    <Td><span style={{ fontSize:12, color:"var(--default-text-color)" }}>{f.lastContact}</span></Td>
-
-                    {/* Attempts */}
-                    <Td>
-                      <div style={{ display:"flex", alignItems:"center", gap:3 }}>
-                        {Array.from({ length:5 }).map((_,idx) => (
-                          <div key={idx} style={{
-                            width:7, height:7, borderRadius:"50%",
-                            background: idx < f.attemptCount
-                              ? (f.attemptCount >= 4 ? "#ef4444" : f.attemptCount >= 2 ? "#f59e0b" : "#10b981")
-                              : "var(--default-border)",
-                          }} />
-                        ))}
-                        <span style={{ fontSize:11, color:"var(--text-muted)", marginLeft:3 }}>{f.attemptCount}</span>
+                      <div style={{fontSize:11,color:f.dueLabel==="Overdue"?"#dc2626":"#374151",fontWeight:f.dueLabel==="Overdue"?700:400,marginTop:2}}>
+                        {f.nextFollowUp}{f.daysOverdue>0&&<span style={{color:"#dc2626",marginLeft:4}}>({f.daysOverdue}d late)</span>}
                       </div>
-                    </Td>
-
-                    {/* Status */}
-                    <Td>
-                      <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:700, color:sc.color, background:sc.bg, whiteSpace:"nowrap" }}>
-                        <i className={sc.icon} style={{ fontSize:11 }} />{f.status}
-                      </span>
-                    </Td>
-
-                    {/* Priority */}
-                    <Td>
-                      <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700, color:pc.color, background:pc.bg }}>
-                        <span style={{ width:6, height:6, borderRadius:"50%", background:pc.color, display:"inline-block" }} />{f.priority}
-                      </span>
-                    </Td>
-
-                    {/* Counselor */}
-                    <Td>
-                      <div style={{ fontSize:12, fontWeight:600, color:"var(--default-text-color)", whiteSpace:"nowrap" }}>{f.counselor}</div>
-                      <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:1 }}>{f.category}</div>
-                    </Td>
-
-                    {/* Actions */}
-                    <Td>
-                      <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                        <ABtn icon="ri-phone-line"           title="Call Now"         color="#2563eb" />
-                        <ABtn icon="ri-checkbox-circle-line" title="Mark Contacted"   color="#16a34a" />
-                        <button
-                          title="View Notes"
-                          onClick={() => setShowNotes(showNotes === f.id ? null : f.id)}
-                          style={{ ...aBase, background: showNotes===f.id ? "#f5f3ff" : "transparent", color:"#7c3aed" }}
-                        >
-                          <i className="ri-sticky-note-line" />
-                        </button>
-                        <ABtn icon="ri-more-2-fill" title="More" color="var(--text-muted)" />
+                    </td>
+                    <td style={{padding:"10px 14px",fontSize:12,color:"#6b7280"}}>{f.lastContact}</td>
+                    <td style={{padding:"10px 14px",fontSize:12,color:"#374151"}}>{f.counselor.split(" ")[0]}</td>
+                    <td style={{padding:"10px 14px"}}>
+                      <span style={{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:20,background:pc.bg,color:pc.color,border:`1px solid ${pc.border}`}}>{f.priority}</span>
+                    </td>
+                    <td style={{padding:"10px 14px"}}><AttemptDots done={f.attempts} max={f.maxAttempts}/></td>
+                    <td style={{padding:"10px 14px"}}>
+                      <span style={{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:20,background:sc.bg,color:sc.color}}>{f.status}</span>
+                    </td>
+                    <td style={{padding:"10px 14px"}}>
+                      <div style={{display:"flex",gap:4}}>
+                        <button title="Mark Contacted" style={{width:27,height:27,borderRadius:6,border:"1px solid #e5e7eb",background:"#f0fdf4",color:"#16a34a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><i className="ri-phone-line" style={{fontSize:11}}/></button>
+                        <button title="Reschedule" style={{width:27,height:27,borderRadius:6,border:"1px solid #e5e7eb",background:"#eff6ff",color:"#2563eb",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><i className="ri-calendar-line" style={{fontSize:11}}/></button>
+                        <button title="Convert to Admission" style={{width:27,height:27,borderRadius:6,border:"1px solid #e5e7eb",background:"#faf5ff",color:"#7c3aed",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><i className="ri-checkbox-circle-line" style={{fontSize:11}}/></button>
+                        <button title="Add Note" style={{width:27,height:27,borderRadius:6,border:"1px solid #e5e7eb",background:"#fefce8",color:"#ca8a04",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><i className="ri-sticky-note-line" style={{fontSize:11}}/></button>
                       </div>
-                      {showNotes === f.id && (
-                        <div style={{ position:"absolute", zIndex:9999, background:"#fff", border:"1px solid var(--default-border)", borderRadius:10, padding:"10px 14px", boxShadow:"0 8px 24px rgba(0,0,0,0.12)", minWidth:220, maxWidth:280, fontSize:12, color:"var(--default-text-color)", marginTop:4, lineHeight:1.6 }}>
-                          <div style={{ fontWeight:700, marginBottom:6, color:"var(--primary-color)" }}><i className="ri-sticky-note-line" style={{ marginRight:4 }} />Notes</div>
-                          {f.notes}
-                        </div>
-                      )}
-                    </Td>
+                    </td>
                   </tr>
                 );
               })}
+              {paged.length===0 && (
+                <tr><td colSpan={10} style={{textAlign:"center",padding:"3rem",color:"#9ca3af"}}>
+                  <i className="ri-calendar-check-line" style={{fontSize:28,display:"block",marginBottom:8}}/>No follow-ups found
+                </td></tr>
+              )}
             </tbody>
           </table>
         </div>
-
-        {/* Pagination footer */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px", borderTop:"1px solid var(--default-border)", background:"#fff", gap:12, flexWrap:"wrap" }}>
-          <span style={{ fontSize:13, color:"var(--text-muted)" }}>
-            Showing <strong>{((safePage-1)*PAGE_SIZE)+1}–{Math.min(safePage*PAGE_SIZE, filtered.length)}</strong> of <strong>{filtered.length.toLocaleString()}</strong> follow-ups
-          </span>
-          <Pagination page={safePage} totalPages={totalPages} onPage={(p) => { setPage(p); setSelected(new Set()); }} />
-          <div style={{ fontSize:13, color:"var(--text-muted)" }}>
-            Page <strong>{safePage}</strong> of <strong>{totalPages.toLocaleString()}</strong>
+        {pages>1 && (
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0.75rem 1rem",borderTop:"1px solid #f3f4f6"}}>
+            <span style={{fontSize:12,color:"#9ca3af"}}>Page {page} of {pages} · {filtered.length} records</span>
+            <div style={{display:"flex",gap:4}}>
+              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #e5e7eb",background:"#fff",fontSize:12,cursor:"pointer",color:page===1?"#d1d5db":"#374151"}}>Prev</button>
+              {Array.from({length:Math.min(5,pages)},(_,i)=>{
+                const pg=page<=3?i+1:page>=pages-2?pages-4+i:page-2+i;
+                if(pg<1||pg>pages) return null;
+                return <button key={pg} onClick={()=>setPage(pg)} style={{width:30,height:30,borderRadius:6,border:"1.5px solid "+(pg===page?"#7c3aed":"#e5e7eb"),background:pg===page?"#7c3aed":"#fff",color:pg===page?"#fff":"#374151",fontSize:12,cursor:"pointer",fontWeight:pg===page?700:400}}>{pg}</button>;
+              })}
+              <button onClick={()=>setPage(p=>Math.min(pages,p+1))} disabled={page===pages} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #e5e7eb",background:"#fff",fontSize:12,cursor:"pointer",color:page===pages?"#d1d5db":"#374151"}}>Next</button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
-
     </div>
   );
 }
-
-// ── Micro-components ──────────────────────────────────────────────────────────
-function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <th style={{ padding:"11px 14px", textAlign:"left", fontSize:11, fontWeight:700, color:"var(--text-muted)", letterSpacing:"0.05em", textTransform:"uppercase", whiteSpace:"nowrap", ...style }}>
-      {children}
-    </th>
-  );
-}
-
-function Td({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
-  return <td style={{ padding:"12px 14px", verticalAlign:"middle", position:"relative", ...style }}>{children}</td>;
-}
-
-function ABtn({ icon, title, color }: { icon: string; title: string; color: string }) {
-  return (
-    <button title={title} style={{ ...aBase, color }}>
-      <i className={icon} />
-    </button>
-  );
-}
-
-// ── Shared styles ─────────────────────────────────────────────────────────────
-const primaryBtn: React.CSSProperties = { display:"inline-flex", alignItems:"center", gap:6, padding:"8px 16px", background:"var(--primary-color,#6c5ffc)", color:"#fff", border:"none", borderRadius:9, fontWeight:700, fontSize:13, cursor:"pointer" };
-const outlineBtn: React.CSSProperties = { display:"inline-flex", alignItems:"center", gap:6, padding:"8px 16px", background:"#fff", color:"var(--default-text-color)", border:"1px solid var(--default-border)", borderRadius:9, fontWeight:600, fontSize:13, cursor:"pointer" };
-const selectStyle: React.CSSProperties = { border:"1px solid var(--default-border)", borderRadius:8, padding:"7px 12px", fontSize:13, color:"var(--default-text-color)", background:"#fff", cursor:"pointer", outline:"none" };
-const bulkBtn: React.CSSProperties = { display:"inline-flex", alignItems:"center", gap:5, background:"none", border:"none", cursor:"pointer", fontSize:12, fontWeight:600, padding:"4px 8px", borderRadius:6 };
-const aBase: React.CSSProperties = { width:28, height:28, borderRadius:7, border:"1px solid var(--default-border)", background:"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, transition:"background 0.1s" };
