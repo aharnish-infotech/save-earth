@@ -2,39 +2,117 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 
-// ── Dummy student data ────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 const COURSES: Record<string, string> = {
   BCA: "BCA", MCA: "MCA", BCOM: "B.Com", MCOM: "M.Com",
   BSC: "B.Sc CS", MSC: "M.Sc CS", BBA: "BBA", MBA: "MBA",
 };
 
-const CATEGORIES = ["General", "OBC", "SC", "ST", "EWS"] as const;
-const GENDERS = ["Male", "Female"] as const;
+const COURSE_KEYS = Object.keys(COURSES) as (keyof typeof COURSES)[];
 
-const RAW_STUDENTS = [
-  { id: "ZF2526001", roll: "2526BCA01", name: "Rahul Kumar",      course: "BCA", sem: "Sem 3", gender: "Male",   cat: "General", doa: "2025-07-12", dob: "2005-03-14", phone: "9876543210", status: "Active" },
-  { id: "ZF2526002", roll: "2526MCA01", name: "Priya Sharma",     course: "MCA", sem: "Sem 1", gender: "Female", cat: "OBC",     doa: "2025-07-14", dob: "2002-11-22", phone: "9876543211", status: "Active" },
-  { id: "ZF2526003", roll: "2526BCA02", name: "Amit Verma",       course: "BCA", sem: "Sem 3", gender: "Male",   cat: "SC",      doa: "2025-07-15", dob: "2004-06-30", phone: "9876543212", status: "Active" },
-  { id: "ZF2526004", roll: "2526BCM01", name: "Sneha Patel",      course: "BCOM", sem: "Sem 1", gender: "Female", cat: "General", doa: "2025-07-16", dob: "2006-01-08", phone: "9876543213", status: "Active" },
-  { id: "ZF2526005", roll: "2526BBA01", name: "Arjun Singh",      course: "BBA", sem: "Sem 5", gender: "Male",   cat: "EWS",     doa: "2024-07-10", dob: "2003-09-18", phone: "9876543214", status: "Active" },
-  { id: "ZF2526006", roll: "2526BSC01", name: "Anjali Mehta",     course: "BSC", sem: "Sem 3", gender: "Female", cat: "OBC",     doa: "2024-07-11", dob: "2004-05-25", phone: "9876543215", status: "Active" },
-  { id: "ZF2526007", roll: "2526MBA01", name: "Vikram Joshi",     course: "MBA", sem: "Sem 2", gender: "Male",   cat: "General", doa: "2025-07-18", dob: "2000-12-03", phone: "9876543216", status: "Inactive" },
-  { id: "ZF2526008", roll: "2526MCA02", name: "Neha Gupta",       course: "MCA", sem: "Sem 1", gender: "Female", cat: "ST",      doa: "2025-07-19", dob: "2001-07-17", phone: "9876543217", status: "Active" },
-  { id: "ZF2526009", roll: "2526BCA03", name: "Karan Yadav",      course: "BCA", sem: "Sem 5", gender: "Male",   cat: "OBC",     doa: "2023-07-08", dob: "2004-02-28", phone: "9876543218", status: "Active" },
-  { id: "ZF2526010", roll: "2526BCM02", name: "Ritu Agarwal",     course: "BCOM", sem: "Sem 3", gender: "Female", cat: "SC",      doa: "2024-07-13", dob: "2003-10-11", phone: "9876543219", status: "Detained" },
-  { id: "ZF2526011", roll: "2526BBA02", name: "Deepak Nair",      course: "BBA", sem: "Sem 1", gender: "Male",   cat: "General", doa: "2025-07-20", dob: "2005-04-20", phone: "9876543220", status: "Active" },
-  { id: "ZF2526012", roll: "2526MSC01", name: "Pooja Iyer",       course: "MSC", sem: "Sem 2", gender: "Female", cat: "General", doa: "2025-07-21", dob: "2001-08-15", phone: "9876543221", status: "Active" },
-  { id: "ZF2526013", roll: "2526BCA04", name: "Suresh Reddy",     course: "BCA", sem: "Sem 1", gender: "Male",   cat: "ST",      doa: "2025-07-22", dob: "2006-03-07", phone: "9876543222", status: "Active" },
-  { id: "ZF2526014", roll: "2526MCM01", name: "Kavita Jain",      course: "MCOM", sem: "Sem 1", gender: "Female", cat: "EWS",     doa: "2025-07-23", dob: "2002-12-19", phone: "9876543223", status: "Active" },
-  { id: "ZF2526015", roll: "2526MBA02", name: "Rohan Mishra",     course: "MBA", sem: "Sem 2", gender: "Male",   cat: "OBC",     doa: "2025-07-24", dob: "1999-06-09", phone: "9876543224", status: "Active" },
-  { id: "ZF2526016", roll: "2526BSC02", name: "Simran Kaur",      course: "BSC", sem: "Sem 1", gender: "Female", cat: "General", doa: "2025-07-25", dob: "2005-11-30", phone: "9876543225", status: "Active" },
-  { id: "ZF2526017", roll: "2526BCA05", name: "Ajay Tiwari",      course: "BCA", sem: "Sem 3", gender: "Male",   cat: "SC",      doa: "2024-07-09", dob: "2004-07-22", phone: "9876543226", status: "Inactive" },
-  { id: "ZF2526018", roll: "2526BBA03", name: "Meena Pillai",     course: "BBA", sem: "Sem 3", gender: "Female", cat: "General", doa: "2024-07-10", dob: "2003-01-05", phone: "9876543227", status: "Active" },
-  { id: "ZF2526019", roll: "2526MCA03", name: "Gaurav Sharma",    course: "MCA", sem: "Sem 3", gender: "Male",   cat: "OBC",     doa: "2024-07-12", dob: "2001-09-27", phone: "9876543228", status: "Active" },
-  { id: "ZF2526020", roll: "2526BCM03", name: "Asha Desai",       course: "BCOM", sem: "Sem 5", gender: "Female", cat: "EWS",     doa: "2023-07-07", dob: "2003-04-16", phone: "9876543229", status: "Active" },
+const COURSE_SEMS: Record<string, string[]> = {
+  BCA:  ["Sem 1","Sem 2","Sem 3","Sem 4","Sem 5","Sem 6"],
+  MCA:  ["Sem 1","Sem 2","Sem 3","Sem 4"],
+  BCOM: ["Sem 1","Sem 2","Sem 3","Sem 4","Sem 5","Sem 6"],
+  MCOM: ["Sem 1","Sem 2","Sem 3","Sem 4"],
+  BSC:  ["Sem 1","Sem 2","Sem 3","Sem 4","Sem 5","Sem 6"],
+  MSC:  ["Sem 1","Sem 2","Sem 3","Sem 4"],
+  BBA:  ["Sem 1","Sem 2","Sem 3","Sem 4","Sem 5","Sem 6"],
+  MBA:  ["Sem 1","Sem 2","Sem 3","Sem 4"],
+};
+
+const CATEGORIES = ["General", "OBC", "SC", "ST", "EWS"] as const;
+const CAT_WEIGHTS = [35, 28, 17, 12, 8]; // realistic distribution
+
+const STATUSES = ["Active", "Active", "Active", "Active", "Active", "Inactive", "Detained"];
+
+const FIRST_NAMES = [
+  "Rahul","Priya","Amit","Sneha","Arjun","Anjali","Vikram","Neha","Karan","Ritu",
+  "Deepak","Pooja","Suresh","Kavita","Rohan","Simran","Ajay","Meena","Gaurav","Asha",
+  "Sanjay","Divya","Anil","Rekha","Vijay","Sunita","Manoj","Geeta","Rajesh","Anita",
+  "Sachin","Savita","Vishal","Nisha","Aakash","Preeti","Mohit","Swati","Nikhil","Kajal",
+  "Ravi","Seema","Akash","Manisha","Sunil","Bharti","Kapil","Jyoti","Vivek","Reena",
+  "Rahul","Shruti","Hemant","Komal","Yash","Pallavi","Tushar","Shweta","Saurabh","Ankita",
+  "Abhinav","Vandana","Varun","Tanvi","Mayank","Rupal","Pranav","Madhuri","Harshit","Sapna",
+  "Kunal","Rashmi","Rohit","Mansi","Sumit","Sonal","Neeraj","Nidhi","Vikas","Poornima",
+  "Dinesh","Meenakshi","Shyam","Usha","Gopal","Lata","Ramesh","Saroj","Naresh","Kamla",
+  "Ashish","Namrata","Yogesh","Archana","Lokesh","Sheetal","Lalit","Radha","Pankaj","Renu",
 ];
 
-// ── Avatar colours by initials ─────────────────────────────────────────────
+const LAST_NAMES = [
+  "Kumar","Sharma","Verma","Patel","Singh","Mehta","Joshi","Gupta","Yadav","Agarwal",
+  "Nair","Iyer","Reddy","Jain","Mishra","Kaur","Tiwari","Pillai","Desai","Agarwal",
+  "Bhatt","Chauhan","Dubey","Pandey","Srivastava","Bajaj","Malhotra","Kapoor","Khanna","Bansal",
+  "Chandra","Bose","Das","Roy","Sen","Ghosh","Chatterjee","Mukherjee","Dey","Pal",
+  "Naidu","Rao","Murthy","Swamy","Gowda","Hegde","Kamath","Shetty","Bhat","Pai",
+  "Garg","Goyal","Jindal","Mittal","Aggarwal","Khandelwal","Saini","Meena","Gurjar","Jat",
+];
+
+// ── Seeded random (reproducible) ─────────────────────────────────────────────
+function seededRand(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+// ── Generate students ─────────────────────────────────────────────────────────
+function generateStudents(count: number) {
+  const rand = seededRand(42);
+  const pick = <T,>(arr: T[]) => arr[Math.floor(rand() * arr.length)];
+  const pickWeighted = (items: readonly string[], weights: number[]) => {
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = rand() * total;
+    for (let i = 0; i < items.length; i++) { r -= weights[i]; if (r <= 0) return items[i]; }
+    return items[items.length - 1];
+  };
+
+  const students: { id:string; roll:string; name:string; course:string; sem:string; gender:string; cat:string; doa:string; dob:string; phone:string; status:string; }[] = [];
+  const courseCounters: Record<string, number> = {};
+  COURSE_KEYS.forEach(k => { courseCounters[k] = 0; });
+
+  // Academic years (spread across 3 years)
+  const doaYears = [2023, 2024, 2025];
+
+  for (let i = 1; i <= count; i++) {
+    const firstName = pick(FIRST_NAMES);
+    const lastName  = pick(LAST_NAMES);
+    const name      = `${firstName} ${lastName}`;
+    const gender    = rand() < 0.52 ? "Male" : "Female";
+    const course    = pick(COURSE_KEYS);
+    courseCounters[course]++;
+    const sems      = COURSE_SEMS[course];
+    const sem       = pick(sems);
+    const cat       = pickWeighted(CATEGORIES, CAT_WEIGHTS);
+    const status    = pick(STATUSES);
+
+    const doaYear   = pick(doaYears);
+    const doaMonth  = Math.floor(rand() * 4) + 6; // Jun–Sep admissions
+    const doaDay    = Math.floor(rand() * 28) + 1;
+    const doa       = `${doaYear}-${String(doaMonth).padStart(2,"0")}-${String(doaDay).padStart(2,"0")}`;
+
+    const dobYear   = Math.floor(rand() * 8) + 1999; // 1999–2006
+    const dobMonth  = Math.floor(rand() * 12) + 1;
+    const dobDay    = Math.floor(rand() * 28) + 1;
+    const dob       = `${dobYear}-${String(dobMonth).padStart(2,"0")}-${String(dobDay).padStart(2,"0")}`;
+
+    const phone     = `${pick(["7","8","9"])}${String(Math.floor(rand() * 900000000) + 100000000)}`;
+
+    // Roll number: YYCOURSE+counter
+    const yy        = String(doaYear).slice(2) + String(doaYear + 1).slice(2);
+    const rollCode  = course === "BCOM" ? "BCM" : course === "MCOM" ? "MCM" : course;
+    const roll      = `${yy}${rollCode}${String(courseCounters[course]).padStart(2,"0")}`;
+    const id        = `ZF${yy}${String(i).padStart(3,"0")}`;
+
+    students.push({ id, roll, name, course, sem, gender, cat, doa, dob, phone, status });
+  }
+  return students;
+}
+
+const ALL_STUDENTS = generateStudents(1000);
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const AVATAR_COLORS = ["#7c3aed","#2563eb","#059669","#d97706","#dc2626","#0891b2","#7c2d12","#065f46"];
 function avatarColor(name: string) {
   let hash = 0;
@@ -48,13 +126,12 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-// ── Status badge ───────────────────────────────────────────────────────────
+// ── Badge styles ──────────────────────────────────────────────────────────────
 const STATUS_STYLE: Record<string, React.CSSProperties> = {
   Active:   { background: "#dcfce7", color: "#16a34a" },
   Inactive: { background: "#fee2e2", color: "#dc2626" },
   Detained: { background: "#fef3c7", color: "#d97706" },
 };
-
 const CAT_STYLE: Record<string, React.CSSProperties> = {
   General: { background: "#ede9fe", color: "#6d28d9" },
   OBC:     { background: "#dbeafe", color: "#1d4ed8" },
@@ -63,31 +140,64 @@ const CAT_STYLE: Record<string, React.CSSProperties> = {
   EWS:     { background: "#fce7f3", color: "#be185d" },
 };
 
-const PAGE_SIZES = [10, 25, 50];
+const PAGE_SIZE = 20;
 
+// ── Smart paginator ───────────────────────────────────────────────────────────
+function getPageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "...")[] = [];
+  const addRange = (from: number, to: number) => {
+    for (let i = from; i <= to; i++) pages.push(i);
+  };
+  pages.push(1);
+  if (current <= 4) {
+    addRange(2, 5);
+    pages.push("...");
+    pages.push(total);
+  } else if (current >= total - 3) {
+    pages.push("...");
+    addRange(total - 4, total);
+  } else {
+    pages.push("...");
+    addRange(current - 1, current + 1);
+    pages.push("...");
+    pages.push(total);
+  }
+  return pages;
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function StudentsPage() {
-  const [search, setSearch] = useState("");
+  const [search,       setSearch]       = useState("");
   const [filterCourse, setFilterCourse] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [filterCat, setFilterCat] = useState("");
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+  const [filterCat,    setFilterCat]    = useState("");
+  const [filterGender, setFilterGender] = useState("");
+  const [page,         setPage]         = useState(1);
 
   const filtered = useMemo(() => {
-    return RAW_STUDENTS.filter((s) => {
-      const q = search.toLowerCase();
-      const matchQ = !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || s.roll.toLowerCase().includes(q) || s.phone.includes(q);
+    const q = search.toLowerCase().trim();
+    return ALL_STUDENTS.filter((s) => {
+      const matchQ      = !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || s.roll.toLowerCase().includes(q) || s.phone.includes(q);
       const matchCourse = !filterCourse || s.course === filterCourse;
       const matchStatus = !filterStatus || s.status === filterStatus;
       const matchCat    = !filterCat    || s.cat === filterCat;
-      return matchQ && matchCourse && matchStatus && matchCat;
+      const matchGender = !filterGender || s.gender === filterGender;
+      return matchQ && matchCourse && matchStatus && matchCat && matchGender;
     });
-  }, [search, filterCourse, filterStatus, filterCat]);
+  }, [search, filterCourse, filterStatus, filterCat, filterGender]);
 
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const rows = filtered.slice((page - 1) * perPage, page * perPage);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage   = Math.min(page, totalPages);
+  const rows       = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageNums   = getPageNumbers(safePage, totalPages);
 
   const resetPage = () => setPage(1);
+
+  // Stats (always from full dataset)
+  const totalActive   = ALL_STUDENTS.filter(s => s.status === "Active").length;
+  const totalInactive = ALL_STUDENTS.filter(s => s.status === "Inactive").length;
+  const totalDetained = ALL_STUDENTS.filter(s => s.status === "Detained").length;
 
   return (
     <div>
@@ -115,10 +225,10 @@ export default function StudentsPage() {
       {/* Stats row */}
       <div className="row g-3 mb-3">
         {[
-          { label: "Total Students", value: RAW_STUDENTS.length, color: "#7c3aed", bg: "#ede9fe", icon: "ri-group-line" },
-          { label: "Active", value: RAW_STUDENTS.filter(s => s.status === "Active").length, color: "#16a34a", bg: "#dcfce7", icon: "ri-checkbox-circle-line" },
-          { label: "Inactive", value: RAW_STUDENTS.filter(s => s.status === "Inactive").length, color: "#dc2626", bg: "#fee2e2", icon: "ri-close-circle-line" },
-          { label: "Detained", value: RAW_STUDENTS.filter(s => s.status === "Detained").length, color: "#d97706", bg: "#fef3c7", icon: "ri-error-warning-line" },
+          { label: "Total Students", value: ALL_STUDENTS.length, color: "#7c3aed", bg: "#ede9fe", icon: "ri-group-line" },
+          { label: "Active",         value: totalActive,          color: "#16a34a", bg: "#dcfce7", icon: "ri-checkbox-circle-line" },
+          { label: "Inactive",       value: totalInactive,        color: "#dc2626", bg: "#fee2e2", icon: "ri-close-circle-line" },
+          { label: "Detained",       value: totalDetained,        color: "#d97706", bg: "#fef3c7", icon: "ri-error-warning-line" },
         ].map(stat => (
           <div key={stat.label} className="col-6 col-md-3">
             <div className="card custom-card mb-0" style={{ borderLeft: `4px solid ${stat.color}` }}>
@@ -128,7 +238,7 @@ export default function StudentsPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>{stat.label}</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "var(--default-text-color)", lineHeight: 1.2 }}>{stat.value}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "var(--default-text-color)", lineHeight: 1.2 }}>{stat.value.toLocaleString()}</div>
                 </div>
               </div>
             </div>
@@ -141,21 +251,9 @@ export default function StudentsPage() {
         {/* Toolbar */}
         <div className="card-header" style={{ padding: "0.75rem 1.25rem", borderBottom: "1px solid var(--default-border)" }}>
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            {/* Left: rows per page */}
-            <div className="d-flex align-items-center gap-2" style={{ fontSize: 13 }}>
-              <span style={{ color: "var(--text-muted)" }}>Show</span>
-              <select
-                className="form-select form-select-sm"
-                style={{ width: 65, fontSize: 12 }}
-                value={perPage}
-                onChange={(e) => { setPerPage(Number(e.target.value)); resetPage(); }}
-              >
-                {PAGE_SIZES.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <span style={{ color: "var(--text-muted)" }}>entries</span>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+              Showing <strong style={{ color: "var(--default-text-color)" }}>{filtered.length.toLocaleString()}</strong> students · Page <strong style={{ color: "var(--default-text-color)" }}>{safePage}</strong> of <strong style={{ color: "var(--default-text-color)" }}>{totalPages}</strong>
             </div>
-
-            {/* Right: filters + search */}
             <div className="d-flex align-items-center gap-2 flex-wrap">
               <select className="form-select form-select-sm" style={{ width: 120, fontSize: 12 }}
                 value={filterCourse} onChange={(e) => { setFilterCourse(e.target.value); resetPage(); }}>
@@ -166,6 +264,12 @@ export default function StudentsPage() {
                 value={filterCat} onChange={(e) => { setFilterCat(e.target.value); resetPage(); }}>
                 <option value="">All Categories</option>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select className="form-select form-select-sm" style={{ width: 100, fontSize: 12 }}
+                value={filterGender} onChange={(e) => { setFilterGender(e.target.value); resetPage(); }}>
+                <option value="">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
               </select>
               <select className="form-select form-select-sm" style={{ width: 105, fontSize: 12 }}
                 value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); resetPage(); }}>
@@ -181,7 +285,7 @@ export default function StudentsPage() {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search students…"
+                  placeholder="Search name, ID, roll, phone…"
                   style={{ fontSize: 12 }}
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); resetPage(); }}
@@ -197,17 +301,17 @@ export default function StudentsPage() {
             <table className="table table-hover table-striped align-middle mb-0" style={{ fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--default-background)", borderBottom: "2px solid var(--default-border)" }}>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", whiteSpace: "nowrap" }}>Admission No</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", whiteSpace: "nowrap" }}>Roll No</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>Student Name</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>Course</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>Semester</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>Gender</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>Category</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", whiteSpace: "nowrap" }}>Admission Date</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>DOB</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>Status</th>
-                  <th style={{ padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>Action</th>
+                  <th style={TH}>Admission No</th>
+                  <th style={TH}>Roll No</th>
+                  <th style={TH}>Student Name</th>
+                  <th style={TH}>Course</th>
+                  <th style={TH}>Semester</th>
+                  <th style={TH}>Gender</th>
+                  <th style={TH}>Category</th>
+                  <th style={TH}>Admission Date</th>
+                  <th style={TH}>DOB</th>
+                  <th style={TH}>Status</th>
+                  <th style={TH}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -219,8 +323,8 @@ export default function StudentsPage() {
                     </td>
                   </tr>
                 ) : rows.map((s) => {
-                  const color = avatarColor(s.name);
-                  const sts = STATUS_STYLE[s.status] || {};
+                  const color  = avatarColor(s.name);
+                  const sts    = STATUS_STYLE[s.status] || {};
                   const catSty = CAT_STYLE[s.cat] || {};
                   return (
                     <tr key={s.id}>
@@ -232,12 +336,7 @@ export default function StudentsPage() {
                       <td style={{ padding: "10px 14px", fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{s.roll}</td>
                       <td style={{ padding: "10px 14px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: "50%",
-                            background: color, color: "#fff",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 11, fontWeight: 700, flexShrink: 0,
-                          }}>
+                          <div style={{ width: 32, height: 32, borderRadius: "50%", background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
                             {initials(s.name)}
                           </div>
                           <div>
@@ -246,9 +345,7 @@ export default function StudentsPage() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: "10px 14px", fontWeight: 500, color: "var(--default-text-color)" }}>
-                        {COURSES[s.course] || s.course}
-                      </td>
+                      <td style={{ padding: "10px 14px", fontWeight: 500, color: "var(--default-text-color)" }}>{COURSES[s.course] || s.course}</td>
                       <td style={{ padding: "10px 14px", color: "var(--text-muted)" }}>{s.sem}</td>
                       <td style={{ padding: "10px 14px", color: "var(--text-muted)" }}>
                         <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -257,9 +354,7 @@ export default function StudentsPage() {
                         </span>
                       </td>
                       <td style={{ padding: "10px 14px" }}>
-                        <span style={{ ...catSty, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>
-                          {s.cat}
-                        </span>
+                        <span style={{ ...catSty, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>{s.cat}</span>
                       </td>
                       <td style={{ padding: "10px 14px", color: "var(--text-muted)", whiteSpace: "nowrap", fontSize: 12 }}>{fmtDate(s.doa)}</td>
                       <td style={{ padding: "10px 14px", color: "var(--text-muted)", whiteSpace: "nowrap", fontSize: 12 }}>{fmtDate(s.dob)}</td>
@@ -294,50 +389,81 @@ export default function StudentsPage() {
         <div className="card-footer" style={{ padding: "0.75rem 1.25rem", borderTop: "1px solid var(--default-border)", background: "var(--custom-white)" }}>
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              Showing <strong>{filtered.length === 0 ? 0 : (page - 1) * perPage + 1}</strong> to{" "}
-              <strong>{Math.min(page * perPage, filtered.length)}</strong> of{" "}
-              <strong>{filtered.length}</strong> entries
+              Showing{" "}
+              <strong>{filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}</strong>
+              {" "}–{" "}
+              <strong>{Math.min(safePage * PAGE_SIZE, filtered.length)}</strong>
+              {" "}of <strong>{filtered.length.toLocaleString()}</strong> entries
             </div>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
               <button
                 className="btn btn-sm"
-                style={{ fontSize: 12, padding: "4px 10px", border: "1px solid var(--default-border)", background: page === 1 ? "var(--default-background)" : "var(--custom-white)", color: "var(--default-text-color)" }}
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                ← Prev
-              </button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const pg = i + 1;
-                return (
+                style={navBtn(false)}
+                disabled={safePage === 1}
+                onClick={() => setPage(1)}
+                title="First"
+              >«</button>
+              <button
+                className="btn btn-sm"
+                style={navBtn(false)}
+                disabled={safePage === 1}
+                onClick={() => setPage(p => p - 1)}
+              >‹ Prev</button>
+
+              {pageNums.map((pg, i) =>
+                pg === "..." ? (
+                  <span key={`e${i}`} style={{ padding: "4px 6px", fontSize: 12, color: "var(--text-muted)" }}>…</span>
+                ) : (
                   <button
                     key={pg}
                     className="btn btn-sm"
                     style={{
-                      fontSize: 12, padding: "4px 10px", minWidth: 32,
-                      background: page === pg ? "var(--primary-color)" : "var(--custom-white)",
-                      color: page === pg ? "#fff" : "var(--default-text-color)",
-                      border: `1px solid ${page === pg ? "var(--primary-color)" : "var(--default-border)"}`,
-                      fontWeight: page === pg ? 600 : 400,
+                      fontSize: 12, padding: "4px 0", minWidth: 32, height: 30,
+                      background: safePage === pg ? "var(--primary-color)" : "var(--custom-white)",
+                      color: safePage === pg ? "#fff" : "var(--default-text-color)",
+                        border: `1px solid ${safePage === pg ? "var(--primary-color)" : "var(--default-border)"}`,
+                      fontWeight: safePage === pg ? 700 : 400,
+                      borderRadius: 6,
                     }}
-                    onClick={() => setPage(pg)}
-                  >
-                    {pg}
-                  </button>
-                );
-              })}
+                    onClick={() => setPage(pg as number)}
+                  >{pg}</button>
+                )
+              )}
+
               <button
                 className="btn btn-sm"
-                style={{ fontSize: 12, padding: "4px 10px", border: "1px solid var(--default-border)", background: page === totalPages ? "var(--default-background)" : "var(--custom-white)", color: "var(--default-text-color)" }}
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next →
-              </button>
+                style={navBtn(false)}
+                disabled={safePage >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+              >Next ›</button>
+              <button
+                className="btn btn-sm"
+                style={navBtn(false)}
+                disabled={safePage >= totalPages}
+                onClick={() => setPage(totalPages)}
+                title="Last"
+              >»</button>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+// ── Style helpers ────────────────────────────────────────────────
+const TH: React.CSSProperties = {
+  padding: "10px 14px", fontWeight: 700, fontSize: 11,
+  textTransform: "uppercase", letterSpacing: "0.05em",
+  color: "var(--text-muted)", whiteSpace: "nowrap",
+};
+
+function navBtn(_active: boolean): React.CSSProperties {
+  return {
+    fontSize: 12, padding: "4px 10px", height: 30,
+    border: "1px solid var(--default-border)",
+    background: "var(--custom-white)",
+    color: "var(--default-text-color)",
+    borderRadius: 6,
+  };
 }
