@@ -165,7 +165,7 @@ export default function LoginPage() {
         {/* Top-right: ZeroForm Campus logo — file: /media/ZeroFormCampus.png */}
         <div style={{ position: "absolute", top: 24, right: 24, zIndex: 10 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/media/ZeroFormCampus.png" alt="ZeroForm Campus" style={{ height: 36, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          <img src="/media/ZeroFormCampus.png" alt="ZeroForm Campus" style={{ height: 40, width: "auto", objectFit: "contain", mixBlendMode: "screen" }} />
         </div>
 
         {/* Content */}
