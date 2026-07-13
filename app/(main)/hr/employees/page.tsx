@@ -274,17 +274,10 @@ export default function EmployeesPage() {
                         </button>
                         {openMenu===emp.id&&(
                           <div style={{ position:"absolute", right:0, top:"100%", zIndex:100, background:"#fff", border:"1px solid #ede9fe", borderRadius:10, boxShadow:"0 8px 24px rgba(79,70,229,0.12)", minWidth:160, padding:"4px 0" }}>
-                            {[
-                              {icon:"ri-eye-line",           label:"View Profile"},
-                              {icon:"ri-edit-line",          label:"Edit Details"},
-                              {icon:"ri-calendar-check-line",label:"Attendance"},
-                              {icon:"ri-delete-bin-6-line",  label:"Remove", danger:true},
-                            ].map(a=>(
-                              <button key={a.label} onClick={()=>setOpenMenu(null)}
-                                style={{ display:"flex", alignItems:"center", gap:8, width:"100%", padding:"8px 14px", background:"none", border:"none", cursor:"pointer", fontSize:13, color:(a as {danger?:boolean}).danger?"#dc2626":"#374151", fontWeight:500, textAlign:"left" as const }}>
-                                <i className={a.icon}/>{a.label}
-                              </button>
-                            ))}
+                            <Link href={`/hr/employees/${globalIdx+1}`} onClick={()=>setOpenMenu(null)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",fontSize:13,color:"#374151",fontWeight:500,textDecoration:"none"}}><i className="ri-eye-line"/>View Profile</Link>
+                            <Link href={`/hr/employees/${globalIdx+1}`} onClick={()=>setOpenMenu(null)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",fontSize:13,color:"#374151",fontWeight:500,textDecoration:"none"}}><i className="ri-edit-line"/>Edit Details</Link>
+                            <Link href="/hr/attendance" onClick={()=>setOpenMenu(null)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",fontSize:13,color:"#374151",fontWeight:500,textDecoration:"none"}}><i className="ri-calendar-check-line"/>Attendance</Link>
+                            <button onClick={()=>setOpenMenu(null)} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"8px 14px",background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#dc2626",fontWeight:500,textAlign:"left" as const}}><i className="ri-delete-bin-6-line"/>Remove</button>
                           </div>
                         )}
                       </div>
@@ -333,3 +326,4 @@ const TD: React.CSSProperties = { padding:"10px 14px", verticalAlign:"middle", w
 const SS: React.CSSProperties = { padding:"7px 10px", borderRadius:8, border:"1.5px solid #e5e7eb", fontSize:12, color:"#374151", background:"#fafafa", cursor:"pointer", outline:"none" };
 const OB: React.CSSProperties = { display:"inline-flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:8, border:"1.5px solid #ede9fe", background:"#fff", color:"#374151", fontSize:13, fontWeight:600, cursor:"pointer", textDecoration:"none" };
 const PB: React.CSSProperties = { display:"inline-flex", alignItems:"center", gap:6, padding:"7px 16px", borderRadius:8, border:"none", background:"linear-gradient(135deg,#4f46e5,#7c3aed)", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", textDecoration:"none" };
+
