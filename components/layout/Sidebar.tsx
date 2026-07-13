@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RAIL_ITEMS } from "@/lib/constants/navigation";
 
-// ── SVG icons for the icon rail ──────────────────────────────────────────────
 const SECTION_ICONS: Record<string, React.ReactNode> = {
   dashboard: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
@@ -68,6 +67,15 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
       <line x1="160" y1="152" x2="160" y2="176" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
     </svg>
   ),
+  hr: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
+      <circle cx="84" cy="108" r="52" opacity="0.2" fill="currentColor"/>
+      <circle cx="84" cy="108" r="52" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+      <path d="M152,60a52,52,0,0,1,0,96" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+      <path d="M8,196c14.37-24.46,39.09-40,76-40s61.63,15.54,76,40" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+      <path d="M152,156h24c36.91,0,61.63,15.54,76,40" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+    </svg>
+  ),
   settings: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
       <circle cx="128" cy="128" r="40" opacity="0.2" fill="currentColor"/>
@@ -77,101 +85,63 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
-// ── Helper: find which section owns the current path ─────────────────────────
 function getActiveSectionId(pathname: string): string {
   const allItems = RAIL_ITEMS.flatMap(r => r.sections.flatMap(s => s.items));
   const hasExactMatch = allItems.some(n => n.href === pathname);
   for (const item of RAIL_ITEMS) {
-    const match = item.sections.some((s) =>
-      s.items.some((n) =>
-        pathname === n.href || (!hasExactMatch && pathname.startsWith(n.href + "/"))
-      )
+    const match = item.sections.some(s =>
+      s.items.some(n => pathname === n.href || (!hasExactMatch && pathname.startsWith(n.href + "/")))
     );
     if (match) return item.id;
   }
   return "dashboard";
 }
 
-// ── Sidebar Component ─────────────────────────────────────────────────────────
 export default function Sidebar() {
   const pathname = usePathname();
-
   const [expandedId, setExpandedId] = useState<string>(() => getActiveSectionId(pathname));
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen]   = useState(true);
 
-  // Keep content area margin in sync via CSS variable
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--zf-sidebar-w",
-      panelOpen ? "288px" : "64px"
-    );
+    document.documentElement.style.setProperty("--zf-sidebar-w", panelOpen ? "288px" : "64px");
   }, [panelOpen]);
 
-  // Sync expanded section when navigating
   useEffect(() => {
     setExpandedId(getActiveSectionId(pathname));
     setPanelOpen(true);
   }, [pathname]);
 
-  // Hamburger toggle — listen for custom event fired by Header
   useEffect(() => {
-    const handleToggle = () => setPanelOpen((prev) => !prev);
+    const handleToggle = () => setPanelOpen(prev => !prev);
     window.addEventListener("zf:toggle-sidebar", handleToggle);
     return () => window.removeEventListener("zf:toggle-sidebar", handleToggle);
   }, []);
 
-  // Rail icon click behaviour
   const handleIconClick = (id: string) => {
-    if (!panelOpen) {
-      // Panel closed — open it and jump to this section
-      setPanelOpen(true);
-      setExpandedId(id);
-    } else if (expandedId === id) {
-      // Same icon clicked — collapse panel (auto-hide)
-      setPanelOpen(false);
-    } else {
-      // Different icon — switch active section
-      setExpandedId(id);
-    }
+    if (!panelOpen) { setPanelOpen(true); setExpandedId(id); }
+    else if (expandedId === id) { setPanelOpen(false); }
+    else { setExpandedId(id); }
   };
 
-  // Accordion section header click
   const handleSectionToggle = (id: string) => {
     if (!panelOpen) setPanelOpen(true);
-    // Only one section open at a time (accordion)
-    setExpandedId((prev) => (prev === id ? "" : id));
+    setExpandedId(prev => (prev === id ? "" : id));
   };
 
   return (
     <aside className="zf-sidebar" id="sidebar">
 
-      {/* ── Icon Rail ── */}
+      {/* Icon Rail */}
       <div className="zf-rail">
-        {/* Product logo */}
         <div className="zf-rail-logo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/media/ZeroFormCampus.png"
-            alt="ZeroForm Campus"
-            width={42}
-            height={42}
-            style={{ borderRadius: 10, display: "block" }}
-          />
+          <img src="/media/ZeroFormCampus.png" alt="ZeroForm Campus" width={42} height={42} style={{ borderRadius: 10, display: "block" }} />
         </div>
-
-        {/* Stacked icon buttons */}
         <nav className="zf-rail-nav" aria-label="Main navigation">
-          {RAIL_ITEMS.map((item) => {
+          {RAIL_ITEMS.map(item => {
             const isActive = expandedId === item.id && panelOpen;
             return (
-              <button
-                key={item.id}
-                className={`zf-rail-btn${isActive ? " active" : ""}`}
-                onClick={() => handleIconClick(item.id)}
-                title={item.label}
-                aria-label={item.label}
-                aria-expanded={isActive}
-              >
+              <button key={item.id} className={`zf-rail-btn${isActive ? " active" : ""}`}
+                onClick={() => handleIconClick(item.id)} title={item.label} aria-label={item.label} aria-expanded={isActive}>
                 <span className="zf-rail-icon">{SECTION_ICONS[item.id]}</span>
                 <span className="zf-rail-label">{item.label}</span>
               </button>
@@ -180,50 +150,30 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* ── Accordion Nav Panel ── */}
+      {/* Accordion Nav Panel */}
       <div className={`zf-nav-panel${panelOpen ? " open" : ""}`} aria-hidden={!panelOpen}>
-        {/* Institution logo */}
         <div className="zf-panel-header">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/media/shmcnys-logo-full.png"
-            alt="Institution Logo"
-            height={44}
-            style={{ maxWidth: 190, width: "auto", display: "block" }}
-          />
+          <img src="/media/institution.png" alt="Institution Logo" height={44} style={{ maxWidth: 190, width: "auto", display: "block" }} />
         </div>
 
-        {/* All sections as accordion */}
         <div className="zf-accordion" id="sidebar-scroll">
-          {RAIL_ITEMS.map((item) => {
+          {RAIL_ITEMS.map(item => {
             const isExpanded = expandedId === item.id;
-            const allItems = item.sections.flatMap((s) => s.items);
+            const allItems   = item.sections.flatMap(s => s.items);
             return (
               <div key={item.id} className={`zf-accord-section${isExpanded ? " expanded" : ""}`}>
-                <button
-                  className={`zf-accord-header${isExpanded ? " active" : ""}`}
-                  onClick={() => handleSectionToggle(item.id)}
-                  aria-expanded={isExpanded}
-                >
+                <button className={`zf-accord-header${isExpanded ? " active" : ""}`}
+                  onClick={() => handleSectionToggle(item.id)} aria-expanded={isExpanded}>
                   <span className="zf-accord-header-icon">{SECTION_ICONS[item.id]}</span>
                   <span className="zf-accord-title">{item.label}</span>
-                  <i
-                    className="ri-arrow-down-s-line zf-accord-chevron"
-                    style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
-                  />
+                  <i className="ri-arrow-down-s-line zf-accord-chevron"
+                    style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }} />
                 </button>
-                <div
-                  className="zf-accord-body"
-                  style={{ maxHeight: isExpanded ? `${allItems.length * 44}px` : "0px" }}
-                >
-                  {allItems.map((nav) => {
+                <div className="zf-accord-body" style={{ maxHeight: isExpanded ? `${allItems.length * 44}px` : "0px" }}>
+                  {allItems.map(nav => {
                     const isNavActive = pathname === nav.href;
                     return (
-                      <Link
-                        key={nav.href}
-                        href={nav.href}
-                        className={`zf-nav-link${isNavActive ? " active" : ""}`}
-                      >
+                      <Link key={nav.href} href={nav.href} className={`zf-nav-link${isNavActive ? " active" : ""}`}>
                         {nav.icon && <i className={`${nav.icon} zf-nav-link-icon`} />}
                         <span>{nav.label}</span>
                       </Link>
