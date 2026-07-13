@@ -613,9 +613,13 @@ export default function EmployeeProfilePage() {
   const emp = getEmp(id);
   const [activeTab, setActiveTab] = useState("Employee Details");
 
-  const bg   = avatarBg(emp.id);
-  const flag = FLAGS[emp.country] ?? "🌐";
-  const sts  = emp.status==="Active" ? {bg:"#dcfce7",color:"#16a34a"} : {bg:"#fee2e2",color:"#dc2626"};
+  const bg      = avatarBg(emp.id);
+  const COUNTRY_CODES: Record<string,string> = { "India":"in","United States":"us","United Kingdom":"gb","Canada":"ca","UAE":"ae" };
+  const ccCode  = COUNTRY_CODES[emp.country] ?? "un";
+  const flagImg = `https://flagcdn.com/w20/${ccCode}.png`;
+  const sts     = emp.status==="Active"
+    ? { background:"rgba(22,163,74,0.12)", color:"#16a34a", border:"1px solid rgba(22,163,74,0.25)" }
+    : { background:"rgba(220,38,38,0.10)", color:"#dc2626", border:"1px solid rgba(220,38,38,0.25)" };
 
   return (
     <div>
@@ -655,13 +659,14 @@ export default function EmployeeProfilePage() {
               </div>
               <div style={{fontWeight:800,fontSize:17,color:"var(--default-text-color)",marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                 {emp.salutation} {emp.name}
-                <span title={emp.country} style={{fontSize:20,lineHeight:1}}>{flag}</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={flagImg} alt={emp.country} title={emp.country} style={{width:20,height:"auto",borderRadius:2,boxShadow:"0 0 0 1px rgba(0,0,0,0.1)",verticalAlign:"middle"}} />
               </div>
               <div style={{fontSize:12,color:"var(--primary-color)",fontWeight:600,marginBottom:"0.3rem"}}>{emp.id}</div>
               <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:"0.75rem"}}>{emp.designation} · {emp.department}</div>
               <div style={{display:"flex",justifyContent:"center",gap:6,flexWrap:"wrap" as const}}>
-                <span style={{background:"rgba(108,95,252,0.1)",color:"var(--primary-color)",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20}}>{emp.userRole}</span>
-                <span style={{...sts,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20}}>{emp.status}</span>
+                <span style={{background:"rgba(108,95,252,0.1)",color:"var(--primary-color)",border:"1px solid rgba(108,95,252,0.2)",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>{emp.userRole}</span>
+                <span style={{...sts,fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>{emp.status}</span>
               </div>
             </div>
           </div>
@@ -778,16 +783,4 @@ export default function EmployeeProfilePage() {
           {/* Tab content */}
           <div>
                         {activeTab==="Employee Details"  && <EmployeeDetailsTab emp={emp}/>}
-            {activeTab==="Reporting"         && <ReportingTab emp={emp}/>}
-            {activeTab==="Attendance"        && <AttendanceTab emp={emp}/>}
-            {activeTab==="Payroll"           && <PayrollTab emp={emp}/>}
-            {activeTab==="Documents"         && <DocumentsTab emp={emp}/>}
-            {activeTab==="Leave Management"  && <LeaveTab emp={emp}/>}
-            {activeTab==="Tasks"             && <TasksTab emp={emp}/>}
-            {activeTab==="Activity"          && <ActivityTab/>}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+            {a
