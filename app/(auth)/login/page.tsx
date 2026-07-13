@@ -51,22 +51,11 @@ export default function LoginPage() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", background: "#fff" }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
 
-          {/* Logo */}
+          {/* Institution Logo */}
+          {/* Replace /media/institution.png with your college logo anytime */}
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg, #4f46e5, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4M9 11h2M13 11h2M9 15h2M13 15h2" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: "#1e1b4b", lineHeight: 1.1 }}>ZeroForm</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#7c3aed", letterSpacing: "0.06em", textTransform: "uppercase" }}>Campus</div>
-              </div>
-            </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600, marginTop: 8 }}>
-              College Management System
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/media/institution.png" alt="Institution Logo" style={{ height: 72, maxWidth: 280, objectFit: "contain" }} />
           </div>
 
           {/* Card */}
@@ -172,14 +161,13 @@ export default function LoginPage() {
         display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
       }} className="d-none d-xl-flex">
 
-        {/* Top-right logo */}
-        <div style={{ position: "absolute", top: 24, right: 24, display: "flex", alignItems: "center", gap: 8, zIndex: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4M9 11h2M13 11h2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+        {/* Top-right: ZeroForm Campus logo */}
+        {/* Logo file: /media/ZeroFormCampus.png */}
+        <div style={{ position: "absolute", top: 24, right: 24, zIndex: 10 }}>
+          <div style={{ background: "#fff", borderRadius: 10, padding: "6px 12px", display: "flex", alignItems: "center" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/media/ZeroFormCampus.png" alt="ZeroForm Campus" style={{ height: 32, width: "auto", objectFit: "contain" }} />
           </div>
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: 13, letterSpacing: "0.04em" }}>ZeroForm Campus</span>
         </div>
 
         {/* Content */}
