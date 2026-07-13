@@ -7,64 +7,40 @@ const SESSIONS = ["2026-27", "2025-26", "2024-25", "2023-24"];
 
 export default function Header() {
   const [activeSession, setActiveSession] = useState("2025-26");
-  const [sessionOpen, setSessionOpen] = useState(false);
+  const [sessionOpen,   setSessionOpen]   = useState(false);
+  const [quickOpen,     setQuickOpen]     = useState(false);
   const sessionRef = useRef<HTMLDivElement>(null);
+  const quickRef   = useRef<HTMLDivElement>(null);
 
-  // Close session dropdown when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (sessionRef.current && !sessionRef.current.contains(e.target as Node)) {
-        setSessionOpen(false);
-      }
+      if (sessionRef.current && !sessionRef.current.contains(e.target as Node)) setSessionOpen(false);
+      if (quickRef.current   && !quickRef.current.contains(e.target as Node))   setQuickOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const toggleSidebar = () => {
-    window.dispatchEvent(new CustomEvent("zf:toggle-sidebar"));
-  };
+  const toggleSidebar = () => window.dispatchEvent(new CustomEvent("zf:toggle-sidebar"));
 
   return (
     <header className="app-header sticky" id="header" style={{ height: "var(--zf-header-h)", display: "flex", alignItems: "center" }}>
       <div className="main-header-container container-fluid" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 1.25rem", height: "100%" }}>
 
-        {/* ── Left ── */}
+        {/* Left */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", height: "100%" }}>
 
-          {/* Hamburger toggle */}
-          <button
-            onClick={toggleSidebar}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              display: "flex", flexDirection: "column", gap: 5,
-              padding: "6px", borderRadius: 8,
-              color: "var(--default-text-color)",
-            }}
-            aria-label="Toggle sidebar"
-          >
+          {/* Hamburger */}
+          <button onClick={toggleSidebar} aria-label="Toggle sidebar"
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", gap: 5, padding: "6px", borderRadius: 8, color: "var(--default-text-color)" }}>
             <span style={{ display: "block", width: 20, height: 2, background: "currentColor", borderRadius: 2 }} />
             <span style={{ display: "block", width: 15, height: 2, background: "currentColor", borderRadius: 2 }} />
             <span style={{ display: "block", width: 20, height: 2, background: "currentColor", borderRadius: 2 }} />
           </button>
 
-          {/* Active Session selector */}
+          {/* Active Session */}
           <div ref={sessionRef} style={{ position: "relative" }}>
-            <button
-              onClick={() => setSessionOpen((o) => !o)}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "5px 12px",
-                background: "rgba(108,95,252,0.08)",
-                border: "1px solid rgba(108,95,252,0.25)",
-                borderRadius: 8,
-                color: "var(--primary-color)",
-                fontWeight: 700,
-                fontSize: 12,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
+            <button onClick={() => setSessionOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: "rgba(108,95,252,0.08)", border: "1px solid rgba(108,95,252,0.25)", borderRadius: 8, color: "var(--primary-color)", fontWeight: 700, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 256 256" fill="currentColor">
                 <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,176H48V48H72v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24Z" />
               </svg>
@@ -73,27 +49,11 @@ export default function Header() {
                 <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z" />
               </svg>
             </button>
-
             {sessionOpen && (
-              <div style={{
-                position: "absolute", top: "calc(100% + 6px)", left: 0,
-                minWidth: 150, zIndex: 9999,
-                borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                border: "1px solid var(--default-border)",
-                background: "var(--custom-white)", padding: "4px 0",
-              }}>
-                {SESSIONS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => { setActiveSession(s); setSessionOpen(false); }}
-                    style={{
-                      display: "block", width: "100%", textAlign: "left",
-                      padding: "7px 14px", background: "none", border: "none",
-                      cursor: "pointer", fontSize: 13,
-                      fontWeight: activeSession === s ? 700 : 400,
-                      color: activeSession === s ? "var(--primary-color)" : "var(--default-text-color)",
-                    }}
-                  >
+              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, minWidth: 150, zIndex: 9999, borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", border: "1px solid var(--default-border)", background: "var(--custom-white)", padding: "4px 0" }}>
+                {SESSIONS.map(s => (
+                  <button key={s} onClick={() => { setActiveSession(s); setSessionOpen(false); }}
+                    style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 14px", background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: activeSession === s ? 700 : 400, color: activeSession === s ? "var(--primary-color)" : "var(--default-text-color)" }}>
                     {s}
                   </button>
                 ))}
@@ -104,36 +64,46 @@ export default function Header() {
           {/* Search */}
           <div style={{ display: "flex", alignItems: "center", background: "var(--default-background)", border: "1px solid var(--default-border)", borderRadius: 8, padding: "0 10px", gap: 6, minWidth: 260 }}>
             <i className="ri-search-line" style={{ color: "var(--text-muted)", fontSize: 14 }} />
-            <input
-              type="text"
-              placeholder="Search students, enquiries, receipts…"
-              style={{ border: "none", background: "transparent", outline: "none", fontSize: 12, color: "var(--default-text-color)", padding: "6px 0", width: "100%" }}
-            />
-            <kbd style={{ fontSize: 10, color: "var(--text-muted)", background: "var(--custom-white)", border: "1px solid var(--default-border)", borderRadius: 4, padding: "1px 5px", whiteSpace: "nowrap" }}>⌘ K</kbd>
+            <input type="text" placeholder="Search students, enquiries, receipts..." style={{ border: "none", background: "transparent", outline: "none", fontSize: 12, color: "var(--default-text-color)", padding: "6px 0", width: "100%" }} />
+            <kbd style={{ fontSize: 10, color: "var(--text-muted)", background: "var(--custom-white)", border: "1px solid var(--default-border)", borderRadius: 4, padding: "1px 5px", whiteSpace: "nowrap" }}>Ctrl K</kbd>
           </div>
         </div>
 
-        {/* ── Right ── */}
+        {/* Right */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 
-          {/* Register New Student */}
-          <a
-            href="https://zero-form-campus.vercel.app/student-registration"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "6px 14px",
-              background: "linear-gradient(135deg, var(--primary-color), #7c3aed)",
-              border: "none", borderRadius: 8,
-              color: "#fff", fontSize: 12, fontWeight: 700,
-              cursor: "pointer", textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <i className="ri-user-add-line" style={{ fontSize: 15 }} />
-            Register New Student
-          </a>
+          {/* Quick Create */}
+          <div ref={quickRef} style={{ position: "relative" }}>
+            <button onClick={() => setQuickOpen(o => !o)} title="Quick Create"
+              style={{ ...iconBtn, background: quickOpen ? "rgba(79,70,229,0.1)" : "none", color: quickOpen ? "var(--primary-color)" : "var(--default-text-color)" }}>
+              <i className="ri-add-circle-line" style={{ fontSize: 20 }} />
+            </button>
+
+            {quickOpen && (
+              <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, minWidth: 220, zIndex: 9999, borderRadius: 12, boxShadow: "0 8px 32px rgba(79,70,229,0.15)", border: "1px solid #ede9fe", background: "#fff", padding: "6px" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: "6px 10px 4px" }}>
+                  Quick Create
+                </div>
+                {([
+                  { label: "Register New Student", icon: "ri-user-add-line",           href: "https://zero-form-campus.vercel.app/student-registration", external: true  },
+                  { label: "Register New Staff",   icon: "ri-user-star-line",           href: "/staff/new",     external: false },
+                  { label: "Collect Fee",          icon: "ri-money-rupee-circle-line",  href: "/fees/collection", external: false },
+                ] as const).map(item =>
+                  item.external ? (
+                    <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" onClick={() => setQuickOpen(false)} style={quickItemStyle}>
+                      <span style={quickIconWrap}><i className={item.icon} style={{ fontSize: 15 }} /></span>
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link key={item.label} href={item.href} onClick={() => setQuickOpen(false)} style={quickItemStyle}>
+                      <span style={quickIconWrap}><i className={item.icon} style={{ fontSize: 15 }} /></span>
+                      {item.label}
+                    </Link>
+                  )
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Notifications */}
           <button style={{ ...iconBtn, position: "relative" }}>
@@ -152,12 +122,7 @@ export default function Header() {
 
           {/* Profile */}
           <button style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: "linear-gradient(135deg, var(--primary-color), #a78bfa)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", fontWeight: 700, fontSize: 12, flexShrink: 0,
-            }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, var(--primary-color), #a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
               AU
             </div>
             <div style={{ textAlign: "left" }}>
@@ -166,33 +131,39 @@ export default function Header() {
             </div>
             <i className="ri-arrow-down-s-line" style={{ fontSize: 14, color: "var(--text-muted)" }} />
           </button>
-        </div>
 
+        </div>
       </div>
     </header>
   );
 }
 
-// Shared micro-styles
 const iconBtn: React.CSSProperties = {
   width: 36, height: 36, borderRadius: 8,
   background: "none", border: "none", cursor: "pointer",
   display: "flex", alignItems: "center", justifyContent: "center",
 };
 
+const quickItemStyle: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 10,
+  padding: "8px 10px", borderRadius: 8,
+  fontSize: 13, fontWeight: 600, color: "#374151",
+  textDecoration: "none", cursor: "pointer",
+};
+
+const quickIconWrap: React.CSSProperties = {
+  width: 30, height: 30, borderRadius: 8,
+  background: "#ede9fe", display: "flex",
+  alignItems: "center", justifyContent: "center",
+  color: "#7c3aed", flexShrink: 0,
+};
+
 function badgeStyle(bg: string): React.CSSProperties {
   return {
-    position: "absolute",
-    top: 4, right: 4,
-    width: 16, height: 16,
-    borderRadius: "50%",
-    background: bg,
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: 700,
+    position: "absolute", top: 4, right: 4,
+    width: 16, height: 16, borderRadius: "50%",
+    background: bg, color: "#fff", fontSize: 9, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center",
-    lineHeight: 1,
-    border: "2px solid var(--custom-white)",
-    pointerEvents: "none",
+    lineHeight: 1, border: "2px solid var(--custom-white)", pointerEvents: "none",
   };
 }
