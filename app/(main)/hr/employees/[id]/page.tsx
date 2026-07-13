@@ -648,22 +648,20 @@ export default function EmployeeProfilePage() {
           {/* Profile Card */}
           <div className="card custom-card mb-0">
             <div className="card-body" style={{padding:"1.5rem 1.25rem",textAlign:"center"}}>
-              <div style={{position:"relative",display:"inline-block",marginBottom:"0.875rem"}}>
+              <div style={{display:"inline-block",marginBottom:"0.875rem"}}>
                 <div style={{width:80,height:80,borderRadius:"50%",background:bg,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:800,margin:"0 auto"}}>
                   {emp.avatar}
                 </div>
-                <span style={{...sts,position:"absolute",bottom:0,right:-4,fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:10,border:"2px solid var(--custom-white)"}}>
-                  {emp.status}
-                </span>
               </div>
-              <div style={{fontWeight:800,fontSize:17,color:"var(--default-text-color)",marginBottom:2}}>
-                {emp.salutation} {emp.name} <span title={emp.country}>{flag}</span>
+              <div style={{fontWeight:800,fontSize:17,color:"var(--default-text-color)",marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                {emp.salutation} {emp.name}
+                <span title={emp.country} style={{fontSize:20,lineHeight:1}}>{flag}</span>
               </div>
               <div style={{fontSize:12,color:"var(--primary-color)",fontWeight:600,marginBottom:"0.3rem"}}>{emp.id}</div>
               <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:"0.75rem"}}>{emp.designation} · {emp.department}</div>
               <div style={{display:"flex",justifyContent:"center",gap:6,flexWrap:"wrap" as const}}>
                 <span style={{background:"rgba(108,95,252,0.1)",color:"var(--primary-color)",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20}}>{emp.userRole}</span>
-                <span style={{background:"#dcfce7",color:"#16a34a",fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20}}>{emp.nationality}</span>
+                <span style={{...sts,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20}}>{emp.status}</span>
               </div>
             </div>
           </div>
