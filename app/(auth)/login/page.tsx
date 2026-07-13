@@ -2,19 +2,15 @@
 
 /**
  * ZeroForm Campus — Login Page
- * AUTH INTEGRATION HOOK: Replace the handleSubmit MOCK block with your API call.
- *   const res = await fetch("/api/auth/login", { method:"POST", body: JSON.stringify({ email, password }) });
- *   if (res.ok) router.replace("/dashboard"); else setErrors({ form: "Invalid credentials" });
+ * AUTH HOOK: Replace the MOCK block in handleSubmit with your real API call.
  */
 
 import React, { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-
   const [email,        setEmail]        = useState("");
   const [password,     setPassword]     = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,12 +23,12 @@ export default function LoginPage() {
     if (!email)                            e.email    = "Email is required.";
     else if (!/\S+@\S+\.\S+/.test(email)) e.email    = "Invalid email format.";
     if (!password)                         e.password = "Password is required.";
-    else if (password.length < 6)          e.password = "Password must be at least 6 characters.";
+    else if (password.length < 6)          e.password = "Minimum 6 characters.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  // ── MOCK: replace this block with real API call ──────────────────────────
+  // ── MOCK ── replace with real API call ────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -49,136 +45,109 @@ export default function LoginPage() {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f3f4f6" }}>
+    <div style={{ display: "flex", minHeight: "100vh" }}>
 
-      {/* ══════════════════════════════════════════════════════════
-          LEFT PANEL — Login Form
-      ══════════════════════════════════════════════════════════ */}
-      <div style={{
-        flex: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem",
-        background: "#ffffff",
-      }}>
-        <div style={{ width: "100%", maxWidth: 420 }}>
+      {/* ── LEFT: Form ───────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", background: "#fff" }}>
+        <div style={{ width: "100%", maxWidth: 400 }}>
 
-          {/* College Logo */}
-          <div style={{ marginBottom: "2rem", textAlign: "center" }}>
-            <div style={{ position: "relative", width: 180, height: 52, margin: "0 auto 0.5rem" }}>
-              <Image
-                src="/assets/brand-logos/desktop-logo.png"
-                alt="ZeroForm Campus"
-                fill
-                style={{ objectFit: "contain" }}
-                priority
-              />
-            </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>
+          {/* Logo */}
+          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/brand-logos/desktop-logo.png" alt="ZeroForm Campus" style={{ height: 44, maxWidth: 200, objectFit: "contain" }} />
+            <div style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600, marginTop: 6 }}>
               Campus Management System
             </div>
           </div>
 
           {/* Card */}
-          <div className="card custom-card border-0" style={{ borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-            <div className="card-body" style={{ padding: "2rem" }}>
+          <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 4px 32px rgba(79,70,229,0.10)", border: "1px solid #ede9fe", padding: "2rem" }}>
 
-              <h4 className="fw-semibold mb-1" style={{ color: "var(--default-text-color)", fontSize: 20 }}>
-                Hi, Welcome back!
-              </h4>
-              <p className="mb-4" style={{ color: "var(--text-muted)", fontSize: 13, fontWeight: 400 }}>
-                Sign in to your account to continue
-              </p>
+            <h4 style={{ fontWeight: 700, fontSize: 20, color: "#1e1b4b", marginBottom: 4 }}>Hi, Welcome back!</h4>
+            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1.5rem", fontWeight: 400 }}>Sign in to your account to continue</p>
 
-              {errors.form && (
-                <div className="alert alert-danger py-2 fs-13 mb-3">{errors.form}</div>
-              )}
+            {errors.form && (
+              <div style={{ background: "#fee2e2", color: "#dc2626", borderRadius: 8, padding: "8px 14px", fontSize: 13, marginBottom: "1rem" }}>
+                {errors.form}
+              </div>
+            )}
 
-              <form onSubmit={handleSubmit} noValidate>
-                {/* Email */}
-                <div className="mb-3">
-                  <label htmlFor="login-email" className="form-label fw-medium" style={{ fontSize: 13, color: "var(--default-text-color)" }}>
-                    Email Address
-                  </label>
+            <form onSubmit={handleSubmit} noValidate>
+
+              {/* Email */}
+              <div style={{ marginBottom: "1rem" }}>
+                <label htmlFor="login-email" style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                  Email Address
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  placeholder="admin@college.edu.in"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setErrors(v => ({ ...v, email: undefined })); }}
+                  autoComplete="email"
+                  style={{
+                    width: "100%", padding: "10px 14px", fontSize: 13, borderRadius: 8,
+                    border: errors.email ? "1.5px solid #dc2626" : "1.5px solid #e5e7eb",
+                    outline: "none", color: "#1f2937", background: "#fafafa",
+                  }}
+                />
+                {errors.email && <div style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>{errors.email}</div>}
+              </div>
+
+              {/* Password */}
+              <div style={{ marginBottom: "0.75rem" }}>
+                <label htmlFor="login-password" style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                  Password
+                </label>
+                <div style={{ position: "relative" }}>
                   <input
-                    id="login-email"
-                    type="email"
-                    className={`form-control${errors.email ? " is-invalid" : ""}`}
-                    placeholder="admin@college.edu.in"
-                    value={email}
-                    onChange={e => { setEmail(e.target.value); setErrors(v => ({ ...v, email: undefined })); }}
-                    autoComplete="email"
-                    style={{ fontSize: 13, borderRadius: 8 }}
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={e => { setPassword(e.target.value); setErrors(v => ({ ...v, password: undefined })); }}
+                    autoComplete="current-password"
+                    style={{
+                      width: "100%", padding: "10px 40px 10px 14px", fontSize: 13, borderRadius: 8,
+                      border: errors.password ? "1.5px solid #dc2626" : "1.5px solid #e5e7eb",
+                      outline: "none", color: "#1f2937", background: "#fafafa",
+                    }}
                   />
-                  {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                  <button type="button" onClick={() => setShowPassword(v => !v)} tabIndex={-1}
+                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0 }}>
+                    <i className={showPassword ? "ri-eye-line" : "ri-eye-off-line"} style={{ fontSize: 16 }} />
+                  </button>
                 </div>
+                {errors.password && <div style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>{errors.password}</div>}
+              </div>
 
-                {/* Password */}
-                <div className="mb-3">
-                  <label htmlFor="login-password" className="form-label fw-medium d-block" style={{ fontSize: 13, color: "var(--default-text-color)" }}>
-                    Password
-                  </label>
-                  <div className="position-relative">
-                    <input
-                      id="login-password"
-                      type={showPassword ? "text" : "password"}
-                      className={`form-control${errors.password ? " is-invalid" : ""}`}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={e => { setPassword(e.target.value); setErrors(v => ({ ...v, password: undefined })); }}
-                      autoComplete="current-password"
-                      style={{ fontSize: 13, borderRadius: 8, paddingRight: 40 }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(v => !v)}
-                      tabIndex={-1}
-                      style={{
-                        position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                        background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0,
-                      }}
-                    >
-                      <i className={showPassword ? "ri-eye-line" : "ri-eye-off-line"} style={{ fontSize: 16 }} />
-                    </button>
-                    {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                  </div>
-                </div>
+              {/* Remember + Forgot */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151", cursor: "pointer" }}>
+                  <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ accentColor: "#7c3aed" }} />
+                  Remember me
+                </label>
+                <Link href="#" onClick={e => e.preventDefault()} style={{ fontSize: 12, fontWeight: 600, color: "#dc2626", textDecoration: "none" }}>
+                  Forgot password?
+                </Link>
+              </div>
 
-                {/* Remember + Forgot */}
-                <div className="d-flex align-items-center justify-content-between mb-4">
-                  <div className="form-check mb-0">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="rememberMe"
-                      checked={rememberMe}
-                      onChange={e => setRememberMe(e.target.checked)}
-                    />
-                    <label className="form-check-label" htmlFor="rememberMe" style={{ fontSize: 13 }}>
-                      Remember me
-                    </label>
-                  </div>
-                  <Link href="#" onClick={e => e.preventDefault()} className="link-danger fw-medium" style={{ fontSize: 12 }}>
-                    Forgot password?
-                  </Link>
-                </div>
+              {/* Submit */}
+              <button type="submit" disabled={loading}
+                style={{
+                  width: "100%", padding: "11px", borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer",
+                  background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "#fff",
+                  fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  opacity: loading ? 0.8 : 1,
+                }}>
+                {loading
+                  ? <><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} /> Signing in…</>
+                  : <><i className="ri-login-box-line" style={{ fontSize: 16 }} /> Sign In</>
+                }
+              </button>
 
-                {/* Submit */}
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100"
-                  disabled={loading}
-                  style={{ borderRadius: 8, fontWeight: 600, fontSize: 14, padding: "0.65rem" }}
-                >
-                  {loading
-                    ? <><span className="spinner-border spinner-border-sm me-2" role="status" />Signing in…</>
-                    : <><i className="ri-login-box-line me-2" />Sign In</>
-                  }
-                </button>
-              </form>
-
-            </div>
+            </form>
           </div>
 
           <p style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", marginTop: "1.5rem" }}>
@@ -187,89 +156,83 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          RIGHT PANEL — Branding
-      ══════════════════════════════════════════════════════════ */}
+      {/* ── RIGHT: Branding ──────────────────────────────────────────────────── */}
       <div style={{
-        width: "42%",
-        background: "linear-gradient(145deg, #4f46e5 0%, #7c3aed 40%, #9333ea 100%)",
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
-        overflow: "hidden",
+        width: "42%", minHeight: "100vh",
+        background: "linear-gradient(145deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%)",
+        display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
       }} className="d-none d-xl-flex">
 
-        {/* Top-right company logo */}
-        <div style={{
-          position: "absolute", top: 28, right: 28,
-          display: "flex", alignItems: "center", gap: 10, zIndex: 10,
-        }}>
-          <div style={{ position: "relative", width: 32, height: 32 }}>
-            <Image src="/assets/brand-logos/toggle-logo.png" alt="ZeroForm" fill style={{ objectFit: "contain" }} />
-          </div>
+        {/* Top-right logo */}
+        <div style={{ position: "absolute", top: 28, right: 28, display: "flex", alignItems: "center", gap: 10, zIndex: 10 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/brand-logos/toggle-logo.png" alt="ZeroForm" style={{ width: 32, height: 32, objectFit: "contain" }} />
           <span style={{ color: "#fff", fontWeight: 700, fontSize: 14, letterSpacing: "0.02em" }}>ZeroForm</span>
         </div>
 
         {/* Decorative circles */}
-        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-        <div style={{ position: "absolute", top: 80, right: -120, width: 400, height: 400, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div style={{ position: "absolute", top: -80,  right: -80,  width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+        <div style={{ position: "absolute", top: 80,   right: -120, width: 400, height: 400, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
         <div style={{ position: "absolute", bottom: -100, left: -80, width: 350, height: 350, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
 
-        {/* Main content */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "3rem", position: "relative", zIndex: 2 }}>
+        {/* Content */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "3rem 2.5rem", position: "relative", zIndex: 2 }}>
 
-          {/* SVG Illustration */}
-          <div style={{ marginBottom: "2.5rem" }}>
-            <svg viewBox="0 0 420 280" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: 400 }}>
-              <rect x="60" y="120" width="300" height="140" rx="4" fill="rgba(255,255,255,0.15)" />
-              <polygon points="50,120 210,50 370,120" fill="rgba(255,255,255,0.2)" />
-              {[100,145,190,235,280,325].map((x,i) => (
-                <rect key={i} x={x} y="120" width="16" height="140" rx="3" fill="rgba(255,255,255,0.12)" />
-              ))}
-              <rect x="173" y="190" width="54" height="70" rx="4" fill="rgba(255,255,255,0.25)" />
-              <circle cx="220" cy="227" r="3" fill="rgba(255,255,255,0.6)" />
-              {[100,155,255,310].map((x,i) => (
-                <rect key={i} x={x} y="148" width="34" height="28" rx="3" fill="rgba(255,255,255,0.2)" />
-              ))}
-              <line x1="210" y1="50" x2="210" y2="14" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
-              <polygon points="210,14 236,22 210,30" fill="rgba(255,220,50,0.8)" />
-              <rect x="40" y="258" width="340" height="10" rx="2" fill="rgba(255,255,255,0.18)" />
-              <rect x="55" y="250" width="310" height="10" rx="2" fill="rgba(255,255,255,0.13)" />
-              <rect x="16" y="220" width="6" height="40" fill="rgba(255,255,255,0.2)" />
-              <ellipse cx="19" cy="210" rx="18" ry="22" fill="rgba(255,255,255,0.15)" />
-              <rect x="398" y="220" width="6" height="40" fill="rgba(255,255,255,0.2)" />
-              <ellipse cx="401" cy="210" rx="18" ry="22" fill="rgba(255,255,255,0.15)" />
-              <rect x="8" y="70" width="90" height="46" rx="8" fill="rgba(255,255,255,0.18)" />
-              <circle cx="26" cy="86" r="8" fill="rgba(255,255,255,0.35)" />
-              <rect x="42" y="80" width="48" height="6" rx="3" fill="rgba(255,255,255,0.5)" />
-              <rect x="42" y="92" width="32" height="5" rx="2.5" fill="rgba(255,255,255,0.3)" />
-              <rect x="322" y="60" width="90" height="46" rx="8" fill="rgba(255,255,255,0.18)" />
-              <circle cx="340" cy="76" r="8" fill="rgba(255,255,255,0.35)" />
-              <rect x="355" y="70" width="48" height="6" rx="3" fill="rgba(255,255,255,0.5)" />
-              <rect x="355" y="82" width="32" height="5" rx="2.5" fill="rgba(255,255,255,0.3)" />
+          {/* College SVG */}
+          <div style={{ marginBottom: "2rem" }}>
+            <svg viewBox="0 0 420 260" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: 380 }}>
+              <rect x="60" y="120" width="300" height="130" rx="4" fill="rgba(255,255,255,0.15)" />
+              <polygon points="45,120 210,48 375,120" fill="rgba(255,255,255,0.22)" />
+              <rect x="96"  y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
+              <rect x="140" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
+              <rect x="184" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
+              <rect x="228" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
+              <rect x="272" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
+              <rect x="316" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
+              <rect x="174" y="185" width="52" height="65" rx="5" fill="rgba(255,255,255,0.28)" />
+              <circle cx="218" cy="218" r="3" fill="rgba(255,255,255,0.7)" />
+              <rect x="97"  y="145" width="34" height="26" rx="3" fill="rgba(255,255,255,0.2)" />
+              <rect x="157" y="145" width="34" height="26" rx="3" fill="rgba(255,255,255,0.2)" />
+              <rect x="257" y="145" width="34" height="26" rx="3" fill="rgba(255,255,255,0.2)" />
+              <rect x="317" y="145" width="34" height="26" rx="3" fill="rgba(255,255,255,0.2)" />
+              <line x1="210" y1="48" x2="210" y2="14" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" />
+              <polygon points="210,14 234,23 210,32" fill="rgba(255,220,50,0.9)" />
+              <rect x="38" y="248" width="344" height="9" rx="2" fill="rgba(255,255,255,0.2)" />
+              <rect x="52" y="240" width="316" height="9" rx="2" fill="rgba(255,255,255,0.14)" />
+              <rect x="14" y="216" width="6" height="34" fill="rgba(255,255,255,0.22)" />
+              <ellipse cx="17" cy="206" rx="16" ry="20" fill="rgba(255,255,255,0.16)" />
+              <rect x="400" y="216" width="6" height="34" fill="rgba(255,255,255,0.22)" />
+              <ellipse cx="403" cy="206" rx="16" ry="20" fill="rgba(255,255,255,0.16)" />
+              <rect x="6"   y="62" width="88" height="44" rx="8" fill="rgba(255,255,255,0.18)" />
+              <circle cx="24" cy="78" r="8" fill="rgba(255,255,255,0.4)" />
+              <rect x="39" y="71" width="46" height="6" rx="3" fill="rgba(255,255,255,0.6)" />
+              <rect x="39" y="83" width="30" height="5" rx="2.5" fill="rgba(255,255,255,0.35)" />
+              <rect x="326" y="52" width="88" height="44" rx="8" fill="rgba(255,255,255,0.18)" />
+              <circle cx="344" cy="68" r="8" fill="rgba(255,255,255,0.4)" />
+              <rect x="359" y="61" width="46" height="6" rx="3" fill="rgba(255,255,255,0.6)" />
+              <rect x="359" y="73" width="30" height="5" rx="2.5" fill="rgba(255,255,255,0.35)" />
+              <rect x="158" y="8"  width="88" height="34" rx="8" fill="rgba(255,255,255,0.15)" />
+              <rect x="170" y="16" width="64" height="5" rx="2.5" fill="rgba(255,255,255,0.5)" />
+              <rect x="170" y="26" width="44" height="5" rx="2.5" fill="rgba(255,255,255,0.3)" />
             </svg>
           </div>
 
-          <h2 style={{ color: "#fff", fontWeight: 800, fontSize: 28, lineHeight: 1.3, marginBottom: "1rem" }}>
+          <h2 style={{ color: "#fff", fontWeight: 800, fontSize: 26, lineHeight: 1.35, marginBottom: "0.75rem" }}>
             Welcome to<br />ZeroForm Campus
           </h2>
-          <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 1.7, marginBottom: "2rem", maxWidth: 320 }}>
-            A modern platform for college admissions, student management, and fee collection — built for Indian higher education.
+          <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 13.5, lineHeight: 1.75, marginBottom: "2rem", maxWidth: 300 }}>
+            A modern college management platform — admissions, student records, and fee management built for Indian higher education.
           </p>
 
+          {/* Feature chips */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {[
-              { icon: "ri-user-add-line",          label: "Admissions" },
-              { icon: "ri-graduation-cap-line",     label: "Student SIS" },
-              { icon: "ri-money-rupee-circle-line", label: "Fee Management" },
-              { icon: "ri-bar-chart-2-line",        label: "Analytics" },
+              { icon: "ri-user-add-line",           label: "Admissions CRM" },
+              { icon: "ri-graduation-cap-line",      label: "Student SIS" },
+              { icon: "ri-money-rupee-circle-line",  label: "Fee Management" },
+              { icon: "ri-bar-chart-2-line",         label: "Analytics" },
             ].map(f => (
-              <div key={f.label} style={{
-                display: "flex", alignItems: "center", gap: 7,
-                background: "rgba(255,255,255,0.15)",
-                borderRadius: 20, padding: "6px 14px",
-                color: "#fff", fontSize: 12, fontWeight: 600,
-              }}>
+              <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)", borderRadius: 20, padding: "6px 14px", color: "#fff", fontSize: 12, fontWeight: 600 }}>
                 <i className={f.icon} style={{ fontSize: 14 }} />
                 {f.label}
               </div>
@@ -277,11 +240,13 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Bottom wave */}
         <svg viewBox="0 0 500 60" preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 60 }}>
           <path d="M0,30 C150,60 350,0 500,30 L500,60 L0,60 Z" fill="rgba(255,255,255,0.08)" />
         </svg>
       </div>
 
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
