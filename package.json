@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "apexcharts": "^4.5.0",
-    "next": "15.3.4",
+    "next": "^15.4.0",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",
     "react-dom": "^19.0.0",
@@ -26,7 +26,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
-    "eslint-config-next": "15.3.4",
+    "eslint-config-next": "^15.4.0",
     "typescript": "^5.0.0"
   }
 }
