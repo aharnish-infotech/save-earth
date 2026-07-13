@@ -118,10 +118,10 @@ const DOC_STYLE: Record<string,{bg:string;color:string;icon:string}> = {
   "Not Submitted": {bg:"#f3f4f6",color:"#6b7280",icon:"ri-file-unknow-line"},
 };
 
-const TABS = ["Employee Details","Reporting","Attendance","Payroll","Documents","Leave Management","Tasks","Activity"];
+const TABS = ["Employee Details","Attendance","Payroll","Documents","Leave Management","Reporting","Tasks","Activity"];
 const TAB_ICONS: Record<string,string> = {
   "Employee Details":"ri-id-card-line",
-  "Reporting":       "ri-org-chart",
+  "Reporting":       "ri-share-forward-line",
   "Attendance":      "ri-calendar-check-line",
   "Payroll":         "ri-money-rupee-circle-line",
   "Documents":       "ri-folder-open-line",
