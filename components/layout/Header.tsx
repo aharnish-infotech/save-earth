@@ -173,7 +173,7 @@ export default function Header() {
   );
 }
 
-// ── Shared micro-styles ────────────────────────────────────────────────────
+// Shared micro-styles
 const iconBtn: React.CSSProperties = {
   width: 36, height: 36, borderRadius: 8,
   background: "none", border: "none", cursor: "pointer",

@@ -79,9 +79,13 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
 
 // ── Helper: find which section owns the current path ─────────────────────────
 function getActiveSectionId(pathname: string): string {
+  const allItems = RAIL_ITEMS.flatMap(r => r.sections.flatMap(s => s.items));
+  const hasExactMatch = allItems.some(n => n.href === pathname);
   for (const item of RAIL_ITEMS) {
     const match = item.sections.some((s) =>
-      s.items.some((n) => pathname === n.href || pathname.startsWith(n.href + "/"))
+      s.items.some((n) =>
+        pathname === n.href || (!hasExactMatch && pathname.startsWith(n.href + "/"))
+      )
     );
     if (match) return item.id;
   }
@@ -194,11 +198,8 @@ export default function Sidebar() {
           {RAIL_ITEMS.map((item) => {
             const isExpanded = expandedId === item.id;
             const allItems = item.sections.flatMap((s) => s.items);
-
             return (
               <div key={item.id} className={`zf-accord-section${isExpanded ? " expanded" : ""}`}>
-
-                {/* Section toggle button */}
                 <button
                   className={`zf-accord-header${isExpanded ? " active" : ""}`}
                   onClick={() => handleSectionToggle(item.id)}
@@ -211,15 +212,12 @@ export default function Sidebar() {
                     style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
                   />
                 </button>
-
-                {/* Expandable items list */}
                 <div
                   className="zf-accord-body"
                   style={{ maxHeight: isExpanded ? `${allItems.length * 44}px` : "0px" }}
                 >
                   {allItems.map((nav) => {
-                    const isNavActive =
-                      pathname === nav.href || pathname.startsWith(nav.href + "/");
+                    const isNavActive = pathname === nav.href;
                     return (
                       <Link
                         key={nav.href}
@@ -232,7 +230,6 @@ export default function Sidebar() {
                     );
                   })}
                 </div>
-
               </div>
             );
           })}
