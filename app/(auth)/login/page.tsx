@@ -51,18 +51,19 @@ export default function LoginPage() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", background: "#fff" }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
 
-          {/* Institution Logo */}
-          {/* Replace /media/institution.png with your college logo anytime */}
-          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/media/institution.png" alt="Institution Logo" style={{ height: 72, maxWidth: 280, objectFit: "contain" }} />
-          </div>
-
           {/* Card */}
           <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 4px 32px rgba(79,70,229,0.10)", border: "1px solid #ede9fe", padding: "2rem" }}>
 
+            {/* Institution Logo — replace /media/institution.png with your college logo */}
+            <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/media/institution.png" alt="Institution Logo" style={{ height: 68, maxWidth: 260, objectFit: "contain" }} />
+            </div>
+
             <h4 style={{ fontWeight: 700, fontSize: 20, color: "#1e1b4b", marginBottom: 4 }}>Hi, Welcome back!</h4>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1.5rem", fontWeight: 400 }}>Sign in to your account to continue</p>
+            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1.5rem", fontWeight: 400 }}>
+              Sign in to <strong style={{ color: "#1e1b4b" }}>Zero Form Campus</strong>
+            </p>
 
             {errors.form && (
               <div style={{ background: "#fee2e2", color: "#dc2626", borderRadius: 8, padding: "8px 14px", fontSize: 13, marginBottom: "1rem" }}>
@@ -161,13 +162,10 @@ export default function LoginPage() {
         display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
       }} className="d-none d-xl-flex">
 
-        {/* Top-right: ZeroForm Campus logo */}
-        {/* Logo file: /media/ZeroFormCampus.png */}
+        {/* Top-right: ZeroForm Campus logo — file: /media/ZeroFormCampus.png */}
         <div style={{ position: "absolute", top: 24, right: 24, zIndex: 10 }}>
-          <div style={{ background: "#fff", borderRadius: 10, padding: "6px 12px", display: "flex", alignItems: "center" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/media/ZeroFormCampus.png" alt="ZeroForm Campus" style={{ height: 32, width: "auto", objectFit: "contain" }} />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/media/ZeroFormCampus.png" alt="ZeroForm Campus" style={{ height: 36, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
         </div>
 
         {/* Content */}
