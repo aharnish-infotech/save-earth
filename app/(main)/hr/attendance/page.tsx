@@ -75,6 +75,34 @@ const TABS = [
   { id:"by-location", label:"Attendance by Location",icon:"ri-map-pin-line"           },
 ];
 
+
+const ATT_PAGE_SIZE = 15;
+
+// ── Pagination widget ──────────────────────────────────────────────────────
+function AttPager({ total, page, onChange }: { total:number;page:number;onChange:(p:number)=>void }) {
+  const pages = Math.ceil(total / ATT_PAGE_SIZE);
+  if (pages <= 1) return null;
+  const start = (page - 1) * ATT_PAGE_SIZE + 1;
+  const end   = Math.min(page * ATT_PAGE_SIZE, total);
+  const nums: number[] = [];
+  const lo = Math.max(1, page - 2);
+  const hi = Math.min(pages, page + 2);
+  for (let i = lo; i <= hi; i++) nums.push(i);
+  const PBTN: React.CSSProperties = { padding:"4px 10px",borderRadius:6,border:"1.5px solid #ede9fe",background:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",color:"#4f46e5" };
+  return (
+    <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"0.75rem",padding:"8px 4px",flexWrap:"wrap",gap:8 }}>
+      <span style={{ fontSize:12,color:"#6b7280",fontWeight:500 }}>Showing <b>{start}</b>–<b>{end}</b> of <b>{total}</b> employees</span>
+      <div style={{ display:"flex",gap:4,alignItems:"center" }}>
+        <button style={{ ...PBTN,color:page===1?"#d1d5db":"#4f46e5" }} disabled={page===1} onClick={()=>onChange(page-1)}><i className="ri-arrow-left-s-line"/></button>
+        {lo > 1 && <><button style={PBTN} onClick={()=>onChange(1)}>1</button><span style={{ color:"#9ca3af" }}>…</span></>}
+        {nums.map(n => <button key={n} style={{ ...PBTN,background:n===page?"#4f46e5":"#fff",color:n===page?"#fff":"#4f46e5",border:n===page?"none":"1.5px solid #ede9fe" }} onClick={()=>onChange(n)}>{n}</button>)}
+        {hi < pages && <><span style={{ color:"#9ca3af" }}>…</span><button style={PBTN} onClick={()=>onChange(pages)}>{pages}</button></>}
+        <button style={{ ...PBTN,color:page===pages?"#d1d5db":"#4f46e5" }} disabled={page===pages} onClick={()=>onChange(page+1)}><i className="ri-arrow-right-s-line"/></button>
+      </div>
+    </div>
+  );
+}
+
 // ── Shared UI primitives ───────────────────────────────────────────────────
 function AvatarEl({ emp, size = 32 }: { emp: EmpAtt; size?: number }) {
   const idx = HR_EMPLOYEES.findIndex(e => e.id === emp.id);
@@ -258,6 +286,9 @@ function DetailModal({ detail, onClose }: { detail: DetailState; onClose: ()=>vo
 
 // ── Summary Tab ────────────────────────────────────────────────────────────
 function SummaryTab({ filtered, days, workDays }: { filtered:EmpAtt[];days:number;workDays:number }) {
+  const [page, setPage] = useState(1);
+  React.useEffect(()=>{ setPage(1); }, [filtered]);
+  const paginated = filtered.slice((page-1)*ATT_PAGE_SIZE, page*ATT_PAGE_SIZE);
   const TH: React.CSSProperties = { padding:"8px 4px",textAlign:"center",fontWeight:700,color:"#6b7280",fontSize:11,whiteSpace:"nowrap",borderBottom:"2px solid #ede9fe" };
   const countP = (e: EmpAtt) => Object.values(e.attendance).filter(s => s==="P"||s==="HD"||s==="L").length;
   return (
@@ -299,7 +330,7 @@ function SummaryTab({ filtered, days, workDays }: { filtered:EmpAtt[];days:numbe
             </tr>
           </thead>
           <tbody>
-            {filtered.map((emp,idx) => (
+            {paginated.map((emp,idx) => (
               <tr key={emp.id} style={{ borderTop:"1px solid #f3f4f6",background:idx%2===0?"#fff":"#fafafa" }}>
                 <td style={{ padding:"8px 12px",position:"sticky",left:0,background:idx%2===0?"#fff":"#fafafa",zIndex:1,borderRight:"1px solid #ede9fe" }}><EmpCell emp={emp}/></td>
                 {Array.from({length:days},(_,i)=>i+1).map(d => (
@@ -313,6 +344,7 @@ function SummaryTab({ filtered, days, workDays }: { filtered:EmpAtt[];days:numbe
           </tbody>
         </table>
       </div>
+      <AttPager total={filtered.length} page={page} onChange={p=>{setPage(p);}} />
     </>
   );
 }
@@ -380,7 +412,10 @@ function ByMemberTab({ month, year }: { month:number;year:number }) {
 
 // ── By Hour Tab ────────────────────────────────────────────────────────────
 function ByHourTab({ filtered, days }: { filtered:EmpAtt[];days:number }) {
+  const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<DetailState|null>(null);
+  React.useEffect(()=>{ setPage(1); }, [filtered]);
+  const paginated = filtered.slice((page-1)*ATT_PAGE_SIZE, page*ATT_PAGE_SIZE);
   const TH: React.CSSProperties = { padding:"8px 6px",textAlign:"center",fontWeight:700,color:"#6b7280",fontSize:11,whiteSpace:"nowrap",borderBottom:"2px solid #ede9fe" };
   return (
     <>
@@ -404,7 +439,7 @@ function ByHourTab({ filtered, days }: { filtered:EmpAtt[];days:number }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((emp,idx) => {
+            {paginated.map((emp,idx) => {
               const totalH = Object.values(emp.hours).reduce((a,b)=>a+b,0);
               return (
                 <tr key={emp.id} style={{ borderTop:"1px solid #f3f4f6",background:idx%2===0?"#fff":"#fafafa" }}>
@@ -436,6 +471,7 @@ function ByHourTab({ filtered, days }: { filtered:EmpAtt[];days:number }) {
           </tbody>
         </table>
       </div>
+      <AttPager total={filtered.length} page={page} onChange={p=>{setPage(p);}} />
       {detail && <DetailModal detail={detail} onClose={()=>setDetail(null)}/>}
     </>
   );
