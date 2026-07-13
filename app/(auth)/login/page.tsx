@@ -159,9 +159,14 @@ export default function LoginPage() {
       {/* ── RIGHT: Branding ──────────────────────────────────────────────────── */}
       <div style={{
         width: "42%", minHeight: "100vh",
-        background: "linear-gradient(145deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%)",
         display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
       }} className="d-none d-xl-flex">
+
+        {/* Background image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/assets/media-bg-9.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }} />
+        {/* Gradient overlay on top of bg image */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg, rgba(79,70,229,0.88) 0%, rgba(124,58,237,0.85) 50%, rgba(147,51,234,0.82) 100%)", zIndex: 1 }} />
 
         {/* Top-right logo */}
         <div style={{ position: "absolute", top: 28, right: 28, display: "flex", alignItems: "center", gap: 10, zIndex: 10 }}>
@@ -170,51 +175,13 @@ export default function LoginPage() {
           <span style={{ color: "#fff", fontWeight: 700, fontSize: 14, letterSpacing: "0.02em" }}>ZeroForm</span>
         </div>
 
-        {/* Decorative circles */}
-        <div style={{ position: "absolute", top: -80,  right: -80,  width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-        <div style={{ position: "absolute", top: 80,   right: -120, width: 400, height: 400, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
-        <div style={{ position: "absolute", bottom: -100, left: -80, width: 350, height: 350, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
-
         {/* Content */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "3rem 2.5rem", position: "relative", zIndex: 2 }}>
 
-          {/* College SVG */}
-          <div style={{ marginBottom: "2rem" }}>
-            <svg viewBox="0 0 420 260" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: 380 }}>
-              <rect x="60" y="120" width="300" height="130" rx="4" fill="rgba(255,255,255,0.15)" />
-              <polygon points="45,120 210,48 375,120" fill="rgba(255,255,255,0.22)" />
-              <rect x="96"  y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
-              <rect x="140" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
-              <rect x="184" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
-              <rect x="228" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
-              <rect x="272" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
-              <rect x="316" y="120" width="14" height="130" rx="3" fill="rgba(255,255,255,0.13)" />
-              <rect x="174" y="185" width="52" height="65" rx="5" fill="rgba(255,255,255,0.28)" />
-              <circle cx="218" cy="218" r="3" fill="rgba(255,255,255,0.7)" />
-              <rect x="97"  y="145" width="34" height="26" rx="3" fill="rgba(255,255,255,0.2)" />
-              <rect x="157" y="145" width="34" height="26" rx="3" fill="rgba(255,255,255,0.2)" />
-              <rect x="257" y="145" width="34" height="26" rx="3" fill="rgba(255,255,255,0.2)" />
-              <rect x="317" y="145" width="34" height="26" rx="3" fill="rgba(255,255,255,0.2)" />
-              <line x1="210" y1="48" x2="210" y2="14" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" />
-              <polygon points="210,14 234,23 210,32" fill="rgba(255,220,50,0.9)" />
-              <rect x="38" y="248" width="344" height="9" rx="2" fill="rgba(255,255,255,0.2)" />
-              <rect x="52" y="240" width="316" height="9" rx="2" fill="rgba(255,255,255,0.14)" />
-              <rect x="14" y="216" width="6" height="34" fill="rgba(255,255,255,0.22)" />
-              <ellipse cx="17" cy="206" rx="16" ry="20" fill="rgba(255,255,255,0.16)" />
-              <rect x="400" y="216" width="6" height="34" fill="rgba(255,255,255,0.22)" />
-              <ellipse cx="403" cy="206" rx="16" ry="20" fill="rgba(255,255,255,0.16)" />
-              <rect x="6"   y="62" width="88" height="44" rx="8" fill="rgba(255,255,255,0.18)" />
-              <circle cx="24" cy="78" r="8" fill="rgba(255,255,255,0.4)" />
-              <rect x="39" y="71" width="46" height="6" rx="3" fill="rgba(255,255,255,0.6)" />
-              <rect x="39" y="83" width="30" height="5" rx="2.5" fill="rgba(255,255,255,0.35)" />
-              <rect x="326" y="52" width="88" height="44" rx="8" fill="rgba(255,255,255,0.18)" />
-              <circle cx="344" cy="68" r="8" fill="rgba(255,255,255,0.4)" />
-              <rect x="359" y="61" width="46" height="6" rx="3" fill="rgba(255,255,255,0.6)" />
-              <rect x="359" y="73" width="30" height="5" rx="2.5" fill="rgba(255,255,255,0.35)" />
-              <rect x="158" y="8"  width="88" height="34" rx="8" fill="rgba(255,255,255,0.15)" />
-              <rect x="170" y="16" width="64" height="5" rx="2.5" fill="rgba(255,255,255,0.5)" />
-              <rect x="170" y="26" width="44" height="5" rx="2.5" fill="rgba(255,255,255,0.3)" />
-            </svg>
+          {/* Illustration image */}
+          <div style={{ marginBottom: "2rem", textAlign: "center" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/media-72.png" alt="" style={{ width: "100%", maxWidth: 320, objectFit: "contain" }} />
           </div>
 
           <h2 style={{ color: "#fff", fontWeight: 800, fontSize: 26, lineHeight: 1.35, marginBottom: "0.75rem" }}>
