@@ -118,15 +118,16 @@ const DOC_STYLE: Record<string,{bg:string;color:string;icon:string}> = {
   "Not Submitted": {bg:"#f3f4f6",color:"#6b7280",icon:"ri-file-unknow-line"},
 };
 
-const TABS = ["Employee Details","Attendance","Payroll","Documents","Leave Management","Tasks","Activity"];
+const TABS = ["Employee Details","Reporting","Attendance","Payroll","Documents","Leave Management","Tasks","Activity"];
 const TAB_ICONS: Record<string,string> = {
   "Employee Details":"ri-id-card-line",
-  "Attendance":"ri-calendar-check-line",
-  "Payroll":"ri-money-rupee-circle-line",
-  "Documents":"ri-folder-open-line",
+  "Reporting":       "ri-org-chart",
+  "Attendance":      "ri-calendar-check-line",
+  "Payroll":         "ri-money-rupee-circle-line",
+  "Documents":       "ri-folder-open-line",
   "Leave Management":"ri-plane-line",
-  "Tasks":"ri-task-line",
-  "Activity":"ri-pulse-line",
+  "Tasks":           "ri-task-line",
+  "Activity":        "ri-pulse-line",
 };
 
 // ── Shared helpers ──────────────────────────────────────────────
@@ -162,17 +163,16 @@ function Sec({icon,title,children,right}: {icon:string;title:string;children:Rea
   );
 }
 
-// ── Employee Details Tab ─────────────────────────────────────────
-function EmployeeDetailsTab({emp}: {emp:any}) {
+// ── Reporting Tab ────────────────────────────────────────────────
+function ReportingTab({emp}: {emp:any}) {
   return (
     <div style={{padding:"1.25rem"}}>
-
-      {/* Reporting Structure — mirrors Parents & Guardian */}
-      <Sec icon="ri-team-line" title="Reporting Structure">
-        <div className="row g-3">
-          {emp.reportingTo && (
+      {/* Reporting Manager */}
+      {emp.reportingTo && (
+        <Sec icon="ri-arrow-up-circle-line" title="Reporting To">
+          <div className="row g-3">
             <div className="col-md-4">
-              <div style={{border:"1px solid var(--default-border)",borderRadius:10,padding:"1rem",height:"100%"}}>
+              <div style={{border:"1px solid var(--default-border)",borderRadius:10,padding:"1rem"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:"0.75rem"}}>
                   <div style={{width:42,height:42,borderRadius:"50%",background:"#4f46e5",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,flexShrink:0}}>
                     {emp.reportingTo.split(" ").map((w:string)=>w[0]).join("").slice(0,2)}
@@ -187,34 +187,48 @@ function EmployeeDetailsTab({emp}: {emp:any}) {
                 </div>
               </div>
             </div>
-          )}
-          {emp.reportingTeam.map((m:any,i:number)=>(
-            <div key={i} className="col-md-4">
-              <div style={{border:"1px solid var(--default-border)",borderRadius:10,padding:"1rem",height:"100%"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:"0.75rem"}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:m.color||AVATAR_COLORS[i%AVATAR_COLORS.length],color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,flexShrink:0}}>
-                    {m.avatar}
-                  </div>
-                  <div>
-                    <div style={{fontWeight:700,fontSize:13,color:"var(--default-text-color)"}}>{m.name}</div>
-                    <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,background:"#dcfce7",color:"#16a34a"}}>{m.role}</span>
+          </div>
+        </Sec>
+      )}
+
+      {/* Reporting Team */}
+      <Sec icon="ri-arrow-down-circle-line" title={`Reporting Team (${emp.reportingTeam.length})`}>
+        {emp.reportingTeam.length === 0
+          ? <div style={{textAlign:"center",padding:"1.5rem",color:"var(--text-muted)"}}>
+              <i className="ri-team-line" style={{fontSize:28,display:"block",marginBottom:6}}/> No team members reporting
+            </div>
+          : <div className="row g-3">
+              {emp.reportingTeam.map((m:any,i:number)=>(
+                <div key={i} className="col-md-4">
+                  <div style={{border:"1px solid var(--default-border)",borderRadius:10,padding:"1rem",height:"100%"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:"0.75rem"}}>
+                      <div style={{width:42,height:42,borderRadius:"50%",background:m.color||AVATAR_COLORS[i%AVATAR_COLORS.length],color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,flexShrink:0}}>
+                        {m.avatar}
+                      </div>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:13,color:"var(--default-text-color)"}}>{m.name}</div>
+                        <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,background:"#dcfce7",color:"#16a34a"}}>{m.role}</span>
+                      </div>
+                    </div>
+                    <div style={{fontSize:12,color:"var(--text-muted)",display:"flex",flexDirection:"column" as const,gap:4}}>
+                      <span><i className="ri-briefcase-4-line" style={{marginRight:5}}/> {m.designation}</span>
+                      <span><i className="ri-phone-line" style={{marginRight:5}}/> {m.phone}</span>
+                      <span><i className="ri-mail-line" style={{marginRight:5}}/> {m.email}</span>
+                    </div>
                   </div>
                 </div>
-                <div style={{fontSize:12,color:"var(--text-muted)",display:"flex",flexDirection:"column" as const,gap:4}}>
-                  <span><i className="ri-briefcase-4-line" style={{marginRight:5}}/> {m.designation}</span>
-                  <span><i className="ri-phone-line" style={{marginRight:5}}/> {m.phone}</span>
-                  <span><i className="ri-mail-line" style={{marginRight:5}}/> {m.email}</span>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-          {!emp.reportingTo && emp.reportingTeam.length===0 && (
-            <div className="col-12" style={{textAlign:"center",padding:"1.5rem",color:"var(--text-muted)"}}>
-              <i className="ri-team-line" style={{fontSize:28,display:"block",marginBottom:6}}/> No reporting structure defined
-            </div>
-          )}
-        </div>
+        }
       </Sec>
+    </div>
+  );
+}
+
+// ── Employee Details Tab ─────────────────────────────────────────
+function EmployeeDetailsTab({emp}: {emp:any}) {
+  return (
+    <div style={{padding:"1.25rem"}}>
 
       {/* Address Details — exact mirror */}
       <Sec icon="ri-map-pin-line" title="Address Details">
@@ -765,7 +779,8 @@ export default function EmployeeProfilePage() {
           </div>
           {/* Tab content */}
           <div>
-            {activeTab==="Employee Details"  && <EmployeeDetailsTab emp={emp}/>}
+                        {activeTab==="Employee Details"  && <EmployeeDetailsTab emp={emp}/>}
+            {activeTab==="Reporting"         && <ReportingTab emp={emp}/>}
             {activeTab==="Attendance"        && <AttendanceTab emp={emp}/>}
             {activeTab==="Payroll"           && <PayrollTab emp={emp}/>}
             {activeTab==="Documents"         && <DocumentsTab emp={emp}/>}
