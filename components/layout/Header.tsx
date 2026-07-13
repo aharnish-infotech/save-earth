@@ -116,10 +116,24 @@ export default function Header() {
         {/* ── Right ── */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 
-          {/* Quick Create */}
-          <button style={{ ...iconBtn }}>
-            <i className="ri-add-circle-line" style={{ fontSize: 18, color: "var(--default-text-color)" }} />
-          </button>
+          {/* Register New Student */}
+          <a
+            href="https://zero-form-campus.vercel.app/student-registration"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 14px",
+              background: "linear-gradient(135deg, var(--primary-color), #7c3aed)",
+              border: "none", borderRadius: 8,
+              color: "#fff", fontSize: 12, fontWeight: 700,
+              cursor: "pointer", textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <i className="ri-user-add-line" style={{ fontSize: 15 }} />
+            Register New Student
+          </a>
 
           {/* Notifications */}
           <button style={{ ...iconBtn, position: "relative" }}>
