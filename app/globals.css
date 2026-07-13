@@ -1,0 +1,510 @@
+/* ── Theme CSS ── */
+@import url("/assets/css/styles.css");
+@import url("/assets/css/icons.css");
+
+/* ── Base reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; }
+
+/* ──────────────────────────────────────────────────────────────
+   ZeroForm Custom Sidebar Layout
+   Icon rail (64px) + Slide-in accordion panel (224px)
+   Total when open: 288px  |  Closed: 64px
+────────────────────────────────────────────────────────────── */
+
+/* CSS variable driven by sidebar state (set from JS) */
+:root {
+  --zf-sidebar-w: 288px;
+  --zf-rail-w: 64px;
+  --zf-panel-w: 224px;
+  --zf-header-h: 60px;
+}
+
+/* ── Override theme layout classes ── */
+.page {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Header spans full width; sidebar (z-index 201) sits on top in the left column */
+.app-header.sticky {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200 !important;
+  height: var(--zf-header-h) !important;
+  padding-inline-start: var(--zf-sidebar-w) !important;
+  transition: padding-inline-start 0.25s ease;
+}
+
+/* Content area pushed right by sidebar width, down by header */
+.main-content.app-content {
+  flex: 1;
+  margin-inline-start: var(--zf-sidebar-w) !important;
+  margin-top: var(--zf-header-h) !important;
+  padding-top: 0 !important;       /* cancel any theme padding-top */
+  transition: margin-inline-start 0.25s ease;
+  min-height: calc(100vh - var(--zf-header-h));
+  background: var(--default-background, #f8f9fa);
+}
+
+/* Zero out extra page-level padding the theme may add */
+.page {
+  padding-top: 0 !important;
+}
+
+.container-fluid { padding: 1.5rem; }
+
+/* ──────────────────────────────────────────────────────────────
+   Sidebar shell
+────────────────────────────────────────────────────────────── */
+.zf-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  z-index: 201;  /* above header (200) so logos cover the top-left */
+  /* No width here — rail + panel each have their own */
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Icon Rail
+────────────────────────────────────────────────────────────── */
+.zf-rail {
+  width: var(--zf-rail-w);
+  flex-shrink: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--menu-bg, #fff);
+  border-right: 1px solid var(--menu-border-color, rgba(0,0,0,0.08));
+  overflow: visible;
+  z-index: 2;
+}
+
+/* Logo slot in rail — holds the product logo image */
+.zf-rail-logo {
+  width: 100%;
+  height: var(--zf-header-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--menu-border-color, rgba(0,0,0,0.08));
+  padding: 10px 0;
+  background: linear-gradient(135deg, rgba(108,95,252,0.12) 0%, rgba(108,95,252,0.04) 100%);
+}
+
+/* Rail nav container */
+.zf-rail-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  scrollbar-width: none;
+}
+.zf-rail-nav::-webkit-scrollbar { display: none; }
+
+/* Each rail icon button */
+.zf-rail-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--menu-icon-color, #6b7280);
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+  position: relative;
+}
+
+.zf-rail-btn:hover {
+  background: rgba(var(--primary-rgb, 108, 95, 252), 0.08);
+  color: var(--primary-color, #6c5ffc);
+}
+
+.zf-rail-btn.active {
+  background: rgba(var(--primary-rgb, 108, 95, 252), 0.12);
+  color: var(--primary-color, #6c5ffc);
+}
+/* Active indicator bar on left edge */
+.zf-rail-btn.active::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 24px;
+  background: var(--primary-color, #6c5ffc);
+  border-radius: 0 4px 4px 0;
+}
+
+.zf-rail-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.zf-rail-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  max-width: 52px;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: none; /* hidden by default, could show on hover */
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Nav Panel (accordion side)
+────────────────────────────────────────────────────────────── */
+.zf-nav-panel {
+  width: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--custom-white, #fff);
+  border-right: 1px solid var(--default-border, rgba(0,0,0,0.08));
+  transition: width 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.06);
+}
+.zf-nav-panel.open {
+  width: var(--zf-panel-w);
+}
+
+/* Panel header — holds institution logo */
+.zf-panel-header {
+  min-height: var(--zf-header-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--default-border, rgba(0,0,0,0.08));
+  background: var(--custom-white, #fff);
+  overflow: hidden;
+}
+.zf-panel-brand {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--primary-color, #6c5ffc);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Accordion scroll container */
+.zf-accordion {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--default-border, #e5e7eb) transparent;
+}
+.zf-accordion::-webkit-scrollbar { width: 4px; }
+.zf-accordion::-webkit-scrollbar-track { background: transparent; }
+.zf-accordion::-webkit-scrollbar-thumb { background: var(--default-border, #e5e7eb); border-radius: 4px; }
+
+/* Each accordion section */
+.zf-accord-section {
+  margin: 0;
+}
+
+/* Section toggle button */
+.zf-accord-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px 9px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--default-text-color, #1f2937);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 0;
+  transition: background 0.12s, color 0.12s;
+  position: relative;
+  white-space: nowrap;
+}
+.zf-accord-header:hover {
+  background: rgba(var(--primary-rgb, 108, 95, 252), 0.05);
+  color: var(--primary-color, #6c5ffc);
+}
+.zf-accord-header.active {
+  color: var(--primary-color, #6c5ffc);
+  background: rgba(var(--primary-rgb, 108, 95, 252), 0.06);
+}
+
+.zf-accord-header-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.75;
+  width: 18px;
+  height: 18px;
+}
+.zf-accord-header.active .zf-accord-header-icon {
+  opacity: 1;
+}
+
+.zf-accord-title {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.zf-accord-chevron {
+  font-size: 16px;
+  color: var(--text-muted, #9ca3af);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Expandable body */
+.zf-accord-body {
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+  max-height: 0;
+  /* max-height set inline from JS based on item count */
+}
+
+/* Each nav link inside accordion */
+.zf-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px 8px 44px;
+  text-decoration: none;
+  color: var(--text-muted, #6b7280);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+  border-radius: 0;
+}
+.zf-nav-link:hover {
+  background: rgba(var(--primary-rgb, 108, 95, 252), 0.05);
+  color: var(--default-text-color, #1f2937);
+  text-decoration: none;
+}
+.zf-nav-link.active {
+  background: rgba(var(--primary-rgb, 108, 95, 252), 0.08);
+  color: var(--primary-color, #6c5ffc);
+  font-weight: 600;
+}
+.zf-nav-link.active::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary-color, #6c5ffc);
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+.zf-nav-link-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   KPI Cards
+────────────────────────────────────────────────────────────── */
+.zf-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 1400px) { .zf-kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px)  { .zf-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.zf-kpi-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 0.5rem;
+  background: var(--custom-white);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  border: 1px solid var(--default-border);
+  border-left: 4px solid var(--primary-color);
+  transition: box-shadow 0.15s;
+}
+.zf-kpi-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+
+.zf-kpi-icon {
+  width: 44px; height: 44px; border-radius: 0.4rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; flex-shrink: 0;
+}
+.zf-kpi-body { flex: 1; min-width: 0; }
+.zf-kpi-label {
+  font-size: 0.7rem; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted); display: block; margin-bottom: 2px;
+}
+.zf-kpi-value {
+  font-size: 1.4rem; font-weight: 800; color: var(--default-text-color);
+  line-height: 1.1; display: block; margin-bottom: 4px;
+}
+.zf-kpi-trend {
+  font-size: 0.7rem; font-weight: 600;
+  display: flex; align-items: center; gap: 4px;
+}
+.zf-kpi-trend.up  { color: #10b981; }
+.zf-kpi-trend.down { color: #ef4444; }
+
+/* ──────────────────────────────────────────────────────────────
+   Dashboard grid layouts
+────────────────────────────────────────────────────────────── */
+.zf-dash-row {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.zf-dash-row-1 { grid-template-columns: 1fr 1.6fr 280px; }
+.zf-dash-row-2 { grid-template-columns: 260px 1fr 1fr 280px; }
+
+@media (max-width: 1300px) {
+  .zf-dash-row-1 { grid-template-columns: 1fr 1fr; }
+  .zf-dash-row-2 { grid-template-columns: 1fr 1fr; }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Shared widget card shell
+────────────────────────────────────────────────────────────── */
+.zf-widget-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem 0.5rem;
+}
+.zf-widget-title { font-size: 0.875rem; font-weight: 700; margin: 0; color: var(--default-text-color); }
+.zf-widget-body  { padding: 0.75rem 1.25rem 1.25rem; }
+.zf-view-all {
+  font-size: 0.75rem; font-weight: 600; color: var(--primary-color);
+  text-decoration: none; display: flex; align-items: center; gap: 2px;
+}
+.zf-view-all:hover { color: var(--primary-color); opacity: 0.8; }
+
+/* ──────────────────────────────────────────────────────────────
+   Admission Funnel
+────────────────────────────────────────────────────────────── */
+.zf-funnel-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 7px; font-size: 0.75rem;
+}
+.zf-funnel-label { width: 115px; flex-shrink: 0; color: var(--default-text-color); font-weight: 500; }
+.zf-funnel-bar-track {
+  flex: 1; height: 20px; background: var(--default-background);
+  border-radius: 3px; overflow: hidden;
+}
+.zf-funnel-bar { height: 100%; border-radius: 3px; }
+.zf-funnel-count { width: 44px; text-align: right; font-weight: 700; color: var(--default-text-color); flex-shrink: 0; }
+.zf-funnel-pct  { width: 36px; text-align: right; color: var(--text-muted); flex-shrink: 0; }
+
+.zf-funnel-visual {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2px; margin-bottom: 1rem;
+}
+.zf-funnel-shape {
+  height: 28px; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 0.7rem; font-weight: 700;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Events list
+────────────────────────────────────────────────────────────── */
+.zf-event-item {
+  display: flex; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--default-border);
+}
+.zf-event-item:last-child { border-bottom: none; }
+.zf-event-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; flex-shrink: 0;
+}
+.zf-event-title { font-size: 0.75rem; font-weight: 600; color: var(--default-text-color); margin-bottom: 1px; }
+.zf-event-meta  { font-size: 0.7rem; color: var(--text-muted); }
+.zf-event-time  { font-size: 0.7rem; color: var(--default-text-color); font-weight: 600; flex-shrink: 0; margin-left: auto; }
+
+/* ──────────────────────────────────────────────────────────────
+   Counselor leaderboard
+────────────────────────────────────────────────────────────── */
+.zf-lb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--default-border);
+}
+.zf-lb-item:last-child { border-bottom: none; }
+.zf-lb-rank  { width: 18px; font-size: 0.8rem; font-weight: 800; color: var(--default-text-color); flex-shrink: 0; }
+.zf-lb-name  { flex: 1; font-size: 0.8rem; font-weight: 600; color: var(--default-text-color); }
+.zf-lb-count { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ──────────────────────────────────────────────────────────────
+   Fee defaulters
+────────────────────────────────────────────────────────────── */
+.zf-def-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--default-border);
+}
+.zf-def-item:last-child { border-bottom: none; }
+.zf-def-rank   { width: 16px; font-size: 0.8rem; font-weight: 700; color: var(--default-text-color); }
+.zf-def-name   { flex: 1; font-size: 0.8rem; font-weight: 600; color: var(--default-text-color); }
+.zf-def-amount { font-size: 0.8rem; font-weight: 700; color: var(--default-text-color); }
+.zf-overdue-badge {
+  font-size: 0.65rem; font-weight: 700;
+  padding: 2px 7px; border-radius: 4px;
+}
+.overdue-red    { background: #fee2e2; color: #dc2626; }
+.overdue-orange { background: #ffedd5; color: #ea580c; }
+
+/* ──────────────────────────────────────────────────────────────
+   Recent activity
+────────────────────────────────────────────────────────────── */
+.zf-activity-item {
+  display: flex; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--default-border);
+}
+.zf-activity-item:last-child { border-bottom: none; }
+.zf-activity-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 4px;
+}
+.zf-activity-text { flex: 1; font-size: 0.78rem; color: var(--default-text-color); line-height: 1.4; }
+.zf-activity-text strong { color: var(--default-text-color); font-weight: 600; }
+.zf-activity-time { font-size: 0.68rem; color: var(--text-muted); display: block; margin-top: 2px; }
+
+/* ──────────────────────────────────────────────────────────────
+   Page header bar
+────────────────────────────────────────────────────────────── */
+.zf-page-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 1.25rem;
+}
+.zf-page-title { font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--default-text-color); }
+.zf-page-sub   { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
