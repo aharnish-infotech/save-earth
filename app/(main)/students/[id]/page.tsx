@@ -438,8 +438,8 @@ function KpiCard({ label, value, icon, bg, color }: { label:string; value:string
 function Th({ children }: { children:string }) {
   return <th style={{ padding:"10px 16px", fontWeight:700, fontSize:12, color:"var(--text-muted)", borderBottom:"1px solid var(--default-border)", whiteSpace:"nowrap" }}>{children}</th>;
 }
-function Td({ children, style }: { children:React.ReactNode; style?: React.CSSProperties }) {
-  return <td style={{ padding:"12px 16px", ...style }}>{children}</td>;
+function Td({ children, style, colSpan }: { children?:React.ReactNode; style?: React.CSSProperties; colSpan?: number }) {
+  return <td colSpan={colSpan} style={{ padding:"12px 16px", ...style }}>{children}</td>;
 }
 function Badge({ label, bg, color }: { label:string; bg:string; color:string }) {
   return <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20, background:bg, color }}>{label}</span>;
@@ -774,7 +774,7 @@ function FeesTab({ data, subTab, setSubTab }: { data:any; subTab:string; setSubT
                   <Td style={{ fontWeight:700, color:"var(--default-text-color)" }}>{fmt(data.totalFee)}</Td>
                   <Td style={{ fontWeight:700, color:"#16a34a" }}>{fmt(data.totalPaid)}</Td>
                   <Td style={{ fontWeight:700, color:data.totalDue>0?"#dc2626":"var(--text-muted)" }}>{fmt(data.totalDue)}</Td>
-                  <Td />
+                  <Td>{""}</Td>
                 </tr>
               </tbody>
             </table>
@@ -1050,7 +1050,7 @@ function ExamResultsTab({ data, semIdx, setSemIdx }: { data:any[]; semIdx:number
                 <Td style={{ fontWeight:700, textAlign:"center" }}>{totalCredits}</Td>
                 <Td /><Td />
                 <Td style={{ fontWeight:800, textAlign:"center" }}>{totalMarks}/{maxMarks}</Td>
-                <Td /><Td />
+                <Td></Td><Td></Td>
               </tr>
             </tbody>
           </table>
