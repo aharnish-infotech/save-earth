@@ -27,7 +27,7 @@ const STATUS_CFG: {[k in AttStatus]: {label:string;bg:string;color:string;icon:s
   H:  {label:"Holiday",  bg:"#fef9c3",color:"#ca8a04",icon:"ri-star-line",            badgeBg:"#fef9c3",badgeColor:"#ca8a04"},
   HD: {label:"Half Day", bg:"#fed7aa",color:"#ea580c",icon:"ri-contrast-line",        badgeBg:"#fed7aa",badgeColor:"#ea580c"},
   L:  {label:"Late",     bg:"#fce7f3",color:"#db2777",icon:"ri-time-line",            badgeBg:"#fce7f3",badgeColor:"#db2777"},
-  OL: {label:"On Leave", bg:"#fee2e2",color:"#dc2626",icon:"ri-plane-line",           badgeBg:"#fee2e2",badgeColor:"#dc2626"},
+  OL: {label:"On Leave", bg:"#dbeafe",color:"#1d4ed8",icon:"ri-plane-line",           badgeBg:"#dbeafe",badgeColor:"#1d4ed8"},
   DO: {label:"Day Off",  bg:"#f3f4f6",color:"#6b7280",icon:"ri-rest-time-line",       badgeBg:"#f3f4f6",badgeColor:"#6b7280"},
   "-":{label:"—",        bg:"transparent",color:"#d1d5db",icon:"",                   badgeBg:"transparent",badgeColor:"#d1d5db"},
 };
@@ -298,7 +298,7 @@ function SummaryTab({ filtered, days, workDays }: { filtered:EmpAtt[];days:numbe
           { label:"Total",       value:filtered.length,                                          icon:"ri-group-line",           color:"#4f46e5",bg:"#ede9fe" },
           { label:"Present",     value:filtered.filter(e=>e.attendance[TODAY]==="P").length,     icon:"ri-checkbox-circle-line", color:"#16a34a",bg:"#dcfce7" },
           { label:"Absent",      value:filtered.filter(e=>e.attendance[TODAY]==="A").length,     icon:"ri-close-circle-line",    color:"#dc2626",bg:"#fee2e2" },
-          { label:"On Leave",    value:filtered.filter(e=>e.attendance[TODAY]==="OL").length,    icon:"ri-plane-line",           color:"#dc2626",bg:"#fee2e2" },
+          { label:"On Leave",    value:filtered.filter(e=>e.attendance[TODAY]==="OL").length,    icon:"ri-plane-line",           color:"#1d4ed8",bg:"#dbeafe" },
           { label:"Working Days",value:workDays,                                                  icon:"ri-calendar-2-line",      color:"#7c3aed",bg:"#f3e8ff" },
         ].map(c => (
           <div key={c.label} className="col">
@@ -454,7 +454,7 @@ function ByHourTab({ filtered, days }: { filtered:EmpAtt[];days:number }) {
                     else if (isHol)           cell=<span style={{ width:24,height:24,borderRadius:4,background:"#fef9c3",color:"#ca8a04",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11 }}><i className="ri-star-line"/></span>;
                     else if (isSun||s==="DO") cell=<span style={{ width:24,height:24,borderRadius:4,background:"#f3f4f6",color:"#9ca3af",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11 }}><i className="ri-close-line"/></span>;
                     else if (s==="A")         cell=<span style={{ width:24,height:24,borderRadius:4,background:"#fee2e2",color:"#dc2626",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11 }}><i className="ri-close-line"/></span>;
-                    else if (s==="OL")        cell=<span style={{ width:24,height:24,borderRadius:4,background:"#fee2e2",color:"#dc2626",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11 }}><i className="ri-plane-line"/></span>;
+                    else if (s==="OL")        cell=<span style={{ width:24,height:24,borderRadius:4,background:"#dbeafe",color:"#1d4ed8",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11 }}><i className="ri-plane-line"/></span>;
                     else if (h>0)             cell=<span style={{ padding:"2px 6px",borderRadius:4,background:"#dcfce7",color:"#16a34a",fontSize:11,fontWeight:700,whiteSpace:"nowrap",border:"1px solid #bbf7d0",cursor:"pointer" }}>{fmtHs(h)}</span>;
                     else                      cell=<span style={{ color:"#d1d5db",fontSize:11 }}>—</span>;
                     return (
