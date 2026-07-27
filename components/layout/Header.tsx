@@ -3,19 +3,61 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
-const SESSIONS = ["2026-27", "2025-26", "2024-25", "2023-24"];
+// ── Digital Clock ─────────────────────────────────────────────────────────────
+function DigitalClock() {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!now) return null;
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const hh = pad(now.getHours());
+  const mm = pad(now.getMinutes());
+  const ss = pad(now.getSeconds());
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const dateStr = `${dayNames[now.getDay()]}, ${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "5px 14px",
+      borderRadius: 8,
+      border: "1px solid var(--default-border)",
+      background: "var(--custom-white)",
+      userSelect: "none",
+    }}>
+      {/* Time */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+        <span style={{ fontFamily: "'Courier New', monospace", fontSize: 16, fontWeight: 800, color: "var(--primary-color)", letterSpacing: 1 }}>
+          {hh}:{mm}
+        </span>
+        <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 700, color: "#4ade80", marginLeft: 2 }}>
+          :{ss}
+        </span>
+      </div>
+      {/* Divider */}
+      <div style={{ width: 1, height: 22, background: "var(--default-border)" }} />
+      {/* Date */}
+      <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.02em", lineHeight: 1 }}>
+        {dateStr}
+      </div>
+    </div>
+  );
+}
 
 export default function Header() {
-  const [activeSession, setActiveSession] = useState("2025-26");
-  const [sessionOpen,   setSessionOpen]   = useState(false);
-  const [quickOpen,     setQuickOpen]     = useState(false);
-  const sessionRef = useRef<HTMLDivElement>(null);
-  const quickRef   = useRef<HTMLDivElement>(null);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const quickRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (sessionRef.current && !sessionRef.current.contains(e.target as Node)) setSessionOpen(false);
-      if (quickRef.current   && !quickRef.current.contains(e.target as Node))   setQuickOpen(false);
+      if (quickRef.current && !quickRef.current.contains(e.target as Node)) setQuickOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -38,36 +80,42 @@ export default function Header() {
             <span style={{ display: "block", width: 20, height: 2, background: "currentColor", borderRadius: 2 }} />
           </button>
 
-          {/* Active Session */}
-          <div ref={sessionRef} style={{ position: "relative" }}>
-            <button onClick={() => setSessionOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: "rgba(108,95,252,0.08)", border: "1px solid rgba(108,95,252,0.25)", borderRadius: 8, color: "var(--primary-color)", fontWeight: 700, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 256 256" fill="currentColor">
-                <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,176H48V48H72v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24Z" />
-              </svg>
-              ACTIVE SESSION : {activeSession}
-              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 256 256" fill="currentColor">
-                <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z" />
-              </svg>
-            </button>
-            {sessionOpen && (
-              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, minWidth: 150, zIndex: 9999, borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", border: "1px solid var(--default-border)", background: "var(--custom-white)", padding: "4px 0" }}>
-                {SESSIONS.map(s => (
-                  <button key={s} onClick={() => { setActiveSession(s); setSessionOpen(false); }}
-                    style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 14px", background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: activeSession === s ? 700 : 400, color: activeSession === s ? "var(--primary-color)" : "var(--default-text-color)" }}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Search */}
-          <div style={{ display: "flex", alignItems: "center", background: "var(--default-background)", border: "1px solid var(--default-border)", borderRadius: 8, padding: "0 10px", gap: 6, minWidth: 260 }}>
-            <i className="ri-search-line" style={{ color: "var(--text-muted)", fontSize: 14 }} />
-            <input type="text" placeholder="Search students, enquiries, receipts..." style={{ border: "none", background: "transparent", outline: "none", fontSize: 12, color: "var(--default-text-color)", padding: "6px 0", width: "100%" }} />
-            <kbd style={{ fontSize: 10, color: "var(--text-muted)", background: "var(--custom-white)", border: "1px solid var(--default-border)", borderRadius: 4, padding: "1px 5px", whiteSpace: "nowrap" }}>Ctrl K</kbd>
+          {/* Search bar + Save Earth logo badge */}
+          <div style={{ display: "flex", alignItems: "stretch" }}>
+            <div style={{
+              display: "flex", alignItems: "center",
+              background: "var(--default-background)", border: "1px solid var(--default-border)",
+              borderRight: "none", borderRadius: "8px 0 0 8px",
+              padding: "0 10px", gap: 6, minWidth: 280,
+            }}>
+              <i className="ri-search-line" style={{ color: "var(--text-muted)", fontSize: 14 }} />
+              <input
+                type="text"
+                placeholder="Search audits, branches, users..."
+                style={{ border: "none", background: "transparent", outline: "none", fontSize: 12, color: "var(--default-text-color)", padding: "6px 0", width: "100%" }}
+              />
+              <kbd style={{ fontSize: 10, color: "var(--text-muted)", background: "var(--custom-white)", border: "1px solid var(--default-border)", borderRadius: 4, padding: "1px 5px", whiteSpace: "nowrap" }}>Ctrl K</kbd>
+            </div>
+            {/* Client logo — personalised touch */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "0 10px",
+              background: "var(--custom-white)",
+              border: "1px solid var(--default-border)",
+              borderRadius: "0 8px 8px 0",
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/media/savearth_logo.png"
+                alt="Save Earth Energy"
+                style={{ height: 22, width: "auto", objectFit: "contain", display: "block" }}
+              />
+            </div>
           </div>
         </div>
+
+        {/* Centre — Digital Clock */}
+        <DigitalClock />
 
         {/* Right */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -75,32 +123,24 @@ export default function Header() {
           {/* Quick Create */}
           <div ref={quickRef} style={{ position: "relative" }}>
             <button onClick={() => setQuickOpen(o => !o)} title="Quick Create"
-              style={{ ...iconBtn, background: quickOpen ? "rgba(79,70,229,0.1)" : "none", color: quickOpen ? "var(--primary-color)" : "var(--default-text-color)" }}>
+              style={{ ...iconBtn, background: quickOpen ? "rgba(22,163,74,0.1)" : "none", color: quickOpen ? "var(--primary-color)" : "var(--default-text-color)" }}>
               <i className="ri-add-circle-line" style={{ fontSize: 20 }} />
             </button>
 
             {quickOpen && (
-              <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, minWidth: 220, zIndex: 9999, borderRadius: 12, boxShadow: "0 8px 32px rgba(79,70,229,0.15)", border: "1px solid #ede9fe", background: "#fff", padding: "6px" }}>
+              <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, minWidth: 220, zIndex: 9999, borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.12)", border: "1px solid var(--default-border)", background: "var(--custom-white)", padding: "6px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: "6px 10px 4px" }}>
                   Quick Create
                 </div>
                 {([
-                  { label: "Register New Student", icon: "ri-user-add-line",           href: "https://zero-form-campus.vercel.app/student-registration", external: true  },
-                  { label: "Register New Staff",   icon: "ri-user-star-line",           href: "/staff/new",     external: false },
-                  { label: "Collect Fee",          icon: "ri-money-rupee-circle-line",  href: "/fees/collection", external: false },
-                ] as const).map(item =>
-                  item.external ? (
-                    <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" onClick={() => setQuickOpen(false)} style={quickItemStyle}>
-                      <span style={quickIconWrap}><i className={item.icon} style={{ fontSize: 15 }} /></span>
-                      {item.label}
-                    </a>
-                  ) : (
-                    <Link key={item.label} href={item.href} onClick={() => setQuickOpen(false)} style={quickItemStyle}>
-                      <span style={quickIconWrap}><i className={item.icon} style={{ fontSize: 15 }} /></span>
-                      {item.label}
-                    </Link>
-                  )
-                )}
+                  { label: "New Audit",       icon: "ri-file-add-line",   href: "/audits/new"   },
+                  { label: "Register Branch", icon: "ri-building-2-line", href: "/branches/new" },
+                ] as const).map(item => (
+                  <Link key={item.label} href={item.href} onClick={() => setQuickOpen(false)} style={quickItemStyle}>
+                    <span style={quickIconWrap}><i className={item.icon} style={{ fontSize: 15 }} /></span>
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             )}
           </div>
@@ -108,13 +148,13 @@ export default function Header() {
           {/* Notifications */}
           <button style={{ ...iconBtn, position: "relative" }}>
             <i className="ri-notification-3-line" style={{ fontSize: 18, color: "var(--default-text-color)" }} />
-            <span style={badgeStyle("#ef4444")}>5</span>
+            <span style={badge("#ef4444")}>3</span>
           </button>
 
           {/* Messages */}
           <button style={{ ...iconBtn, position: "relative" }}>
             <i className="ri-message-3-line" style={{ fontSize: 18, color: "var(--default-text-color)" }} />
-            <span style={badgeStyle("#10b981")}>3</span>
+            <span style={badge("#10b981")}>2</span>
           </button>
 
           {/* Divider */}
@@ -122,7 +162,7 @@ export default function Header() {
 
           {/* Profile */}
           <button style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 8 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, var(--primary-color), #a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #16a34a, #86efac)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
               AU
             </div>
             <div style={{ textAlign: "left" }}>
@@ -153,12 +193,12 @@ const quickItemStyle: React.CSSProperties = {
 
 const quickIconWrap: React.CSSProperties = {
   width: 30, height: 30, borderRadius: 8,
-  background: "#ede9fe", display: "flex",
+  background: "#dcfce7", display: "flex",
   alignItems: "center", justifyContent: "center",
-  color: "#7c3aed", flexShrink: 0,
+  color: "#16a34a", flexShrink: 0,
 };
 
-function badgeStyle(bg: string): React.CSSProperties {
+function badge(bg: string): React.CSSProperties {
   return {
     position: "absolute", top: 4, right: 4,
     width: 16, height: 16, borderRadius: "50%",

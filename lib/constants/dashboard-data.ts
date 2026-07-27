@@ -1,179 +1,140 @@
-// All dashboard dummy data lives here — swap for API calls later
+// ORBIT Inspectflow ERP — Dashboard seed data
+// Client: Save Earth Energy | Domain: Bank Branch Audit Inspection
+// Replace these arrays with API calls when backend is ready.
 
 export const KPI_CARDS = [
   {
-    id: "total-enquiries",
-    label: "Total Enquiries",
-    value: "12,850",
-    trend: "+12.5%",
+    id: "total-audits",
+    label: "Total Audits",
+    value: "128",
+    trend: "+14",
     trendDir: "up" as const,
-    trendLabel: "This Year",
-    icon: "ri-group-2-line",
+    trendLabel: "This Month",
+    icon: "ri-file-list-3-line",
     colorClass: "primary",
   },
   {
-    id: "dhe-registered",
-    label: "DHE Registered",
-    value: "8,542",
+    id: "approved",
+    label: "Approved",
+    value: "74",
     trend: "+8.1%",
     trendDir: "up" as const,
-    trendLabel: "This Year",
-    icon: "ri-file-list-3-line",
-    colorClass: "info",
-  },
-  {
-    id: "govt-allotted",
-    label: "Govt Allotted",
-    value: "4,125",
-    trend: "+10.3%",
-    trendDir: "up" as const,
-    trendLabel: "This Year",
-    icon: "ri-shield-check-line",
+    trendLabel: "This Month",
+    icon: "ri-checkbox-circle-line",
     colorClass: "success",
   },
   {
-    id: "final-admissions",
-    label: "Final Admissions",
-    value: "2,854",
-    trend: "+9.7%",
-    trendDir: "up" as const,
-    trendLabel: "This Year",
-    icon: "ri-graduation-cap-line",
-    colorClass: "secondary",
+    id: "pending-review",
+    label: "Pending Review",
+    value: "7",
+    trend: "-2",
+    trendDir: "down" as const,
+    trendLabel: "vs Last Week",
+    icon: "ri-time-line",
+    colorClass: "danger",
   },
   {
-    id: "fee-collected",
-    label: "Fee Collected",
-    value: "₹ 12.76 Cr",
-    trend: "+14.2%",
+    id: "branches-covered",
+    label: "Branches Covered",
+    value: "312",
+    trend: "+22",
     trendDir: "up" as const,
-    trendLabel: "This Year",
-    icon: "ri-money-rupee-circle-line",
+    trendLabel: "This Month",
+    icon: "ri-building-2-line",
+    colorClass: "info",
+  },
+  {
+    id: "active-auditors",
+    label: "Active Auditors",
+    value: "5",
+    trend: "3 On Field",
+    trendDir: "up" as const,
+    trendLabel: "Live Now",
+    icon: "ri-user-star-line",
     colorClass: "warning",
   },
   {
-    id: "outstanding",
-    label: "Outstanding Amount",
-    value: "₹ 2.35 Cr",
-    trend: "-3.4%",
-    trendDir: "down" as const,
-    trendLabel: "This Year",
-    icon: "ri-file-damage-line",
-    colorClass: "danger",
+    id: "reports-generated",
+    label: "Reports Generated",
+    value: "34",
+    trend: "+6",
+    trendDir: "up" as const,
+    trendLabel: "This Month",
+    icon: "ri-file-pdf-line",
+    colorClass: "secondary",
   },
 ];
 
+// Audit workflow pipeline stages
 export const FUNNEL_STAGES = [
-  { label: "Enquiries",     count: 12850, pct: 100,  color: "#7c3aed" },
-  { label: "Interested",    count: 7245,  pct: 56.4, color: "#2563eb" },
-  { label: "Counseling Done", count: 5128, pct: 39.9, color: "#10b981" },
-  { label: "DHE Registered", count: 8542, pct: 66.2, color: "#f59e0b" },
-  { label: "Allotted",      count: 4125,  pct: 48.3, color: "#f97316" },
-  { label: "Admitted",      count: 2854,  pct: 69.1, color: "#ec4899" },
+  { label: "Assigned",    count: 128, pct: 100,  color: "#16a34a" },
+  { label: "In Progress", count: 96,  pct: 75.0, color: "#2563eb" },
+  { label: "Submitted",   count: 81,  pct: 63.3, color: "#10b981" },
+  { label: "In Review",   count: 54,  pct: 42.2, color: "#15803d" },
+  { label: "Approved",    count: 74,  pct: 57.8, color: "#16a34a" },
+  { label: "Delivered",   count: 61,  pct: 47.7, color: "#0891b2" },
 ];
 
+// Monthly audit submission vs approval trend
 export const TREND_SERIES = {
-  months: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-  enquiries: [820, 1050, 1680, 1920, 2100, 1750, 1580, 1640, 1520, 1720, 2050, 2400],
-  admissions: [200,  380,  720,  850,  920,  760,  680,  710,  650,  740,  910, 1050],
+  months:    ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  submitted: [18, 22, 31, 28, 35, 29, 26, 33, 30, 38, 42, 48],
+  approved:  [12, 16, 24, 20, 28, 22, 19, 26, 24, 30, 35, 40],
 };
 
-export const CATEGORY_ALLOTMENT = [
-  { name: "General", value: 1733, pct: 42, color: "#7c3aed" },
-  { name: "OBC",     value: 1156, pct: 28, color: "#2563eb" },
-  { name: "SC",      value: 619,  pct: 15, color: "#10b981" },
-  { name: "ST",      value: 413,  pct: 10, color: "#f59e0b" },
-  { name: "EWS",     value: 204,  pct: 5,  color: "#ec4899" },
+// Bank-wise branch coverage breakdown
+export const BANK_COVERAGE = [
+  { name: "SBI Gujarat",   value: 84, pct: 27, color: "#16a34a" },
+  { name: "SBI MP",        value: 62, pct: 20, color: "#2563eb" },
+  { name: "SBI Rajasthan", value: 55, pct: 18, color: "#10b981" },
+  { name: "Bank of Baroda",value: 38, pct: 12, color: "#15803d" },
+  { name: "UCO Bank",      value: 29, pct: 9,  color: "#0891b2" },
+  { name: "Others",        value: 44, pct: 14, color: "#94a3b8" },
 ];
 
-export const TODAY_EVENTS = [
-  {
-    icon: "ri-user-voice-line",
-    iconBg: "#ede9fe",
-    iconColor: "#7c3aed",
-    title: "Counseling Session",
-    meta: "BCA 1st Year",
-    time: "09:00 AM",
-  },
-  {
-    icon: "ri-calendar-close-line",
-    iconBg: "#fee2e2",
-    iconColor: "#dc2626",
-    title: "DHE Choice Filling Last Date",
-    meta: "9 Days Remaining",
-    time: "11:59 PM",
-  },
-  {
-    icon: "ri-award-line",
-    iconBg: "#d1fae5",
-    iconColor: "#059669",
-    title: "Allotment Round 2 Result",
-    meta: "Announced",
-    time: "02:00 PM",
-  },
-  {
-    icon: "ri-bill-line",
-    iconBg: "#fef9c3",
-    iconColor: "#d97706",
-    title: "Fee Due Reminder",
-    meta: "24 Students",
-    time: "03:30 PM",
-  },
-  {
-    icon: "ri-folder-check-line",
-    iconBg: "#dbeafe",
-    iconColor: "#2563eb",
-    title: "Document Verification",
-    meta: "15 Pending",
-    time: "04:00 PM",
-  },
+// Today's completed / submitted audits
+export const TODAY_AUDITS = [
+  { auditId: "AU-2024-131", auditor: "Rajesh Kumar",  bank: "SBI",           branch: "SBI Maninagar",   completedAt: "09:45 AM", score: 87, status: "Submitted" },
+  { auditId: "AU-2024-130", auditor: "Sneha Patel",   bank: "SBI",           branch: "SBI CG Road",     completedAt: "11:20 AM", score: 92, status: "Approved"  },
+  { auditId: "AU-2024-129", auditor: "Vikas Tiwari",  bank: "Bank of Baroda",branch: "BOB Ahmedabad",   completedAt: "01:10 PM", score: 78, status: "Submitted" },
+  { auditId: "AU-2024-128", auditor: "Divya Mehta",   bank: "UCO Bank",      branch: "UCO Kolkata HO",  completedAt: "03:00 PM", score: 95, status: "Approved"  },
+  { auditId: "AU-2024-127", auditor: "Arjun Yadav",   bank: "SBI",           branch: "SBI Navrangpura", completedAt: "04:30 PM", score: 81, status: "Submitted" },
 ];
 
-export const COUNSELOR_LEADERBOARD = [
-  { rank: 1, name: "Riya Sharma",   count: 156, trophy: true },
-  { rank: 2, name: "Amit Verma",    count: 128, trophy: false },
-  { rank: 3, name: "Neha Singh",    count: 112, trophy: false },
-  { rank: 4, name: "Sandeep Patel", count: 98,  trophy: false },
-  { rank: 5, name: "Rahul Yadav",   count: 87,  trophy: false },
+// In-progress and overdue audits (used by IncompleteAudits widget)
+export const INCOMPLETE_AUDITS = [
+  { auditId:"AU-2024-132", auditor:"Rajesh Kumar", bank:"SBI",           branch:"SBI Bodakdev",    assignedDate:"27 Jul 2024", dueDate:"30 Jul 2024", daysLeft:3,  progress:60, status:"In Progress" },
+  { auditId:"AU-2024-133", auditor:"Sneha Patel",  bank:"SBI",           branch:"SBI Satellite",   assignedDate:"26 Jul 2024", dueDate:"29 Jul 2024", daysLeft:2,  progress:40, status:"In Progress" },
+  { auditId:"AU-2024-134", auditor:"Vikas Tiwari", bank:"Bank of Baroda",branch:"BOB Baroda Main", assignedDate:"25 Jul 2024", dueDate:"28 Jul 2024", daysLeft:1,  progress:75, status:"In Progress" },
+  { auditId:"AU-2024-135", auditor:"Divya Mehta",  bank:"SBI",           branch:"SBI MP Nagar",    assignedDate:"24 Jul 2024", dueDate:"27 Jul 2024", daysLeft:0,  progress:20, status:"Overdue"     },
+  { auditId:"AU-2024-136", auditor:"Arjun Yadav",  bank:"UCO Bank",      branch:"UCO Patna",       assignedDate:"23 Jul 2024", dueDate:"26 Jul 2024", daysLeft:-1, progress:10, status:"Overdue"     },
+  { auditId:"AU-2024-137", auditor:"Rajesh Kumar", bank:"SBI",           branch:"SBI Vastrapur",   assignedDate:"27 Jul 2024", dueDate:"31 Jul 2024", daysLeft:4,  progress:0,  status:"Assigned"    },
+  { auditId:"AU-2024-138", auditor:"Sneha Patel",  bank:"SBI",           branch:"SBI Indore Main", assignedDate:"27 Jul 2024", dueDate:"01 Aug 2024", daysLeft:5,  progress:0,  status:"Assigned"    },
 ];
 
-export const FEE_DEFAULTERS = [
-  { rank: 1, name: "Vikram Singh",  amount: "₹ 95,000", overdue: "120+ Days", tier: "red" as const },
-  { rank: 2, name: "Arjun Patel",   amount: "₹ 78,500", overdue: "90+ Days",  tier: "red" as const },
-  { rank: 3, name: "Pooja Sharma",  amount: "₹ 65,000", overdue: "90+ Days",  tier: "red" as const },
-  { rank: 4, name: "Karan Verma",   amount: "₹ 48,000", overdue: "60+ Days",  tier: "orange" as const },
-  { rank: 5, name: "Neha Gupta",    amount: "₹ 42,500", overdue: "60+ Days",  tier: "orange" as const },
+// Top auditors leaderboard
+export const AUDITORS_LEADERBOARD = [
+  { rank: 1, name: "Rajesh Kumar", count: 38, trophy: true  },
+  { rank: 2, name: "Sneha Patel",  count: 31, trophy: false },
+  { rank: 3, name: "Vikas Tiwari", count: 24, trophy: false },
+  { rank: 4, name: "Divya Mehta",  count: 18, trophy: false },
+  { rank: 5, name: "Arjun Yadav",  count: 9,  trophy: false },
 ];
 
+// Overdue / pending-action audits
+export const OVERDUE_AUDITS = [
+  { rank: 1, name: "SBI Vastrapur",   auditId: "AU-2024-115", overdue: "12+ Days", tier: "red"    as const },
+  { rank: 2, name: "SBI Bodakdev",    auditId: "AU-2024-118", overdue: "9 Days",   tier: "red"    as const },
+  { rank: 3, name: "SBI Bhopal Main", auditId: "AU-2024-120", overdue: "7 Days",   tier: "red"    as const },
+  { rank: 4, name: "SBI MP Nagar",    auditId: "AU-2024-123", overdue: "4 Days",   tier: "orange" as const },
+  { rank: 5, name: "SBI Satellite",   auditId: "AU-2024-126", overdue: "2 Days",   tier: "orange" as const },
+];
+
+// Recent activity feed
 export const RECENT_ACTIVITIES = [
-  {
-    color: "#7c3aed",
-    text: "New enquiry received from",
-    highlight: "Rahul Kumar",
-    time: "10 mins ago",
-  },
-  {
-    color: "#10b981",
-    text: "Payment of ₹25,000 received from",
-    highlight: "Anjali Verma",
-    time: "25 mins ago",
-  },
-  {
-    color: "#2563eb",
-    text: "DHE registration completed for",
-    highlight: "Aman Patel",
-    time: "40 mins ago",
-  },
-  {
-    color: "#d97706",
-    text: "Documents verified for",
-    highlight: "Priya Singh",
-    time: "1 hour ago",
-  },
-  {
-    color: "#ec4899",
-    text: "Counseling completed for",
-    highlight: "Mohit Yadav",
-    time: "2 hours ago",
-  },
+  { color: "#16a34a", text: "Audit submitted for",             highlight: "SBI Paldi Branch",        time: "10 mins ago" },
+  { color: "#2563eb", text: "AU-2024-122 approved by",         highlight: "Admin — Priya Sharma",     time: "25 mins ago" },
+  { color: "#10b981", text: "Report delivered to client for",  highlight: "SBI CG Road",              time: "40 mins ago" },
+  { color: "#15803d", text: "New branch registered —",         highlight: "SBI Navrangpura, Gujarat", time: "1 hour ago"  },
+  { color: "#0891b2", text: "Audit assigned to Rajesh Kumar —",highlight: "SBI Maninagar",            time: "2 hours ago" },
 ];

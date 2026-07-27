@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { RAIL_ITEMS } from "@/lib/constants/navigation";
 
 const SECTION_ICONS: Record<string, React.ReactNode> = {
-  dashboard: (
+  overview: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
       <path d="M104,40H40a8,8,0,0,0-8,8v64a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V48A8,8,0,0,0,104,40Z" opacity="0.2" fill="currentColor"/>
       <path d="M216,40H152a8,8,0,0,0-8,8v64a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V48A8,8,0,0,0,216,40Z" opacity="0.2" fill="currentColor"/>
@@ -18,46 +18,7 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
       <rect x="144" y="152" width="80" height="80" rx="8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
     </svg>
   ),
-  "admission-crm": (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
-      <circle cx="128" cy="96" r="64" opacity="0.2" fill="currentColor"/>
-      <circle cx="128" cy="96" r="64" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <path d="M32,216c19.37-33.47,54.55-56,96-56s76.63,22.53,96,56" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-    </svg>
-  ),
-  "dhe-admissions": (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
-      <path d="M48,208V96l80-64,80,64V208Z" opacity="0.2" fill="currentColor"/>
-      <polyline points="48 208 48 96 128 32 208 96 208 208" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <line x1="16" y1="208" x2="240" y2="208" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <rect x="96" y="152" width="64" height="56" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-    </svg>
-  ),
-  students: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
-      <path d="M232,96l-104,40L24,96l104-40Z" opacity="0.2" fill="currentColor"/>
-      <polygon points="232 96 128 56 24 96 128 136 232 96" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <polyline points="184 112 184 176 128 200 72 176 72 112" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <line x1="232" y1="96" x2="232" y2="168" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-    </svg>
-  ),
-  fees: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
-      <rect x="24" y="64" width="208" height="144" rx="8" opacity="0.2" fill="currentColor"/>
-      <rect x="24" y="64" width="208" height="144" rx="8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <path d="M168,64V48a8,8,0,0,0-8-8H96a8,8,0,0,0-8,8V64" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <line x1="128" y1="112" x2="128" y2="160" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <path d="M104,148c0,6.63,10.75,12,24,12s24-5.37,24-12-10.75-12-24-12-24-5.37-24-12,10.75-12,24-12,24,5.37,24,12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-    </svg>
-  ),
-  scholarships: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
-      <circle cx="128" cy="96" r="72" opacity="0.2" fill="currentColor"/>
-      <circle cx="128" cy="96" r="72" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-      <polyline points="88 136 88 240 128 216 168 240 168 136" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-    </svg>
-  ),
-  reports: (
+  audits: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
       <path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34Z" opacity="0.2" fill="currentColor"/>
       <path d="M152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
@@ -67,7 +28,23 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
       <line x1="160" y1="152" x2="160" y2="176" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
     </svg>
   ),
-  hr: (
+  banking: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
+      <path d="M48,208V96l80-64,80,64V208Z" opacity="0.2" fill="currentColor"/>
+      <polyline points="48 208 48 96 128 32 208 96 208 208" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+      <line x1="16" y1="208" x2="240" y2="208" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+      <rect x="96" y="152" width="64" height="56" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+    </svg>
+  ),
+  questions: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
+      <circle cx="128" cy="128" r="96" opacity="0.2" fill="currentColor"/>
+      <circle cx="128" cy="128" r="96" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+      <path d="M96,96a32,32,0,1,1,48,27.7c-7.9,4.4-16,11.4-16,20.3v8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
+      <circle cx="128" cy="176" r="12" fill="currentColor"/>
+    </svg>
+  ),
+  administration: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
       <circle cx="84" cy="108" r="52" opacity="0.2" fill="currentColor"/>
       <circle cx="84" cy="108" r="52" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
@@ -94,38 +71,36 @@ function getActiveSectionId(pathname: string): string {
     );
     if (match) return item.id;
   }
-  return "dashboard";
+  return "overview";
 }
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [expandedId, setExpandedId] = useState<string>(() => getActiveSectionId(pathname));
-  const [panelOpen, setPanelOpen]   = useState(true);
+  const [activeId, setActiveId] = useState<string>(() => getActiveSectionId(pathname));
+  const [panelOpen, setPanelOpen] = useState(true);
 
+  // Keep sidebar width in sync
   useEffect(() => {
     document.documentElement.style.setProperty("--zf-sidebar-w", panelOpen ? "288px" : "64px");
   }, [panelOpen]);
 
+  // Update active section on route change
   useEffect(() => {
-    setExpandedId(getActiveSectionId(pathname));
+    setActiveId(getActiveSectionId(pathname));
     setPanelOpen(true);
   }, [pathname]);
 
+  // Hamburger toggle
   useEffect(() => {
     const handleToggle = () => setPanelOpen(prev => !prev);
     window.addEventListener("zf:toggle-sidebar", handleToggle);
     return () => window.removeEventListener("zf:toggle-sidebar", handleToggle);
   }, []);
 
+  // Rail icon click: open panel and highlight section (no collapse)
   const handleIconClick = (id: string) => {
-    if (!panelOpen) { setPanelOpen(true); setExpandedId(id); }
-    else if (expandedId === id) { setPanelOpen(false); }
-    else { setExpandedId(id); }
-  };
-
-  const handleSectionToggle = (id: string) => {
-    if (!panelOpen) setPanelOpen(true);
-    setExpandedId(prev => (prev === id ? "" : id));
+    setActiveId(id);
+    setPanelOpen(true);
   };
 
   return (
@@ -134,14 +109,15 @@ export default function Sidebar() {
       {/* Icon Rail */}
       <div className="zf-rail">
         <div className="zf-rail-logo">
-          <img src="/media/ZeroFormCampus.png" alt="ZeroForm Campus" width={42} height={42} style={{ borderRadius: 10, display: "block" }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/media/orbit-inspectflow-app.png" alt="ORBIT Inspectflow ERP" width={42} height={42} style={{ borderRadius: 10, display: "block" }} />
         </div>
         <nav className="zf-rail-nav" aria-label="Main navigation">
           {RAIL_ITEMS.map(item => {
-            const isActive = expandedId === item.id && panelOpen;
+            const isActive = activeId === item.id && panelOpen;
             return (
               <button key={item.id} className={`zf-rail-btn${isActive ? " active" : ""}`}
-                onClick={() => handleIconClick(item.id)} title={item.label} aria-label={item.label} aria-expanded={isActive}>
+                onClick={() => handleIconClick(item.id)} title={item.label} aria-label={item.label}>
                 <span className="zf-rail-icon">{SECTION_ICONS[item.id]}</span>
                 <span className="zf-rail-label">{item.label}</span>
               </button>
@@ -150,26 +126,24 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Accordion Nav Panel */}
+      {/* Nav Panel — always open, all sections always expanded */}
       <div className={`zf-nav-panel${panelOpen ? " open" : ""}`} aria-hidden={!panelOpen}>
         <div className="zf-panel-header">
-          <img src="/media/institution.png" alt="Institution Logo" height={44} style={{ maxWidth: 190, width: "auto", display: "block" }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/media/orbit-inspectflow-typo.png" alt="ORBIT Inspectflow" height={44} style={{ maxWidth: 190, width: "auto", display: "block" }} />
         </div>
 
         <div className="zf-accordion" id="sidebar-scroll">
           {RAIL_ITEMS.map(item => {
-            const isExpanded = expandedId === item.id;
-            const allItems   = item.sections.flatMap(s => s.items);
+            const allItems = item.sections.flatMap(s => s.items);
             return (
-              <div key={item.id} className={`zf-accord-section${isExpanded ? " expanded" : ""}`}>
-                <button className={`zf-accord-header${isExpanded ? " active" : ""}`}
-                  onClick={() => handleSectionToggle(item.id)} aria-expanded={isExpanded}>
+              /* All sections always expanded — no accordion toggle */
+              <div key={item.id} className="zf-accord-section expanded">
+                <div className="zf-accord-header active" style={{ cursor: "default" }}>
                   <span className="zf-accord-header-icon">{SECTION_ICONS[item.id]}</span>
                   <span className="zf-accord-title">{item.label}</span>
-                  <i className="ri-arrow-down-s-line zf-accord-chevron"
-                    style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }} />
-                </button>
-                <div className="zf-accord-body" style={{ maxHeight: isExpanded ? `${allItems.length * 44}px` : "0px" }}>
+                </div>
+                <div className="zf-accord-body" style={{ maxHeight: `${allItems.length * 44 + 8}px` }}>
                   {allItems.map(nav => {
                     const isNavActive = pathname === nav.href;
                     return (

@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ZeroForm Campus",
-  description: "College Admission, Student Information & Fee Management System",
+  title: "ORBIT Inspectflow ERP",
+  description: "Enterprise ERP for Save Earth Energy — Bank Branch Inspection Management, Audit Workflows & Compliance Reporting",
   icons: {
-    icon: "/media/ZeroFormCampus.png",
-    shortcut: "/media/ZeroFormCampus.png",
-    apple: "/media/ZeroFormCampus.png",
+    icon: "/media/orbit-inspectflow-app.png",
+    shortcut: "/media/orbit-inspectflow-app.png",
+    apple: "/media/orbit-inspectflow-app.png",
   },
 };
 

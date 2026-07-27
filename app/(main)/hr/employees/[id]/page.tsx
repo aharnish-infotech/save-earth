@@ -25,8 +25,8 @@ const EMP_DB: Record<string, any> = {
     probationEnd:"—", noticePeriod:"90 Days",
     userRole:"Super Admin", reportingTo:null,
     reportingTeam:[
-      {"name":"Akash Rai","role":"Sr. Developer","avatar":"AR","color":"#7c3aed","phone":"+91-98765-43210","email":"akash@zeroform.in","designation":"Sr. Developer"},
-      {"name":"Sanjana Goldar","role":"Intern","avatar":"SG","color":"#db2777","phone":"+91-98765-00004","email":"sanjana@zeroform.in","designation":"Intern"},
+      {"name":"Akash Rai","role":"Sr. Developer","avatar":"AR","color":"#16a34a","phone":"+91-98765-43210","email":"akash@saveearth.energy","designation":"Sr. Developer"},
+      {"name":"Sanjana Goldar","role":"Intern","avatar":"SG","color":"#db2777","phone":"+91-98765-00004","email":"sanjana@saveearth.energy","designation":"Intern"},
     ],
     status:"Active", lastLogin:"14-07-2026 12:58 am",
     openTasks:0, hoursLogged:0, tickets:0, lateAttendance:0, leavesTaken:0,
@@ -56,7 +56,7 @@ const EMP_DB: Record<string, any> = {
   },
   "2": {
     id:"EMP-002", name:"Akash Rai", salutation:"Mr.", avatar:"AR",
-    designation:"Sr. Developer", department:"Technology", email:"akash@zeroform.in",
+    designation:"Sr. Developer", department:"Technology", email:"akash@saveearth.energy",
     mobile:"+91-98765-43210", gender:"Male", dob:"22 Mar 1995", blood:"O+",
     nationality:"Indian", religion:"Hinduism", maritalStatus:"Single",
     marriageAnniversary:"—", workAnniversary:"4 Yrs 4 Mths",
@@ -71,8 +71,8 @@ const EMP_DB: Record<string, any> = {
     probationEnd:"15-06-2022", noticePeriod:"60 Days",
     userRole:"Developer", reportingTo:"Mukteshwar Sharma",
     reportingTeam:[
-      {"name":"Harsh Mishra","role":"Trainee","avatar":"HM","color":"#16a34a","phone":"+91-98765-00002","email":"harsh@zeroform.in","designation":"Trainee"},
-      {"name":"Bhagvendra Singh","role":"Sr. Developer","avatar":"BS","color":"#0284c7","phone":"+91-98765-00003","email":"bhagvendra@zeroform.in","designation":"Sr. Developer"},
+      {"name":"Harsh Mishra","role":"Trainee","avatar":"HM","color":"#16a34a","phone":"+91-98765-00002","email":"harsh@saveearth.energy","designation":"Trainee"},
+      {"name":"Bhagvendra Singh","role":"Sr. Developer","avatar":"BS","color":"#0284c7","phone":"+91-98765-00003","email":"bhagvendra@saveearth.energy","designation":"Sr. Developer"},
     ],
     status:"Active", lastLogin:"13-07-2026 06:30 pm",
     openTasks:2, hoursLogged:9, tickets:1, lateAttendance:3, leavesTaken:2,
@@ -108,7 +108,7 @@ const EMP_DB: Record<string, any> = {
 
 function getEmp(id: string) { return EMP_DB[id] ?? EMP_DB["2"]; }
 
-const AVATAR_COLORS = ["#4f46e5","#7c3aed","#0284c7","#16a34a","#dc2626","#db2777","#ea580c","#ca8a04"];
+const AVATAR_COLORS = ["#15803d","#16a34a","#0284c7","#16a34a","#dc2626","#db2777","#ea580c","#ca8a04"];
 function avatarBg(id: string) { return AVATAR_COLORS[(parseInt(id.replace("EMP-",""))-1) % AVATAR_COLORS.length]; }
 
 const DOC_STYLE: Record<string,{bg:string;color:string;icon:string}> = {
@@ -174,12 +174,12 @@ function ReportingTab({emp}: {emp:any}) {
             <div className="col-md-4">
               <div style={{border:"1px solid var(--default-border)",borderRadius:10,padding:"1rem"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:"0.75rem"}}>
-                  <div style={{width:42,height:42,borderRadius:"50%",background:"#4f46e5",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,flexShrink:0}}>
+                  <div style={{width:42,height:42,borderRadius:"50%",background:"#15803d",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,flexShrink:0}}>
                     {emp.reportingTo.split(" ").map((w:string)=>w[0]).join("").slice(0,2)}
                   </div>
                   <div>
                     <div style={{fontWeight:700,fontSize:13,color:"var(--default-text-color)"}}>{emp.reportingTo}</div>
-                    <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,background:"rgba(108,95,252,0.1)",color:"var(--primary-color)"}}>Reporting Manager</span>
+                    <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,background:"rgba(22,163,74,0.1)",color:"var(--primary-color)"}}>Reporting Manager</span>
                   </div>
                 </div>
                 <div style={{fontSize:12,color:"var(--text-muted)",display:"flex",flexDirection:"column" as const,gap:4}}>
@@ -293,7 +293,7 @@ function EmployeeDetailsTab({emp}: {emp:any}) {
           <div className="col-md-6">
             <div style={{fontSize:11,fontWeight:700,color:"var(--primary-color)",letterSpacing:"0.06em",marginBottom:"0.75rem",textTransform:"uppercase" as const}}>Technical Skills</div>
             <div style={{display:"flex",flexWrap:"wrap" as const,gap:6}}>
-              {emp.skills.map((s:string)=><span key={s} style={{fontSize:11,fontWeight:600,color:"#7c3aed",background:"#f3e8ff",padding:"3px 10px",borderRadius:20}}>{s}</span>)}
+              {emp.skills.map((s:string)=><span key={s} style={{fontSize:11,fontWeight:600,color:"#16a34a",background:"#dcfce7",padding:"3px 10px",borderRadius:20}}>{s}</span>)}
             </div>
           </div>
           <div className="col-md-6">
@@ -353,7 +353,7 @@ function AttendanceTab({emp}: {emp:any}) {
                 <Td><SBadge label={String(r.a)} bg="#fee2e2" color="#dc2626"/></Td>
                 <Td><SBadge label={String(r.l)} bg="#fce7f3" color="#db2777"/></Td>
                 <Td><SBadge label={String(r.hd)} bg="#fed7aa" color="#ea580c"/></Td>
-                <Td><SBadge label={r.s} bg={r.s==="Closed"?"#f3f4f6":"#ede9fe"} color={r.s==="Closed"?"#6b7280":"#4f46e5"}/></Td>
+                <Td><SBadge label={r.s} bg={r.s==="Closed"?"#f3f4f6":"#dcfce7"} color={r.s==="Closed"?"#6b7280":"#15803d"}/></Td>
               </tr>
             ))}
           </tbody>
@@ -396,7 +396,7 @@ function PayrollTab({emp}: {emp:any}) {
       {sub==="structure" && (
         <div>
           <div className="row g-3 mb-3">
-            {[{label:"Annual CTC",value:emp.payroll.ctc,icon:"ri-money-rupee-circle-line",bg:"#ede9fe",color:"#7c3aed"},
+            {[{label:"Annual CTC",value:emp.payroll.ctc,icon:"ri-money-rupee-circle-line",bg:"#dcfce7",color:"#16a34a"},
               {label:"Monthly Take Home",value:emp.payroll.slips[0]?.net||"—",icon:"ri-wallet-3-line",bg:"#dcfce7",color:"#16a34a"},
               {label:"Hourly Rate",value:emp.hourlyRate,icon:"ri-time-line",bg:"#dbeafe",color:"#2563eb"}].map(c=>(
               <div key={c.label} className="col-md-4">
@@ -449,7 +449,7 @@ function DocumentsTab({emp}: {emp:any}) {
           const ds = statuses[d.name] ?? d.status;
           const c = DOC_STYLE[ds] ?? DOC_STYLE["Pending"];
           return (
-            <div key={d.name} onClick={()=>{setSel(d);setVOpen(false);}} style={{padding:"10px 14px",cursor:"pointer",background:sel?.name===d.name?"rgba(108,95,252,0.06)":"transparent",borderLeft:sel?.name===d.name?"3px solid var(--primary-color)":"3px solid transparent"}}>
+            <div key={d.name} onClick={()=>{setSel(d);setVOpen(false);}} style={{padding:"10px 14px",cursor:"pointer",background:sel?.name===d.name?"rgba(22,163,74,0.06)":"transparent",borderLeft:sel?.name===d.name?"3px solid var(--primary-color)":"3px solid transparent"}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <i className={c.icon} style={{fontSize:14,color:c.color,flexShrink:0}}/>
                 <div>
@@ -490,7 +490,7 @@ function DocumentsTab({emp}: {emp:any}) {
             <div style={{height:260,background:curStatus==="Not Submitted"?"#f9fafb":"#e0e7ff",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",border:"1px dashed var(--default-border)"}}>
               {curStatus==="Not Submitted"
                 ? <div style={{textAlign:"center",color:"var(--text-muted)"}}><i className="ri-file-upload-line" style={{fontSize:36,display:"block",marginBottom:8}}/><div style={{fontSize:13,fontWeight:600}}>Not Submitted</div></div>
-                : <div style={{textAlign:"center",color:"#4f46e5"}}><i className="ri-file-pdf-2-line" style={{fontSize:48,display:"block",marginBottom:8}}/><div style={{fontSize:13,fontWeight:700,color:"var(--default-text-color)"}}>{sel.name}</div><div style={{fontSize:11,color:"var(--text-muted)",marginTop:4}}>Click Download to open</div></div>
+                : <div style={{textAlign:"center",color:"#15803d"}}><i className="ri-file-pdf-2-line" style={{fontSize:48,display:"block",marginBottom:8}}/><div style={{fontSize:13,fontWeight:700,color:"var(--default-text-color)"}}>{sel.name}</div><div style={{fontSize:11,color:"var(--text-muted)",marginTop:4}}>Click Download to open</div></div>
               }
             </div>
           </>
@@ -505,7 +505,7 @@ function LeaveTab({emp}: {emp:any}) {
   return (
     <div style={{padding:"1.25rem"}}>
       <div className="row g-3 mb-3">
-        {[{label:"Annual Leave",d:emp.leaves.annual,color:"#4f46e5",bg:"#ede9fe"},
+        {[{label:"Annual Leave",d:emp.leaves.annual,color:"#15803d",bg:"#dcfce7"},
           {label:"Sick Leave",d:emp.leaves.sick,color:"#16a34a",bg:"#dcfce7"},
           {label:"Casual Leave",d:emp.leaves.casual,color:"#0284c7",bg:"#dbeafe"}].map(({label,d,color,bg})=>(
           <div key={label} className="col-md-4">
@@ -530,7 +530,7 @@ function LeaveTab({emp}: {emp:any}) {
                   <tr key={i} style={{borderBottom:"1px solid var(--default-border)"}}>
                     <Td><span style={{fontWeight:700,color:"var(--default-text-color)"}}>{l.type}</span></Td>
                     <Td>{l.from}</Td><Td>{l.to}</Td>
-                    <Td><SBadge label={l.days+" day"+(l.days>1?"s":"")} bg="#ede9fe" color="#4f46e5"/></Td>
+                    <Td><SBadge label={l.days+" day"+(l.days>1?"s":"")} bg="#dcfce7" color="#15803d"/></Td>
                     <Td><SBadge label={l.status} bg="#dcfce7" color="#16a34a"/></Td>
                     <Td style={{color:"var(--text-muted)"}}>{l.reason}</Td>
                   </tr>
@@ -546,11 +546,11 @@ function LeaveTab({emp}: {emp:any}) {
 // ── Tasks Tab ────────────────────────────────────────────────────
 function TasksTab({emp}: {emp:any}) {
   const tasks = emp.openTasks > 0
-    ? [{title:"Complete API integration for Fees Module",priority:"High",due:"20 Jul 2026",status:"In Progress"},
-       {title:"Code review for student registration flow",priority:"Medium",due:"22 Jul 2026",status:"Pending"}]
+    ? [{title:"Complete API integration for Audit Sync Module",priority:"High",due:"20 Jul 2026",status:"In Progress"},
+       {title:"Code review for branch mapping workflow",priority:"Medium",due:"22 Jul 2026",status:"Pending"}]
     : [];
   const PRIO: Record<string,{bg:string;color:string}> = {High:{bg:"#fee2e2",color:"#dc2626"},Medium:{bg:"#fef9c3",color:"#ca8a04"},Low:{bg:"#dcfce7",color:"#16a34a"}};
-  const SST: Record<string,{bg:string;color:string}> = {"In Progress":{bg:"#ede9fe",color:"#4f46e5"},Pending:{bg:"#f3f4f6",color:"#6b7280"},Completed:{bg:"#dcfce7",color:"#16a34a"}};
+  const SST: Record<string,{bg:string;color:string}> = {"In Progress":{bg:"#dcfce7",color:"#15803d"},Pending:{bg:"#f3f4f6",color:"#6b7280"},Completed:{bg:"#dcfce7",color:"#16a34a"}};
   return (
     <div style={{padding:"1.25rem"}}>
       <Sec icon="ri-task-line" title={`Tasks (${tasks.length})`}>
@@ -580,7 +580,7 @@ function ActivityTab() {
   const items = [
     {time:"13 Jul 2026, 6:30 PM",icon:"ri-login-circle-line",color:"#16a34a",text:"Logged in from IP 49.36.16.99"},
     {time:"13 Jul 2026, 5:30 PM",icon:"ri-logout-circle-line",color:"#6b7280",text:"Clocked out"},
-    {time:"13 Jul 2026, 9:05 AM",icon:"ri-time-line",color:"#4f46e5",text:"Clocked in — Late by 5 min"},
+    {time:"13 Jul 2026, 9:05 AM",icon:"ri-time-line",color:"#15803d",text:"Clocked in — Late by 5 min"},
     {time:"11 Jul 2026, 5:00 PM",icon:"ri-logout-circle-line",color:"#6b7280",text:"Clocked out"},
     {time:"11 Jul 2026, 9:00 AM",icon:"ri-time-line",color:"#16a34a",text:"Clocked in on time"},
     {time:"10 Jul 2026, 3:00 PM",icon:"ri-file-edit-line",color:"#ca8a04",text:"Profile updated by Admin"},
@@ -669,7 +669,7 @@ export default function EmployeeProfilePage() {
               <div style={{fontSize:12,color:"var(--primary-color)",fontWeight:600,marginBottom:"0.3rem"}}>{emp.id}</div>
               <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:"0.75rem"}}>{emp.designation} · {emp.department}</div>
               <div style={{display:"flex",justifyContent:"center",gap:6,flexWrap:"wrap" as const}}>
-                <span style={{background:"rgba(108,95,252,0.1)",color:"var(--primary-color)",border:"1px solid rgba(108,95,252,0.2)",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>{emp.userRole}</span>
+                <span style={{background:"rgba(22,163,74,0.1)",color:"var(--primary-color)",border:"1px solid rgba(22,163,74,0.2)",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>{emp.userRole}</span>
                 <span style={{...stsStyle,fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>{emp.status}</span>
               </div>
             </div>
@@ -704,7 +704,7 @@ export default function EmployeeProfilePage() {
                 <span style={{color:"var(--text-muted)",fontWeight:500}}>Language</span>
                 <div style={{display:"flex",gap:4}}>
                   {emp.language.map((l:string)=>(
-                    <span key={l} style={{background:"rgba(108,95,252,0.1)",color:"var(--primary-color)",fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:4}}>{l}</span>
+                    <span key={l} style={{background:"rgba(22,163,74,0.1)",color:"var(--primary-color)",fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:4}}>{l}</span>
                   ))}
                 </div>
               </div>
@@ -718,7 +718,7 @@ export default function EmployeeProfilePage() {
             </div>
             <div className="card-body" style={{padding:"0.75rem 1rem",display:"flex",flexDirection:"column" as const,gap:10}}>
               {([
-                {label:"Phone Number",value:emp.mobile,icon:"ri-phone-line",ibg:"rgba(108,95,252,0.1)",ic:"var(--primary-color)"},
+                {label:"Phone Number",value:emp.mobile,icon:"ri-phone-line",ibg:"rgba(22,163,74,0.1)",ic:"var(--primary-color)"},
                 {label:"Email Address",value:emp.email,icon:"ri-mail-line",ibg:"rgba(16,185,129,0.1)",ic:"#10b981"},
               ]).map(({label,value,icon,ibg,ic})=>(
                 <div key={label} style={{display:"flex",alignItems:"center",gap:10}}>
@@ -743,8 +743,8 @@ export default function EmployeeProfilePage() {
               {([ ["Present Days",emp.attendance.thisMonth.present,"#16a34a"],
                   ["Late Entries",emp.lateAttendance,"#db2777"],
                   ["Leaves Taken",emp.leavesTaken,"#0284c7"],
-                  ["Open Tasks",emp.openTasks,"#4f46e5"],
-                  ["Hours Logged",emp.hoursLogged+" hrs","#7c3aed"],
+                  ["Open Tasks",emp.openTasks,"#15803d"],
+                  ["Hours Logged",emp.hoursLogged+" hrs","#16a34a"],
               ] as [string,any,string][]).map(([label,value,color],i,arr)=>(
                 <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:i<arr.length-1?"1px dashed var(--default-border)":"none",fontSize:12}}>
                   <span style={{color:"var(--text-muted)",fontWeight:500}}>{label}</span>

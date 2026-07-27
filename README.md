@@ -1,11 +1,13 @@
-# ZeroForm Campus
+# ORBIT Inspectflow ERP
 
-College Admission, Student Information & Fee Management System.
+Enterprise Resource Planning System for **Save Earth Energy**.
+
+Inspection Management, Admission CRM, Student Information & Fee Management System.
 
 ## Quick Start
 
 ```bash
-cd "Zero Form Campus"
+cd "orbit-inspectflow-erp"
 npm install
 npm run dev
 ```
@@ -15,13 +17,13 @@ Then open [http://localhost:3000](http://localhost:3000) — it redirects to `/d
 ## Project Structure
 
 ```
-Zero Form Campus/
+orbit-inspectflow-erp/
 ├── app/
 │   ├── (main)/              # All authenticated pages (sidebar + header layout)
 │   │   ├── layout.tsx       # Shell with Sidebar + Header
 │   │   └── dashboard/       # Dashboard page
 │   ├── layout.tsx           # Root HTML layout
-│   └── globals.css          # All ZeroForm CSS + theme imports
+│   └── globals.css          # All ORBIT Inspectflow CSS + theme imports
 │
 ├── components/
 │   ├── layout/
@@ -60,3 +62,7 @@ Zero Form Campus/
 - ApexCharts (react-apexcharts)
 - Vyzor theme CSS
 - Remix Icons
+
+## Client
+
+**Save Earth Energy** — Powering sustainable futures through intelligent inspection and compliance management.

@@ -28,7 +28,7 @@ const SALUTATIONS  = ["Mr.","Mrs.","Ms.","Dr.","Prof."];
 const GENDERS      = ["","Male","Female","Other","Prefer not to say"];
 const DESIGNATIONS = ["CEO & Founder","Sr. Developer","Jr. Developer","Trainee","Intern","HR Manager","Accountant","Admin Officer"];
 const DEPARTMENTS  = ["Management","Technology","HR","Finance","Operations","Marketing"];
-const ROLES        = ["Super Admin","Admin","HR Manager","Developer","Accountant","Counselor","Viewer"];
+const ROLES        = ["Super Admin","Admin","HR Manager","Developer","Accountant","Coordinator","Viewer"];
 const REPORTERS    = ["—","Mukteshwar Sharma","Akash Rai","Pooja Singh"];
 const EMP_TYPES    = ["Full Time","Part Time","Contract","Intern","Consultant"];
 const MARITAL      = ["","Single","Married","Divorced","Widowed"];
@@ -72,7 +72,7 @@ export default function AddEmployeePage() {
 
   if (saved) return (
     <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ textAlign: "center", padding: "3rem", background: "#fff", borderRadius: 16, border: "1px solid #ede9fe", maxWidth: 400 }}>
+      <div style={{ textAlign: "center", padding: "3rem", background: "#fff", borderRadius: 16, border: "1px solid #dcfce7", maxWidth: 400 }}>
         <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
           <i className="ri-check-line" style={{ fontSize: 28, color: "#16a34a" }} />
         </div>
@@ -81,18 +81,18 @@ export default function AddEmployeePage() {
           {form.salutation} {form.firstName} {form.lastName} has been successfully registered.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <button onClick={() => { setForm(INIT); setSaved(false); }} style={{ padding: "8px 20px", borderRadius: 8, border: "1.5px solid #ede9fe", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Add Another</button>
-          <Link href="/hr/employees" style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#4f46e5,#7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>View Employees</Link>
+          <button onClick={() => { setForm(INIT); setSaved(false); }} style={{ padding: "8px 20px", borderRadius: 8, border: "1.5px solid #dcfce7", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Add Another</button>
+          <Link href="/hr/employees" style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#15803d,#16a34a)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>View Employees</Link>
         </div>
       </div>
     </div>
   );
 
   const SectionCard = ({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) => (
-    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #ede9fe", marginBottom: "1.5rem", overflow: "hidden" }}>
+    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #dcfce7", marginBottom: "1.5rem", overflow: "hidden" }}>
       <div style={{ padding: "14px 20px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: "#ede9fe", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <i className={icon} style={{ fontSize: 16, color: "#4f46e5" }} />
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <i className={icon} style={{ fontSize: 16, color: "#15803d" }} />
         </div>
         <span style={{ fontWeight: 800, fontSize: 14, color: "#1e1b4b" }}>{title}</span>
       </div>
@@ -110,17 +110,17 @@ export default function AddEmployeePage() {
             <span>Home</span><i className="ri-arrow-right-s-line" style={{ margin: "0 4px" }} />
             <Link href="/hr/employees" style={{ color: "#9ca3af", textDecoration: "none" }}>Employees</Link>
             <i className="ri-arrow-right-s-line" style={{ margin: "0 4px" }} />
-            <span style={{ color: "#4f46e5" }}>Add Employee</span>
+            <span style={{ color: "#15803d" }}>Add Employee</span>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <Link href="/hr/employees" style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
             <i className="ri-arrow-left-line" /> Cancel
           </Link>
-          <button onClick={handleSave} disabled={saving} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#4f46e5,#7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={handleSave} disabled={saving} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#15803d,#16a34a)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
             {saving ? <><span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} /> Saving…</> : <><i className="ri-save-line" /> Save & Add More</>}
           </button>
-          <button onClick={handleSave} disabled={saving} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#4f46e5,#7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={handleSave} disabled={saving} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#15803d,#16a34a)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
             {saving ? "Saving…" : <><i className="ri-check-line" /> Save</>}
           </button>
         </div>
@@ -222,7 +222,7 @@ export default function AddEmployeePage() {
                   <div style={{ display: "flex", gap: 16 }}>
                     {["Yes","No"].map(v => (
                       <label key={v} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", fontWeight: form.loginAllowed===v?700:400 }}>
-                        <input type="radio" name="loginAllowed" value={v} checked={form.loginAllowed===v} onChange={() => set("loginAllowed",v)} style={{ accentColor: "#7c3aed" }} />{v}
+                        <input type="radio" name="loginAllowed" value={v} checked={form.loginAllowed===v} onChange={() => set("loginAllowed",v)} style={{ accentColor: "#16a34a" }} />{v}
                       </label>
                     ))}
                   </div>
@@ -233,7 +233,7 @@ export default function AddEmployeePage() {
                   <div style={{ display: "flex", gap: 16 }}>
                     {["Yes","No"].map(v => (
                       <label key={v} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", fontWeight: form.emailNotifications===v?700:400 }}>
-                        <input type="radio" name="emailNotif" value={v} checked={form.emailNotifications===v} onChange={() => set("emailNotifications",v)} style={{ accentColor: "#7c3aed" }} />{v}
+                        <input type="radio" name="emailNotif" value={v} checked={form.emailNotifications===v} onChange={() => set("emailNotifications",v)} style={{ accentColor: "#16a34a" }} />{v}
                       </label>
                     ))}
                   </div>
@@ -251,13 +251,13 @@ export default function AddEmployeePage() {
                     <input value={form.skillInput} onChange={e => set("skillInput", e.target.value)}
                       onKeyDown={e => { if (e.key==="Enter") { e.preventDefault(); addSkill(); } }}
                       placeholder="Type a skill and press Enter" style={{ ...inputStyle, flex: 1 }} />
-                    <button onClick={addSkill} style={{ padding: "9px 14px", borderRadius: 8, border: "none", background: "#ede9fe", color: "#4f46e5", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Add</button>
+                    <button onClick={addSkill} style={{ padding: "9px 14px", borderRadius: 8, border: "none", background: "#dcfce7", color: "#15803d", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Add</button>
                   </div>
                   {form.skills.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
                       {form.skills.map(s => (
-                        <span key={s} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: "#ede9fe", color: "#4f46e5", fontSize: 12, fontWeight: 600 }}>
-                          {s}<button onClick={() => set("skills", form.skills.filter(x=>x!==s))} style={{ background: "none", border: "none", cursor: "pointer", color: "#7c3aed", fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+                        <span key={s} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: "#dcfce7", color: "#15803d", fontSize: 12, fontWeight: 600 }}>
+                          {s}<button onClick={() => set("skills", form.skills.filter(x=>x!==s))} style={{ background: "none", border: "none", cursor: "pointer", color: "#16a34a", fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
                         </span>
                       ))}
                     </div>
@@ -296,18 +296,18 @@ export default function AddEmployeePage() {
 
         {/* Right Column — Profile + summary */}
         <div className="col-md-4">
-          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #ede9fe", overflow: "hidden", marginBottom: "1rem", position: "sticky", top: 90 }}>
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #dcfce7", overflow: "hidden", marginBottom: "1rem", position: "sticky", top: 90 }}>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#ede9fe", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <i className="ri-image-add-line" style={{ fontSize: 16, color: "#4f46e5" }} />
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <i className="ri-image-add-line" style={{ fontSize: 16, color: "#15803d" }} />
               </div>
               <span style={{ fontWeight: 800, fontSize: 14, color: "#1e1b4b" }}>Profile Picture</span>
             </div>
             <div style={{ padding: "1.5rem", textAlign: "center" }}>
-              <div style={{ width: 90, height: 90, borderRadius: "50%", background: "linear-gradient(135deg,#4f46e5,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem", color: "#fff", fontSize: 28, fontWeight: 800 }}>
+              <div style={{ width: 90, height: 90, borderRadius: "50%", background: "linear-gradient(135deg,#15803d,#16a34a)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem", color: "#fff", fontSize: 28, fontWeight: 800 }}>
                 {form.firstName ? form.firstName[0].toUpperCase() : <i className="ri-user-line" />}
               </div>
-              <label htmlFor="pp-upload" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, border: "1.5px dashed #c4b5fd", background: "#faf5ff", color: "#7c3aed", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              <label htmlFor="pp-upload" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, border: "1.5px dashed #86efac", background: "#f0fdf4", color: "#16a34a", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                 <i className="ri-upload-cloud-2-line" /> Upload Photo
                 <input id="pp-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={e => set("profilePicture", e.target.files?.[0]||null)} />
               </label>

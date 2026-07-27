@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ZeroForm Campus — Login Page
+ * ORBIT Inspectflow ERP — Login Page
  * AUTH HOOK: Replace the MOCK block in handleSubmit with your real API call.
  */
 
@@ -52,17 +52,17 @@ export default function LoginPage() {
         <div style={{ width: "100%", maxWidth: 400 }}>
 
           {/* Card */}
-          <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 4px 32px rgba(79,70,229,0.10)", border: "1px solid #ede9fe", padding: "2rem" }}>
+          <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 4px 32px rgba(22,163,74,0.10)", border: "1px solid #dcfce7", padding: "2rem" }}>
 
-            {/* Institution Logo — replace /media/institution.png with your college logo */}
+            {/* ORBIT Inspectflow logo */}
             <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/media/institution.png" alt="Institution Logo" style={{ height: 68, maxWidth: 260, objectFit: "contain" }} />
+              <img src="/media/orbit-inspectflow-typo.png" alt="ORBIT Inspectflow" style={{ height: 68, maxWidth: 260, objectFit: "contain" }} />
             </div>
 
             <h4 style={{ fontWeight: 700, fontSize: 20, color: "#1e1b4b", marginBottom: 4 }}>Hi, Welcome back!</h4>
             <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1.5rem", fontWeight: 400 }}>
-              Sign in to <strong style={{ color: "#1e1b4b" }}>Zero Form Campus</strong>
+              Sign in to <strong style={{ color: "#1e1b4b" }}>ORBIT Inspectflow ERP</strong>
             </p>
 
             {errors.form && (
@@ -124,7 +124,7 @@ export default function LoginPage() {
               {/* Remember + Forgot */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151", cursor: "pointer" }}>
-                  <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ accentColor: "#7c3aed" }} />
+                  <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ accentColor: "#16a34a" }} />
                   Remember me
                 </label>
                 <Link href="#" onClick={e => e.preventDefault()} style={{ fontSize: 12, fontWeight: 600, color: "#dc2626", textDecoration: "none" }}>
@@ -136,7 +136,7 @@ export default function LoginPage() {
               <button type="submit" disabled={loading}
                 style={{
                   width: "100%", padding: "11px", borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer",
-                  background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "#fff",
+                  background: "linear-gradient(135deg, #15803d 0%, #16a34a 100%)", color: "#fff",
                   fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   opacity: loading ? 0.8 : 1,
                 }}>
@@ -150,7 +150,7 @@ export default function LoginPage() {
           </div>
 
           <p style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", marginTop: "1.5rem" }}>
-            © {new Date().getFullYear()} ZeroForm Campus · All rights reserved
+            © {new Date().getFullYear()} ORBIT Inspectflow ERP · Save Earth Energy · All rights reserved
           </p>
         </div>
       </div>
@@ -158,14 +158,14 @@ export default function LoginPage() {
       {/* ── RIGHT: Branding ──────────────────────────────────────────────────── */}
       <div style={{
         width: "42%", minHeight: "100vh",
-        background: "linear-gradient(145deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%)",
+        background: "linear-gradient(145deg, #052e16 0%, #15803d 50%, #16a34a 100%)",
         display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
       }} className="d-none d-xl-flex">
 
-        {/* Top-right: ZeroForm Campus logo — file: /media/ZeroFormCampus.png */}
+        {/* Top-right: ORBIT Inspectflow ERP logo — file: /media/orbit-inspectflow-full.png */}
         <div style={{ position: "absolute", top: 24, right: 24, zIndex: 10 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/media/ZeroFormCampus.png" alt="ZeroForm Campus" style={{ height: 40, width: "auto", objectFit: "contain", mixBlendMode: "screen" }} />
+          <img src="/media/orbit-inspectflow-full.png" alt="ORBIT Inspectflow ERP" style={{ height: 40, width: "auto", objectFit: "contain", mixBlendMode: "screen" }} />
         </div>
 
         {/* Content */}
@@ -211,19 +211,19 @@ export default function LoginPage() {
           </div>
 
           <h2 style={{ color: "#fff", fontWeight: 800, fontSize: 26, lineHeight: 1.35, marginBottom: "0.75rem" }}>
-            Welcome to<br />ZeroForm Campus
+            Welcome to<br />ORBIT Inspectflow ERP
           </h2>
           <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 13.5, lineHeight: 1.75, marginBottom: "2rem", maxWidth: 300 }}>
-            A modern college management platform — admissions, student records, and fee management built for Indian higher education.
+            Enterprise ERP for Save Earth Energy — bank branch inspection management, audit workflows, compliance reporting, and field operations on a single platform.
           </p>
 
           {/* Feature chips */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {[
-              { icon: "ri-user-add-line",           label: "Admissions CRM" },
-              { icon: "ri-graduation-cap-line",      label: "Student SIS" },
-              { icon: "ri-money-rupee-circle-line",  label: "Fee Management" },
-              { icon: "ri-bar-chart-2-line",         label: "Analytics" },
+              { icon: "ri-building-2-line",          label: "Bank Branches"    },
+              { icon: "ri-file-list-3-line",         label: "Audit Workflows"  },
+              { icon: "ri-shield-check-line",        label: "Compliance"       },
+              { icon: "ri-bar-chart-2-line",         label: "Analytics"        },
             ].map(f => (
               <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)", borderRadius: 20, padding: "6px 14px", color: "#fff", fontSize: 12, fontWeight: 600 }}>
                 <i className={f.icon} style={{ fontSize: 14 }} />

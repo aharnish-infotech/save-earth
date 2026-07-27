@@ -96,7 +96,7 @@ html, body { height: 100%; margin: 0; padding: 0; }
   flex-shrink: 0;
   border-bottom: 1px solid var(--menu-border-color, rgba(0,0,0,0.08));
   padding: 10px 0;
-  background: linear-gradient(135deg, rgba(108,95,252,0.12) 0%, rgba(108,95,252,0.04) 100%);
+  background: linear-gradient(135deg, rgba(22,163,74,0.12) 0%, rgba(22,163,74,0.04) 100%);
 }
 
 /* Rail nav container */
@@ -135,12 +135,12 @@ html, body { height: 100%; margin: 0; padding: 0; }
 
 .zf-rail-btn:hover {
   background: rgba(var(--primary-rgb, 108, 95, 252), 0.08);
-  color: var(--primary-color, #6c5ffc);
+  color: var(--primary-color, #16a34a);
 }
 
 .zf-rail-btn.active {
   background: rgba(var(--primary-rgb, 108, 95, 252), 0.12);
-  color: var(--primary-color, #6c5ffc);
+  color: var(--primary-color, #16a34a);
 }
 /* Active indicator bar on left edge */
 .zf-rail-btn.active::before {
@@ -151,7 +151,7 @@ html, body { height: 100%; margin: 0; padding: 0; }
   transform: translateY(-50%);
   width: 4px;
   height: 24px;
-  background: var(--primary-color, #6c5ffc);
+  background: var(--primary-color, #16a34a);
   border-radius: 0 4px 4px 0;
 }
 
@@ -208,7 +208,7 @@ html, body { height: 100%; margin: 0; padding: 0; }
 .zf-panel-brand {
   font-size: 13px;
   font-weight: 800;
-  color: var(--primary-color, #6c5ffc);
+  color: var(--primary-color, #16a34a);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -252,10 +252,10 @@ html, body { height: 100%; margin: 0; padding: 0; }
 }
 .zf-accord-header:hover {
   background: rgba(var(--primary-rgb, 108, 95, 252), 0.05);
-  color: var(--primary-color, #6c5ffc);
+  color: var(--primary-color, #16a34a);
 }
 .zf-accord-header.active {
-  color: var(--primary-color, #6c5ffc);
+  color: var(--primary-color, #16a34a);
   background: rgba(var(--primary-rgb, 108, 95, 252), 0.06);
 }
 
@@ -313,7 +313,7 @@ html, body { height: 100%; margin: 0; padding: 0; }
 }
 .zf-nav-link.active {
   background: rgba(var(--primary-rgb, 108, 95, 252), 0.08);
-  color: var(--primary-color, #6c5ffc);
+  color: var(--primary-color, #16a34a);
   font-weight: 600;
 }
 .zf-nav-link.active::before {
@@ -322,7 +322,7 @@ html, body { height: 100%; margin: 0; padding: 0; }
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--primary-color, #6c5ffc);
+  background: var(--primary-color, #16a34a);
   margin-right: 2px;
   flex-shrink: 0;
 }
