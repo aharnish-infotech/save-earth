@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ORBIT Compliance ERP",
+  title: {
+    default: "ORBIT Compliance ERP",
+    template: "%s | ORBIT Compliance",
+  },
   description: "Enterprise ERP for Save Earth Energy — Bank Branch Inspection Management, Audit Workflows & Compliance Reporting",
   icons: {
     icon: "/media/orbit-compliance-app.png",
