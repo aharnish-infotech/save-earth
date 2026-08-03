@@ -1,4 +1,4 @@
-# ORBIT Inspectflow ERP
+# ORBIT Compliance ERP
 
 Enterprise Resource Planning System for **Save Earth Energy**.
 
@@ -7,7 +7,7 @@ Inspection Management, Admission CRM, Student Information & Fee Management Syste
 ## Quick Start
 
 ```bash
-cd "orbit-inspectflow-erp"
+cd "orbit-compliance-erp"
 npm install
 npm run dev
 ```
@@ -17,13 +17,13 @@ Then open [http://localhost:3000](http://localhost:3000) — it redirects to `/d
 ## Project Structure
 
 ```
-orbit-inspectflow-erp/
+orbit-compliance-erp/
 ├── app/
 │   ├── (main)/              # All authenticated pages (sidebar + header layout)
 │   │   ├── layout.tsx       # Shell with Sidebar + Header
 │   │   └── dashboard/       # Dashboard page
 │   ├── layout.tsx           # Root HTML layout
-│   └── globals.css          # All ORBIT Inspectflow CSS + theme imports
+│   └── globals.css          # All ORBIT Compliance CSS + theme imports
 │
 ├── components/
 │   ├── layout/

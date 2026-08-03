@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ORBIT Inspectflow ERP — Dashboard
+ * ORBIT Compliance ERP — Dashboard
  * Role switcher is the ONLY new functional addition.
  * All visual components and CSS classes are the original theme — untouched.
  */

@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ORBIT Inspectflow ERP",
+  title: "ORBIT Compliance ERP",
   description: "Enterprise ERP for Save Earth Energy — Bank Branch Inspection Management, Audit Workflows & Compliance Reporting",
   icons: {
-    icon: "/media/orbit-inspectflow-app.png",
-    shortcut: "/media/orbit-inspectflow-app.png",
-    apple: "/media/orbit-inspectflow-app.png",
+    icon: "/media/orbit-compliance-app.png",
+    shortcut: "/media/orbit-compliance-app.png",
+    apple: "/media/orbit-compliance-app.png",
   },
 };
 

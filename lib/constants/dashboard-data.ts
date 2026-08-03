@@ -1,4 +1,4 @@
-// ORBIT Inspectflow ERP — Dashboard seed data
+// ORBIT Compliance ERP — Dashboard seed data
 // Client: Save Earth Energy | Domain: Bank Branch Audit Inspection
 // Replace these arrays with API calls when backend is ready.
 

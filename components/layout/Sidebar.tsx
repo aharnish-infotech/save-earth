@@ -110,7 +110,7 @@ export default function Sidebar() {
       <div className="zf-rail">
         <div className="zf-rail-logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/media/orbit-inspectflow-app.png" alt="ORBIT Inspectflow ERP" width={42} height={42} style={{ borderRadius: 10, display: "block" }} />
+          <img src="/media/orbit-compliance-app.png" alt="ORBIT Compliance ERP" width={42} height={42} style={{ borderRadius: 10, display: "block" }} />
         </div>
         <nav className="zf-rail-nav" aria-label="Main navigation">
           {RAIL_ITEMS.map(item => {
@@ -130,7 +130,7 @@ export default function Sidebar() {
       <div className={`zf-nav-panel${panelOpen ? " open" : ""}`} aria-hidden={!panelOpen}>
         <div className="zf-panel-header">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/media/orbit-inspectflow-typo.png" alt="ORBIT Inspectflow" height={44} style={{ maxWidth: 190, width: "auto", display: "block" }} />
+          <img src="/media/orbit-compliance-typo.png" alt="ORBIT Compliance" height={44} style={{ maxWidth: 190, width: "auto", display: "block" }} />
         </div>
 
         <div className="zf-accordion" id="sidebar-scroll">

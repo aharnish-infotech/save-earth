@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ORBIT Inspectflow ERP — Login Page
+ * ORBIT Compliance ERP — Login Page
  * AUTH HOOK: Replace the MOCK block in handleSubmit with your real API call.
  */
 
@@ -54,15 +54,15 @@ export default function LoginPage() {
           {/* Card */}
           <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 4px 32px rgba(22,163,74,0.10)", border: "1px solid #dcfce7", padding: "2rem" }}>
 
-            {/* ORBIT Inspectflow logo */}
+            {/* ORBIT Compliance logo */}
             <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/media/orbit-inspectflow-typo.png" alt="ORBIT Inspectflow" style={{ height: 68, maxWidth: 260, objectFit: "contain" }} />
+              <img src="/media/orbit-compliance-typo.png" alt="ORBIT Compliance" style={{ height: 68, maxWidth: 260, objectFit: "contain" }} />
             </div>
 
             <h4 style={{ fontWeight: 700, fontSize: 20, color: "#1e1b4b", marginBottom: 4 }}>Hi, Welcome back!</h4>
             <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1.5rem", fontWeight: 400 }}>
-              Sign in to <strong style={{ color: "#1e1b4b" }}>ORBIT Inspectflow ERP</strong>
+              Sign in to <strong style={{ color: "#1e1b4b" }}>ORBIT Compliance ERP</strong>
             </p>
 
             {errors.form && (
@@ -150,7 +150,7 @@ export default function LoginPage() {
           </div>
 
           <p style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", marginTop: "1.5rem" }}>
-            © {new Date().getFullYear()} ORBIT Inspectflow ERP · Save Earth Energy · All rights reserved
+            © {new Date().getFullYear()} ORBIT Compliance ERP · Save Earth Energy · All rights reserved
           </p>
         </div>
       </div>
@@ -162,10 +162,10 @@ export default function LoginPage() {
         display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
       }} className="d-none d-xl-flex">
 
-        {/* Top-right: ORBIT Inspectflow ERP logo — file: /media/orbit-inspectflow-full.png */}
+        {/* Top-right: ORBIT Compliance ERP logo — file: /media/orbit-compliance-full.png */}
         <div style={{ position: "absolute", top: 24, right: 24, zIndex: 10 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/media/orbit-inspectflow-full.png" alt="ORBIT Inspectflow ERP" style={{ height: 40, width: "auto", objectFit: "contain", mixBlendMode: "screen" }} />
+          <img src="/media/orbit-compliance-full.png" alt="ORBIT Compliance ERP" style={{ height: 40, width: "auto", objectFit: "contain", mixBlendMode: "screen" }} />
         </div>
 
         {/* Content */}
@@ -211,7 +211,7 @@ export default function LoginPage() {
           </div>
 
           <h2 style={{ color: "#fff", fontWeight: 800, fontSize: 26, lineHeight: 1.35, marginBottom: "0.75rem" }}>
-            Welcome to<br />ORBIT Inspectflow ERP
+            Welcome to<br />ORBIT Compliance ERP
           </h2>
           <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 13.5, lineHeight: 1.75, marginBottom: "2rem", maxWidth: 300 }}>
             Enterprise ERP for Save Earth Energy — bank branch inspection management, audit workflows, compliance reporting, and field operations on a single platform.

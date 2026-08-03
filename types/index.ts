@@ -1,4 +1,4 @@
-// Shared type definitions for ORBIT Inspectflow ERP — Save Earth Energy
+// Shared type definitions for ORBIT Compliance ERP — Save Earth Energy
 // Domain: Bank Branch Audit Inspection & Compliance Management
 
 export type UserRole =

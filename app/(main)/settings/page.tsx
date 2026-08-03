@@ -345,7 +345,7 @@ function ReportConfigPanel() {
 function EmailSMTPPanel() {
   const [f, setF] = useState({
     smtpHost:"smtp.gmail.com", smtpPort:"587", smtpUser:"noreply@saveearth.in",
-    smtpPass:"••••••••••••", encryption:"TLS", fromName:"ORBIT Inspectflow",
+    smtpPass:"••••••••••••", encryption:"TLS", fromName:"ORBIT Compliance",
     fromEmail:"noreply@saveearth.in", replyTo:"support@saveearth.in",
   });
   const F = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({...f, [k]:e.target.value});

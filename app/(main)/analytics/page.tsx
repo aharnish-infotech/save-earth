@@ -37,7 +37,7 @@ export default function AnalyticsPage() {
             </div>
             <h2 style={{ fontSize:24, fontWeight:900, color:"#14532d", margin:"0 0 10px" }}>Analytics Dashboard</h2>
             <p style={{ fontSize:14, color:"#166534", margin:"0 auto", maxWidth:460, lineHeight:1.7 }}>
-              A comprehensive analytics suite is being built for ORBIT Inspectflow. It will bring real-time intelligence to every audit decision.
+              A comprehensive analytics suite is being built for ORBIT Compliance. It will bring real-time intelligence to every audit decision.
             </p>
             <span style={{ display:"inline-flex", alignItems:"center", gap:6, marginTop:18, fontSize:12, fontWeight:700, color:"#15803d", background:"rgba(22,163,74,0.12)", borderRadius:20, padding:"6px 16px" }}>
               <i className="ri-tools-line"/>Under Development — Coming Soon

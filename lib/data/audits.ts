@@ -1,4 +1,4 @@
-// ORBIT Inspectflow ERP — Shared Audit Seed Data
+// ORBIT Compliance ERP — Shared Audit Seed Data
 // Workflow: In Progress → Completed → Pending Review → Approved → Delivered
 
 export type AuditStatus =

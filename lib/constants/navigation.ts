@@ -1,4 +1,4 @@
-// Navigation configuration for ORBIT Inspectflow ERP — Save Earth Energy
+// Navigation configuration for ORBIT Compliance ERP — Save Earth Energy
 // Menu structure mirrors admin-ui.html exactly.
 
 export interface NavItem {
