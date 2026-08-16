@@ -548,7 +548,8 @@ export default function QuestionLibraryPage() {
 
         {/* ── LEFT PANEL — Add / Edit ───────────────────────────────────────────── */}
         {panelOpen && (
-          <div style={{ width:380, flexShrink:0, background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden", position:"sticky", top:80 }}>
+          <div style={{ width:380, flexShrink:0, display:"flex", flexDirection:"column", gap:14 }}>
+          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden", position:"sticky", top:80 }}>
 
             {/* Panel header */}
             <div style={{ padding:"14px 18px", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between", background: isEditMode ? "#fffbeb" : "#f0fdf4" }}>
@@ -691,48 +692,63 @@ export default function QuestionLibraryPage() {
                   style={{ ...INP, background:translating.recommendHi?"#f9fafb":"#fff", color:translating.recommendHi?"#9ca3af":"#374151", fontStyle:translating.recommendHi?"italic":"normal" }}/>
               </div>
 
-              {/* API payload preview — for developer reference */}
-              <details style={{ border:"1px solid #30363d", borderRadius:10, overflow:"hidden" }}>
-                <summary style={{ padding:"9px 13px", background:"#161b22", fontSize:11, fontWeight:700, color:"#8b949e", cursor:"pointer", letterSpacing:"0.04em", userSelect:"none" as const, display:"flex", alignItems:"center", gap:6, listStyle:"none" }}>
-                  <i className="ri-code-s-slash-line" style={{ fontSize:13, color:"#58a6ff" }}/>
-                  <span style={{ flex:1, textTransform:"uppercase" as const, letterSpacing:"0.06em" }}>API Payload Preview</span>
-                  <span style={{ fontSize:9, color:"#3d444d", fontWeight:500 }}>click to expand</span>
-                </summary>
+            </div>
 
-                {/* Toolbar */}
-                <div style={{ background:"#0d1117", borderTop:"1px solid #21262d", padding:"6px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <span style={{ fontSize:10, color:"#3d444d", fontWeight:600, letterSpacing:"0.05em" }}>application/json</span>
-                  <button
-                    onClick={() => {
-                      const payload = JSON.stringify({
-                        id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
-                        questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",
-                        textEn:       form.textEn       || "(empty)",
-                        textHi:       form.textHi       || "(empty)",
-                        type:         form.type,
-                        section:      form.section,
-                        category:     form.category,
-                        weightage:    form.weightage,
-                        mandatory:    form.mandatory,
-                        allowRemarks: form.allowRemarks,
-                        allowPhoto:   form.allowPhoto,
-                        recommendEn:  form.recommendEn,
-                        recommendHi:  form.recommendHi  || "(empty)",
-                        status:       form.status,
-                      }, null, 2);
-                      navigator.clipboard.writeText(payload).then(() => {
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      });
-                    }}
-                    style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:6, border:"1px solid #30363d", background:copied?"#238636":"#21262d", color:copied?"#fff":"#8b949e", fontSize:10, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}>
-                    <i className={copied ? "ri-check-line" : "ri-file-copy-line"} style={{ fontSize:11 }}/>
-                    {copied ? "Copied!" : "Copy"}
-                  </button>
-                </div>
+            {/* Footer */}
+            <div style={{ padding:"12px 16px", borderTop:"1px solid #e5e7eb", display:"flex", gap:8, background:"#fff" }}>
+              <button onClick={()=>{ setForm({ ...EMPTY }); setEditRow(null); setAddPanel(true); }} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
+                Clear
+              </button>
+              <button onClick={handleSave} disabled={!form.textEn.trim()}
+                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af": form.status==="Active"?(isEditMode?"#2563eb":"#16a34a"):"#dc2626", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <i className={isEditMode ? "ri-save-line" : "ri-check-line"}/>
+                {isEditMode ? `UPDATE AS ${form.status.toUpperCase()}` : `SAVE AS ${form.status.toUpperCase()}`}
+              </button>
+            </div>
+          </div>
 
-                {/* Highlighted JSON */}
-                <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:280, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
+          {/* ── API Payload — separate card below form ─────────────────────────── */}
+          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+            <div style={{ padding:"11px 16px", borderBottom:"1px solid #f0fdf4", background:"#f8fafc", display:"flex", alignItems:"center", gap:7 }}>
+              <i className="ri-code-s-slash-line" style={{ fontSize:14, color:"#2563eb" }}/>
+              <span style={{ fontSize:12, fontWeight:800, color:"#111827" }}>API Payload</span>
+              <span style={{ fontSize:10, color:"#9ca3af", marginLeft:2 }}>Live preview of what will be sent</span>
+            </div>
+
+            {/* Toolbar */}
+            <div style={{ background:"#0d1117", padding:"6px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <span style={{ fontSize:10, color:"#3d444d", fontWeight:600, letterSpacing:"0.05em" }}>application/json</span>
+              <button
+                onClick={() => {
+                  const payload = JSON.stringify({
+                    id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
+                    questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",
+                    textEn:       form.textEn       || "(empty)",
+                    textHi:       form.textHi       || "(empty)",
+                    type:         form.type,
+                    section:      form.section,
+                    category:     form.category,
+                    weightage:    form.weightage,
+                    mandatory:    form.mandatory,
+                    allowRemarks: form.allowRemarks,
+                    allowPhoto:   form.allowPhoto,
+                    recommendEn:  form.recommendEn,
+                    recommendHi:  form.recommendHi  || "(empty)",
+                    status:       form.status,
+                  }, null, 2);
+                  navigator.clipboard.writeText(payload).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  });
+                }}
+                style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:6, border:"1px solid #30363d", background:copied?"#238636":"#21262d", color:copied?"#fff":"#8b949e", fontSize:10, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}>
+                <i className={copied ? "ri-check-line" : "ri-file-copy-line"} style={{ fontSize:11 }}/>
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+
+            {/* Highlighted JSON */}
+            <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:280, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
 {colorizeJson(JSON.stringify({
   id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
   questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",
@@ -749,21 +765,9 @@ export default function QuestionLibraryPage() {
   recommendHi:  form.recommendHi  || "(empty)",
   status:       form.status,
 }, null, 2))}
-                </pre>
-              </details>
-            </div>
+            </pre>
+          </div>
 
-            {/* Footer */}
-            <div style={{ padding:"12px 16px", borderTop:"1px solid #e5e7eb", display:"flex", gap:8, background:"#fff" }}>
-              <button onClick={()=>{ setForm({ ...EMPTY }); setEditRow(null); setAddPanel(true); }} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
-                Clear
-              </button>
-              <button onClick={handleSave} disabled={!form.textEn.trim()}
-                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af": form.status==="Active"?(isEditMode?"#2563eb":"#16a34a"):"#dc2626", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                <i className={isEditMode ? "ri-save-line" : "ri-check-line"}/>
-                {isEditMode ? `UPDATE AS ${form.status.toUpperCase()}` : `SAVE AS ${form.status.toUpperCase()}`}
-              </button>
-            </div>
           </div>
         )}
 

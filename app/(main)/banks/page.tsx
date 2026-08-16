@@ -193,10 +193,11 @@ export default function BanksPage() {
       </div>
 
       {/* Split layout */}
-      <div style={{ display:"grid", gridTemplateColumns:"360px 1fr", gap:18, alignItems:"start" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"360px 1fr", gap:18, alignItems:"start", gridAutoRows:"min-content" }}>
 
-        {/* LEFT — Form */}
-        <div ref={formRef} style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", position:"sticky", top:80 }}>
+        {/* LEFT — Form + API Payload */}
+        <div ref={formRef} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", position:"sticky", top:80 }}>
 
           {/* Panel header */}
           <div style={{ padding:"14px 18px", borderBottom:"1px solid #f3f4f6", background: editId ? "#fffbeb" : "#f0fdf4" }}>
@@ -286,42 +287,45 @@ export default function BanksPage() {
               {editId ? "Update Bank" : "Save Bank"}
             </button>
 
-            {/* API Payload Preview */}
-            <details style={{ border:"1px solid #30363d", borderRadius:10, overflow:"hidden" }}>
-              <summary style={{ padding:"9px 13px", background:"#161b22", fontSize:11, fontWeight:700, color:"#8b949e", cursor:"pointer", letterSpacing:"0.04em", userSelect:"none" as const, display:"flex", alignItems:"center", gap:6, listStyle:"none" }}>
-                <i className="ri-code-s-slash-line" style={{ fontSize:13, color:"#58a6ff" }}/>
-                <span style={{ flex:1, textTransform:"uppercase" as const, letterSpacing:"0.06em" }}>API Payload Preview</span>
-                <span style={{ fontSize:9, color:"#3d444d", fontWeight:500 }}>click to expand</span>
-              </summary>
+          </div>
+        </div>
 
-              {/* Toolbar */}
-              <div style={{ background:"#0d1117", borderTop:"1px solid #21262d", padding:"6px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                <span style={{ fontSize:10, color:"#3d444d", fontWeight:600, letterSpacing:"0.05em" }}>application/json</span>
-                <button
-                  onClick={() => {
-                    const payload = JSON.stringify({
-                      id:       editId ? editRow?.id        : "(uuid — auto-generated on save)",
-                      bankCode: editId ? editRow?.bankCode  : "(e.g. BNK-017 — auto-assigned)",
-                      name:     form.name    || "(empty)",
-                      code:     form.code    || "(empty)",
-                      hq:       form.hq      || "(empty)",
-                      state:    form.state   || "(empty)",
-                      branches: "(derived — count of branches linked to this bank)",
-                      status:   form.status,
-                    }, null, 2);
-                    navigator.clipboard.writeText(payload).then(() => {
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    });
-                  }}
-                  style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:6, border:"1px solid #30363d", background:copied?"#238636":"#21262d", color:copied?"#fff":"#8b949e", fontSize:10, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}>
-                  <i className={copied ? "ri-check-line" : "ri-file-copy-line"} style={{ fontSize:11 }}/>
-                  {copied ? "Copied!" : "Copy"}
-                </button>
-              </div>
+        {/* ── API Payload — separate card below form ──────────────────────────── */}
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+          <div style={{ padding:"11px 16px", borderBottom:"1px solid #f3f4f6", background:"#f8fafc", display:"flex", alignItems:"center", gap:7 }}>
+            <i className="ri-code-s-slash-line" style={{ fontSize:14, color:"#2563eb" }}/>
+            <span style={{ fontSize:12, fontWeight:800, color:"#111827" }}>API Payload</span>
+            <span style={{ fontSize:10, color:"#9ca3af", marginLeft:2 }}>Live preview of what will be sent</span>
+          </div>
 
-              {/* Highlighted JSON */}
-              <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:260, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
+          {/* Toolbar */}
+          <div style={{ background:"#0d1117", padding:"6px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <span style={{ fontSize:10, color:"#3d444d", fontWeight:600, letterSpacing:"0.05em" }}>application/json</span>
+            <button
+              onClick={() => {
+                const payload = JSON.stringify({
+                  id:       editId ? editRow?.id        : "(uuid — auto-generated on save)",
+                  bankCode: editId ? editRow?.bankCode  : "(e.g. BNK-017 — auto-assigned)",
+                  name:     form.name    || "(empty)",
+                  code:     form.code    || "(empty)",
+                  hq:       form.hq      || "(empty)",
+                  state:    form.state   || "(empty)",
+                  branches: "(derived — count of branches linked to this bank)",
+                  status:   form.status,
+                }, null, 2);
+                navigator.clipboard.writeText(payload).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                });
+              }}
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:6, border:"1px solid #30363d", background:copied?"#238636":"#21262d", color:copied?"#fff":"#8b949e", fontSize:10, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}>
+              <i className={copied ? "ri-check-line" : "ri-file-copy-line"} style={{ fontSize:11 }}/>
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+
+          {/* Highlighted JSON */}
+          <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:260, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
 {colorizeJson(JSON.stringify({
   id:       editId ? editRow?.id        : "(uuid — auto-generated on save)",
   bankCode: editId ? editRow?.bankCode  : "(e.g. BNK-017 — auto-assigned)",
@@ -332,10 +336,9 @@ export default function BanksPage() {
   branches: "(derived — count of branches linked to this bank)",
   status:   form.status,
 }, null, 2))}
-              </pre>
-            </details>
+          </pre>
+        </div>
 
-          </div>
         </div>
 
         {/* RIGHT — Table */}
