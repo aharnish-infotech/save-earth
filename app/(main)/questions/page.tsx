@@ -456,9 +456,6 @@ export default function QuestionLibraryPage() {
                   {isEditMode ? "Modify and save the question below" : "Fill all fields then save or draft"}
                 </div>
               </div>
-              <button onClick={closePanel} style={{ background:"none", border:"none", cursor:"pointer", color:"#9ca3af", fontSize:18, lineHeight:1, padding:2 }}>
-                <i className="ri-close-line"/>
-              </button>
             </div>
 
             {/* Auto-translate notice */}
@@ -752,9 +749,6 @@ export default function QuestionLibraryPage() {
               <div style={{ fontSize:16, fontWeight:800, color:"#111827" }}>Delete Question</div>
               <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>This action is permanent and cannot be undone.</div>
             </div>
-            <button onClick={cancelDelete} style={{ marginLeft:"auto", background:"none", border:"none", cursor:"pointer", color:"#9ca3af", fontSize:18, lineHeight:1, padding:2, flexShrink:0 }}>
-              <i className="ri-close-line"/>
-            </button>
           </div>
 
           {/* Modal body */}
