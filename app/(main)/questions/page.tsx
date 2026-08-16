@@ -261,7 +261,7 @@ const SECTION_COLOR: Record<string,string> = {
 const EMPTY = {
   textEn:"", textHi:"", type:"YES_NO_NA" as QType, category:"General",
   section:"General", riskLevel:"HIGH" as RiskLevel, weightage:5,
-  helpEn:"", helpHi:"", recommendEn:"COMPLIED", recommendHi:"",
+  helpEn:"", helpHi:"", recommendEn:"COMPLIED", recommendHi:"अनुपालित",
   mandatory:true, allowRemarks:true, allowPhoto:false,
   multiPhoto:false, numericValue:false, allowNA:false,
 };
@@ -644,12 +644,13 @@ export default function QuestionLibraryPage() {
                   <th style={{ ...TH, textAlign:"center" }}>TYPE</th>
                   <th style={{ ...TH, textAlign:"center" }}>WT</th>
                   <th style={{ ...TH, textAlign:"center" }}>FLAGS</th>
+                  <th style={TH}>DEFAULT REC</th>
                   <th style={{ ...TH, textAlign:"center" }}>STATUS</th>
                   <th style={{ ...TH, textAlign:"center" }}>ACT</th>
                 </tr></thead>
                 <tbody>
                   {paged.length === 0 ? (
-                    <tr><td colSpan={9} style={{ padding:"50px 20px", textAlign:"center", color:"#9ca3af" }}>
+                    <tr><td colSpan={10} style={{ padding:"50px 20px", textAlign:"center", color:"#9ca3af" }}>
                       <i className="ri-questionnaire-line" style={{ fontSize:32, display:"block", marginBottom:8, opacity:0.3 }}/>No questions found
                     </td></tr>
                   ) : paged.map((q, idx) => {
@@ -685,6 +686,12 @@ export default function QuestionLibraryPage() {
                             {q.allowPhoto   && <span title="Allow Photo"     style={{ fontSize:9, fontWeight:700, color:"#2563eb", background:"#dbeafe", borderRadius:4, padding:"1px 5px" }}>PHO</span>}
                             {q.allowRemarks && <span title="Recommendation"  style={{ fontSize:9, fontWeight:700, color:"#7c3aed", background:"#f5f3ff", borderRadius:4, padding:"1px 5px" }}>REC</span>}
                           </div>
+                        </td>
+                        <td style={TD}>
+                          <div style={{ fontSize:11, color:"#374151", fontWeight:600 }}>{q.recommendEn}</div>
+                          {q.recommendHi && (
+                            <div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>{q.recommendHi}</div>
+                          )}
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
                           <button onClick={()=>handleToggle(q.id)}
