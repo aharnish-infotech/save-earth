@@ -98,6 +98,7 @@ export default function BranchesPage() {
   const [branchStatus, setBranchStatus] = useState("Active");
   const [success, setSuccess]           = useState(false);
   const [submitting, setSubmitting]     = useState(false);
+  const [viewRow, setViewRow]           = useState<Row | null>(null);
   const suffixRef = useRef<HTMLInputElement>(null);
 
   const fullIFSC  = `${selectedBank.code}${ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}`;
@@ -182,6 +183,7 @@ export default function BranchesPage() {
   };
 
   const handleReset = () => {
+    setViewRow(null);
     setSelectedBank(BANK_LIST[0]); setIfscSuffix(""); setIfscData(null); setIfscError("");
     setGps(null); setGpsError(""); setGpsDenied(false); setHtlt(""); setSld("");
     setCircle(""); setRbo(""); setBranchType("Urban"); setBranchStatus("Active");
@@ -231,17 +233,102 @@ export default function BranchesPage() {
       {/* Split layout */}
       <div style={{ display:"grid", gridTemplateColumns:"400px 1fr", gap:18, alignItems:"start" }}>
 
-        {/* ── LEFT — Add Branch Form ─────────────────────────── */}
+        {/* ── LEFT — Add Branch Form / View Panel ───────────── */}
         <div style={{ display:"flex", flexDirection:"column", gap:12, position:"sticky", top:80 }}>
 
           {/* Header */}
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
             <div>
-              <div style={{ fontSize:14, fontWeight:800, color:"#111827" }}>Add New Branch</div>
-              <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>Fill all sections to capture a branch</div>
+              <div style={{ fontSize:14, fontWeight:800, color:"#111827" }}>{viewRow ? `Viewing — ${viewRow.id}` : "Add New Branch"}</div>
+              <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>{viewRow ? viewRow.name : "Fill all sections to capture a branch"}</div>
             </div>
-            <button onClick={handleReset} style={{ fontSize:11, color:"#6b7280", background:"#f3f4f6", border:"none", borderRadius:6, padding:"5px 11px", cursor:"pointer", fontWeight:600 }}>Reset</button>
+            {viewRow
+              ? <button onClick={() => setViewRow(null)} style={{ fontSize:11, color:"#2563eb", background:"#eff6ff", border:"none", borderRadius:6, padding:"5px 11px", cursor:"pointer", fontWeight:700 }}>← Add New</button>
+              : <button onClick={handleReset} style={{ fontSize:11, color:"#6b7280", background:"#f3f4f6", border:"none", borderRadius:6, padding:"5px 11px", cursor:"pointer", fontWeight:600 }}>Reset</button>
+            }
           </div>
+
+          {/* ── VIEW MODE ─────────────────────────────────────── */}
+          {viewRow && (
+            <>
+              <SectionCard icon="ri-bank-line" iconBg="#dbeafe" iconColor="#2563eb" title="Bank Details">
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {[
+                    { label:"Bank",     value: viewRow.bank   },
+                    { label:"IFSC",     value: viewRow.ifsc   },
+                    { label:"Branch",   value: viewRow.name   },
+                    { label:"Address",  value: viewRow.address || "—" },
+                    { label:"City",     value: viewRow.city   },
+                    { label:"District", value: viewRow.district || "—" },
+                    { label:"State",    value: viewRow.state  },
+                    { label:"MICR",     value: viewRow.micr   || "—" },
+                    { label:"Contact",  value: viewRow.contact || "—" },
+                  ].map(f => (
+                    <div key={f.label} style={{ display:"flex", gap:8 }}>
+                      <span style={{ fontSize:10, fontWeight:700, color:"#6b7280", minWidth:62, textTransform:"uppercase", paddingTop:1 }}>{f.label}</span>
+                      <span style={{ fontSize:12, color:"#111827", fontWeight:500, flex:1, fontFamily: f.label==="IFSC"||f.label==="MICR"?"monospace":"inherit" }}>{f.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+
+              <SectionCard icon="ri-map-pin-2-line" iconBg="#fef9c3" iconColor="#ca8a04" title="GPS Co-ordinates">
+                {viewRow.lat ? (
+                  <div style={{ display:"flex", gap:20 }}>
+                    <div>
+                      <div style={{ fontSize:9, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Latitude</div>
+                      <div style={{ fontSize:14, fontWeight:800, color:"#15803d", fontFamily:"monospace", marginTop:2 }}>{parseFloat(viewRow.lat).toFixed(7)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:9, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Longitude</div>
+                      <div style={{ fontSize:14, fontWeight:800, color:"#15803d", fontFamily:"monospace", marginTop:2 }}>{parseFloat(viewRow.lng).toFixed(7)}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize:12, color:"#9ca3af" }}>GPS not captured for this branch.</div>
+                )}
+              </SectionCard>
+
+              <SectionCard icon="ri-flashlight-line" iconBg="#fee2e2" iconColor="#dc2626" title="HT / LT & SLD">
+                <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+                  <span style={{ fontSize:20, fontWeight:900, color: viewRow.htlt==="HT"?"#dc2626":"#16a34a", background:viewRow.htlt==="HT"?"#fef2f2":"#dcfce7", borderRadius:9, padding:"8px 22px" }}>{viewRow.htlt || "—"}</span>
+                  {viewRow.htlt === "HT" && (
+                    <div>
+                      <div style={{ fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase" }}>SLD</div>
+                      <div style={{ fontSize:13, fontWeight:700, color: viewRow.sld==="Yes"?"#d97706":"#6b7280" }}>{viewRow.sld || "—"}</div>
+                    </div>
+                  )}
+                  {viewRow.htlt === "LT" && (
+                    <div>
+                      <div style={{ fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase" }}>SLD</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:"#16a34a" }}>Yes (Default)</div>
+                    </div>
+                  )}
+                </div>
+              </SectionCard>
+
+              <SectionCard icon="ri-links-line" iconBg="#f5f3ff" iconColor="#7c3aed" title="Branch Classification">
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {[
+                    { label:"Status", value: viewRow.status },
+                  ].map(f => (
+                    <div key={f.label} style={{ display:"flex", gap:8 }}>
+                      <span style={{ fontSize:10, fontWeight:700, color:"#6b7280", minWidth:62, textTransform:"uppercase", paddingTop:1 }}>{f.label}</span>
+                      <span style={{ fontSize:12, fontWeight:600, color: f.value==="Active"?"#16a34a":"#9ca3af" }}>{f.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+
+              <button onClick={() => setViewRow(null)}
+                style={{ width:"100%", padding:"12px", borderRadius:12, border:"none", background:"#2563eb", color:"#fff", cursor:"pointer", fontWeight:800, fontSize:13, letterSpacing:"0.05em", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                <i className="ri-add-line"/>ADD NEW BRANCH
+              </button>
+            </>
+          )}
+
+          {/* ── ADD MODE ──────────────────────────────────────── */}
+          {!viewRow && (<>
 
           {/* Success banner */}
           {success && (
@@ -409,7 +496,7 @@ export default function BranchesPage() {
               {(["HT","LT"] as const).map(type => (
                 <button
                   key={type}
-                  onClick={() => { setHtlt(type); if(type==="LT") setSld(""); }}
+                  onClick={() => { setHtlt(type); setSld(type === "LT" ? "Yes" : ""); }}
                   style={{
                     padding:"12px",
                     borderRadius:10,
@@ -521,6 +608,8 @@ export default function BranchesPage() {
             ))}
           </div>
 
+          </>)}
+
         </div>
 
         {/* ── RIGHT — Table ──────────────────────────────────────── */}
@@ -551,10 +640,11 @@ export default function BranchesPage() {
                   <th style={{ ...TH, textAlign:"center" }}>SLD</th>
                   <th style={{ ...TH, textAlign:"center" }}>GPS</th>
                   <th style={{ ...TH, textAlign:"center" }}>STATUS</th>
+                  <th style={{ ...TH, textAlign:"center" }}>VIEW</th>
                 </tr></thead>
                 <tbody>
                   {paged.length === 0 ? (
-                    <tr><td colSpan={9} style={{ padding:"50px", textAlign:"center", color:"#9ca3af" }}>
+                    <tr><td colSpan={10} style={{ padding:"50px", textAlign:"center", color:"#9ca3af" }}>
                       <i className="ri-building-2-line" style={{ fontSize:32, display:"block", marginBottom:8, opacity:0.3 }}/>No branches found
                     </td></tr>
                   ) : paged.map((r, i) => (
@@ -585,6 +675,15 @@ export default function BranchesPage() {
                       </td>
                       <td style={{ ...TD, textAlign:"center" }}>
                         <span style={{ fontSize:11, fontWeight:700, color:r.status==="Active"?"#16a34a":"#9ca3af", background:r.status==="Active"?"#dcfce7":"#f3f4f6", borderRadius:20, padding:"3px 10px" }}>{r.status}</span>
+                      </td>
+                      <td style={{ ...TD, textAlign:"center" }}>
+                        <button
+                          onClick={() => { setViewRow(r); setSuccess(false); }}
+                          style={{ width:28, height:28, borderRadius:6, border:"1px solid #e5e7eb", background: viewRow?.id===r.id?"#eff6ff":"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color: viewRow?.id===r.id?"#2563eb":"#6b7280" }}
+                          title="View branch details"
+                        >
+                          <i className="ri-eye-line" style={{ fontSize:13 }}/>
+                        </button>
                       </td>
                     </tr>
                   ))}
