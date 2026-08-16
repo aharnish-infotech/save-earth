@@ -34,7 +34,7 @@ interface Question {
 const D = "01 Jan 2024";
 const mkQ = (
   id: string, section: string, textEn: string, textHi: string,
-  recommendHi = "अनुपालित", category = "General",
+  recommendHi = "ठीक है", category = "General",
   helpEn = "", type: QType = "YES_NO_NA"
 ): Question => ({
   id, section, textEn, textHi, type, category,
@@ -60,48 +60,48 @@ const SEED: Question[] = [
   mkQ("Q-001","General",
     "Whether MCCBs/MCBs/ELCBs are provided with proper rating to cater the load",
     "क्या MCCB/MCB/ELCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-002","General",
     "Whether light and emergency light are provided in electrical rooms/operating areas for easy operation & maintenance works",
     "क्या विद्युत कक्षों/संचालन क्षेत्रों में सामान्य और आपातकालीन प्रकाश आसान संचालन और रखरखाव के लिए प्रदान किए गए हैं?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-003","General",
     "Whether Pump room, DG set room, UPS room, electrical room etc. are maintained dry and in good condition and obsolete/hazardous/old items are not dumped there",
     "क्या पंप रूम, DG सेट रूम, UPS रूम, विद्युत कक्ष आदि शुष्क और अच्छी स्थिति में रखे गए हैं और वहाँ पुराने/खतरनाक/अनुपयोगी सामान नहीं डाले गए हैं?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-004","General",
     "Whether water seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc.",
     "क्या किसी विद्युत पैनल, वितरण बोर्ड, विद्युत उपकरण आदि के पास जल रिसाव देखा गया है?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-005","General",
     "Whether Earthing pits are provided and connected to the equipment, body of the connected equipment",
     "क्या अर्थिंग पिट प्रदान किए गए हैं और उपकरण तथा संबंधित उपकरण के बॉडी से जुड़े हैं?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-006","General",
     "Whether the Earthing Pits are properly maintained",
     "क्या अर्थिंग पिट उचित तरीके से रखरखाव किए जा रहे हैं?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-007","General",
     "Whether proper exhaust fan for ventilation of panel room/electrical room/UPS room is provided and paper, old materials or any other scrap kept near DB/Panels/UPS/Batteries etc. are not kept there",
     "क्या पैनल रूम/विद्युत कक्ष/UPS रूम के वेंटिलेशन के लिए उचित एग्जॉस्ट फैन लगाया गया है और DB/पैनल/UPS/बैटरी आदि के पास कागज, पुराना सामान या कोई अन्य कबाड़ नहीं रखा गया है?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-008","General",
     "Whether penalty is being imposed in electricity bills on account of higher load/poor power factor etc. (it may be ascertained from the electricity bill of April/May/Jun/July)",
     "क्या अधिक लोड/खराब पावर फैक्टर आदि के कारण बिजली बिल में जुर्माना लगाया जा रहा है? (अप्रैल/मई/जून/जुलाई के बिजली बिल से जाँचें।)",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   // ── NEW — original 7a sub-question (was embedded in Q-008, now standalone) ──
   mkQ("Q-009","General",
     "Additional electrical load required if any (from Power Distribution Company)",
     "क्या किसी अतिरिक्त विद्युत भार की आवश्यकता है? (बिजली वितरण कंपनी से)",
-    "अनुपालित","General",
+    "ठीक है","General",
     "If YES — record the additional load required in KW in the observations field.",
     "YES_NO"),
 
@@ -109,33 +109,33 @@ const SEED: Question[] = [
   mkQ("Q-010","General",
     "Whether load is distributed in all 3 phases to avoid unbalancing of phases and no loose electrical connection/haphazard wiring observed in the branch/office premises",
     "क्या फेज असंतुलन से बचने के लिए लोड तीनों फेज में वितरित किया गया है और शाखा/कार्यालय परिसर में कोई ढीला विद्युत कनेक्शन/अव्यवस्थित वायरिंग नहीं देखी गई है?",
-    "अनुपालित","General",
+    "ठीक है","General",
     "Record phase-wise current readings in observations: R: ___ AMPS | Y: ___ AMPS | B: ___ AMPS | N: ___ AMPS"),
 
   mkQ("Q-011","General",
     "Whether isolating switches are provided for the switching off of non-essential loads premises during night and main switch to switch off the power supply to the branch in case of Fire/Emergency",
     "क्या रात के समय गैर-आवश्यक लोड बंद करने के लिए आइसोलेटिंग स्विच और आग/आपातकाल की स्थिति में शाखा की बिजली आपूर्ति बंद करने के लिए मेन स्विच प्रदान किया गया है?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-012","General",
     "Whether electrical equipments of Pantry etc. are properly connected to Iron socket box with MCBs. MCBs or latest type switches are provided to switch on/off the ACs and protect them from overload",
     "क्या पेंट्री आदि के विद्युत उपकरण MCB के साथ आयरन सॉकेट बॉक्स से ठीक से जुड़े हैं? AC को चालू/बंद करने और ओवरलोड से बचाने के लिए MCB या नवीनतम प्रकार के स्विच लगाए गए हैं?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-013","General",
     "Whether Proper preventive maintenance after opening of Panel boards and Distribution Boards are carried out by the license holder Electrician or skilled technicians of Equipment manufacturers/Service providers",
     "क्या पैनल बोर्ड और वितरण बोर्ड खोलने के बाद उचित निवारक रखरखाव लाइसेंस धारक इलेक्ट्रीशियन या उपकरण निर्माताओं/सेवा प्रदाताओं के कुशल तकनीशियनों द्वारा किया जाता है?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-014","General",
     "Whether appropriate timers used in the changeover of Air conditioners for Server Room ACs and for Signage Boards to make auto ON/OFF (for scheduled timings). The thermostat of ACs at server rooms should be set to 30°C so they run only when temperature is too high (to minimise fire risk from idle running of ACs during nights)",
     "क्या सर्वर रूम AC और साइनेज बोर्ड के ऑटो ON/OFF के लिए उपयुक्त टाइमर का उपयोग किया जाता है? सर्वर रूम AC का थर्मोस्टेट 30°C पर सेट होना चाहिए ताकि रात में निष्क्रिय AC चलने से आग लगने का खतरा कम हो।",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-015","General",
     "Whether preventive maintenance of electric installation and equipment is carried out by skilled license holder electricians/skilled technician",
     "क्या विद्युत प्रतिष्ठान और उपकरणों का निवारक रखरखाव कुशल लाइसेंस धारक इलेक्ट्रीशियन/कुशल तकनीशियन द्वारा किया जाता है?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   // ── Answer type OK/NOT OK — matches original document ────────────────────────
   mkQ("Q-016","General",
@@ -146,12 +146,12 @@ const SEED: Question[] = [
   mkQ("Q-017","General",
     "Whether the contact numbers of persons, electricians, power distribution company, Generator service provider, Vendor, UPS vendor, ACs etc. are available with Accountant/Security guard and other staff and they are displayed in Electric Room/UPS room",
     "क्या इलेक्ट्रीशियन, बिजली वितरण कंपनी, जनरेटर सेवा प्रदाता, UPS विक्रेता, AC आदि के संपर्क नंबर अकाउंटेंट/सुरक्षा गार्ड और अन्य कर्मचारियों के पास उपलब्ध हैं और विद्युत कक्ष/UPS रूम में प्रदर्शित हैं?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   mkQ("Q-018","General",
     "Whether the Power Factor (PF) panel of appropriate rating is installed",
     "क्या उचित रेटिंग का पावर फैक्टर (PF) पैनल स्थापित किया गया है?",
-    "अनुपालित","General"),
+    "ठीक है","General"),
 
   // ══════════════════════════════════════════════════════════════════════════════
   // FIRE PREVENTION MEASURES  —  Q-019 to Q-023  (no changes)
@@ -186,7 +186,7 @@ const SEED: Question[] = [
   mkQ("Q-026","Server and UPS Room",
     "Whether all ceiling fans installed are of BLDC type",
     "क्या सभी स्थापित सीलिंग फैन BLDC प्रकार के हैं?",
-    "अनुपालित","Safety",
+    "ठीक है","Safety",
     "Record total number of ceiling fans installed in the observations field (NOS: ___)"),
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -261,7 +261,7 @@ const SECTION_COLOR: Record<string,string> = {
 const EMPTY = {
   textEn:"", textHi:"", type:"YES_NO_NA" as QType, category:"General",
   section:"General", riskLevel:"HIGH" as RiskLevel, weightage:5,
-  helpEn:"", helpHi:"", recommendEn:"COMPLIED", recommendHi:"अनुपालित",
+  helpEn:"", helpHi:"", recommendEn:"COMPLIED", recommendHi:"ठीक है",
   mandatory:true, allowRemarks:true, allowPhoto:false,
   multiPhoto:false, numericValue:false, allowNA:false,
 };
