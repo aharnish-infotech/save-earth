@@ -548,8 +548,8 @@ export default function QuestionLibraryPage() {
 
         {/* ── LEFT PANEL — Add / Edit ───────────────────────────────────────────── */}
         {panelOpen && (
-          <div style={{ width:380, flexShrink:0, display:"flex", flexDirection:"column", gap:14 }}>
-          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden", position:"sticky", top:80 }}>
+          <div style={{ width:380, flexShrink:0, display:"flex", flexDirection:"column", gap:14, position:"sticky", top:80 }}>
+          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden" }}>
 
             {/* Panel header */}
             <div style={{ padding:"14px 18px", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between", background: isEditMode ? "#fffbeb" : "#f0fdf4" }}>

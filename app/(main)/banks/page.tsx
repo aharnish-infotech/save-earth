@@ -196,8 +196,8 @@ export default function BanksPage() {
       <div style={{ display:"grid", gridTemplateColumns:"360px 1fr", gap:18, alignItems:"start", gridAutoRows:"min-content" }}>
 
         {/* LEFT — Form + API Payload */}
-        <div ref={formRef} style={{ display:"flex", flexDirection:"column", gap:14 }}>
-        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", position:"sticky", top:80 }}>
+        <div ref={formRef} style={{ display:"flex", flexDirection:"column", gap:14, position:"sticky", top:80 }}>
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
 
           {/* Panel header */}
           <div style={{ padding:"14px 18px", borderBottom:"1px solid #f3f4f6", background: editId ? "#fffbeb" : "#f0fdf4" }}>
