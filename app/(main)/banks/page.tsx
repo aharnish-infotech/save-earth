@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 // ── UUID helper ────────────────────────────────────────────────────────────────
 const uuid = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
@@ -43,10 +43,43 @@ const SEED: Bank[] = [
   mkB("BNK-016", "Yes Bank",                "YESB", "Mumbai",      "Maharashtra"),
 ];
 
-type FormData = Omit<Bank, "id" | "bankCode">;
-const EMPTY: FormData = { name:"", code:"", hq:"", state:"", branches:0, status:"Active" };
+// branches is a derived count from the branches table — NOT a user-editable field
+type FormData = Omit<Bank, "id" | "bankCode" | "branches">;
+const EMPTY: FormData = { name:"", code:"", hq:"", state:"", status:"Active" };
 const STATUSES = ["All Status","Active","Inactive"];
 const PAGE_SIZE = 10;
+
+const INDIA_STATES = [
+  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat",
+  "Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh",
+  "Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab",
+  "Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh",
+  "Uttarakhand","West Bengal",
+  // UTs
+  "Andaman & Nicobar Islands","Chandigarh","Dadra & Nagar Haveli and Daman & Diu",
+  "Delhi","Jammu & Kashmir","Ladakh","Lakshadweep","Puducherry",
+];
+
+// ── JSON syntax highlighter ────────────────────────────────────────────────────
+function colorizeJson(json: string): React.ReactNode {
+  const regex = /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}[\],])/g;
+  const nodes: React.ReactNode[] = [];
+  let last = 0; let key = 0;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(json)) !== null) {
+    if (m.index > last) nodes.push(<span key={key++} style={{ color:"#d4d4d4" }}>{json.slice(last, m.index)}</span>);
+    const v = m[0];
+    let col = "#d4d4d4";
+    if (/^"/.test(v))           col = /:$/.test(v) ? "#9cdcfe" : "#ce9178";
+    else if (/true|false/.test(v)) col = "#569cd6";
+    else if (v === "null")      col = "#569cd6";
+    else if (!isNaN(+v))        col = "#b5cea8";
+    nodes.push(<span key={key++} style={{ color: col }}>{v}</span>);
+    last = regex.lastIndex;
+  }
+  if (last < json.length) nodes.push(<span key={key++} style={{ color:"#d4d4d4" }}>{json.slice(last)}</span>);
+  return <>{nodes}</>;
+}
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const TH: React.CSSProperties = { padding:"11px 14px", fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.05em", background:"#f9fafb", borderBottom:"1px solid #e5e7eb", whiteSpace:"nowrap" as const, textAlign:"left" as const };
@@ -62,12 +95,14 @@ export default function BanksPage() {
   const [search,  setSearch]  = useState("");
   const [statusF, setStatusF] = useState("All Status");
   const [page,    setPage]    = useState(1);
+  const [copied,  setCopied]  = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const editRow = rows.find(r => r.id === editId) ?? null;
 
   const filtered = rows.filter(r => {
     const q = search.toLowerCase();
-    return (!q || r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q) || r.bankCode.toLowerCase().includes(q))
+    return (!q || r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q) || r.bankCode.toLowerCase().includes(q) || r.hq.toLowerCase().includes(q) || r.state.toLowerCase().includes(q))
       && (statusF === "All Status" || r.status === statusF);
   });
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -98,6 +133,7 @@ export default function BanksPage() {
   const handleSave = () => {
     if (!form.name.trim() || form.code.length !== 4) return;
     if (editId) {
+      // branches is derived — preserve existing count, only update form fields
       setRows(rs => rs.map(r => r.id === editId ? { ...r, ...form } : r));
     } else {
       const maxNum = rows.reduce((m, r) => {
@@ -105,13 +141,19 @@ export default function BanksPage() {
         return isNaN(n) ? m : Math.max(m, n);
       }, 0);
       const newCode = `BNK-${String(maxNum + 1).padStart(3, "0")}`;
-      setRows(rs => [...rs, { id: uuid(), bankCode: newCode, ...form }]);
+      // branches: 0 — will be updated via the Branches module (FK relationship)
+      setRows(rs => [...rs, { id: uuid(), bankCode: newCode, branches: 0, ...form }]);
     }
     setForm({ ...EMPTY });
     setEditId(null);
   };
 
-  const handleEdit   = (r: Bank) => { setForm({ name:r.name, code:r.code, hq:r.hq, state:r.state, branches:r.branches, status:r.status }); setEditId(r.id); window.scrollTo({ top:0, behavior:"smooth" }); };
+  const handleEdit   = (r: Bank) => {
+    setForm({ name:r.name, code:r.code, hq:r.hq, state:r.state, status:r.status });
+    setEditId(r.id);
+    // Scroll form panel into view — works correctly inside any scroll container
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior:"smooth", block:"start" }), 50);
+  };
   const handleCancel = () => { setForm({ ...EMPTY }); setEditId(null); };
   const toggleStatus = (id: string) => setRows(rs => rs.map(r => r.id===id ? { ...r, status: r.status==="Active"?"Inactive":"Active" } : r));
 
@@ -136,7 +178,7 @@ export default function BanksPage() {
           { label:"Total Banks",    value: rows.length,                                  color:"#2563eb", bg:"#eff6ff", icon:"ri-bank-line",            border:"#2563eb" },
           { label:"Active",         value: rows.filter(r=>r.status==="Active").length,   color:"#16a34a", bg:"#f0fdf4", icon:"ri-checkbox-circle-line", border:"#16a34a" },
           { label:"Inactive",       value: rows.filter(r=>r.status==="Inactive").length, color:"#dc2626", bg:"#fef2f2", icon:"ri-close-circle-line",    border:"#dc2626" },
-          { label:"Total Branches", value: rows.reduce((s,r)=>s+r.branches,0),           color:"#7c3aed", bg:"#f5f3ff", icon:"ri-building-2-line",      border:"#7c3aed" },
+          { label:"States Covered",  value: new Set(rows.filter(r=>r.state).map(r=>r.state)).size, color:"#7c3aed", bg:"#f5f3ff", icon:"ri-map-pin-2-line", border:"#7c3aed" },
         ].map(c => (
           <div key={c.label} style={{ background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", padding:"13px 15px", display:"flex", alignItems:"center", gap:11, borderLeft:`4px solid ${c.border}`, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
             <div style={{ width:36, height:36, borderRadius:9, background:c.bg, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -154,7 +196,7 @@ export default function BanksPage() {
       <div style={{ display:"grid", gridTemplateColumns:"360px 1fr", gap:18, alignItems:"start" }}>
 
         {/* LEFT — Form */}
-        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", position:"sticky", top:80 }}>
+        <div ref={formRef} style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", position:"sticky", top:80 }}>
 
           {/* Panel header */}
           <div style={{ padding:"14px 18px", borderBottom:"1px solid #f3f4f6", background: editId ? "#fffbeb" : "#f0fdf4" }}>
@@ -210,7 +252,10 @@ export default function BanksPage() {
               </div>
               <div>
                 <label style={LBL}>HQ State</label>
-                <input value={form.state} onChange={fp("state")} placeholder="Maharashtra" style={INP}/>
+                <select value={form.state} onChange={fp("state")} style={{ ...INP, cursor:"pointer" }}>
+                  <option value="">Select State</option>
+                  {INDIA_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
             </div>
 
@@ -240,6 +285,56 @@ export default function BanksPage() {
               <i className={editId ? "ri-save-line" : "ri-add-circle-line"}/>
               {editId ? "Update Bank" : "Save Bank"}
             </button>
+
+            {/* API Payload Preview */}
+            <details style={{ border:"1px solid #30363d", borderRadius:10, overflow:"hidden" }}>
+              <summary style={{ padding:"9px 13px", background:"#161b22", fontSize:11, fontWeight:700, color:"#8b949e", cursor:"pointer", letterSpacing:"0.04em", userSelect:"none" as const, display:"flex", alignItems:"center", gap:6, listStyle:"none" }}>
+                <i className="ri-code-s-slash-line" style={{ fontSize:13, color:"#58a6ff" }}/>
+                <span style={{ flex:1, textTransform:"uppercase" as const, letterSpacing:"0.06em" }}>API Payload Preview</span>
+                <span style={{ fontSize:9, color:"#3d444d", fontWeight:500 }}>click to expand</span>
+              </summary>
+
+              {/* Toolbar */}
+              <div style={{ background:"#0d1117", borderTop:"1px solid #21262d", padding:"6px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <span style={{ fontSize:10, color:"#3d444d", fontWeight:600, letterSpacing:"0.05em" }}>application/json</span>
+                <button
+                  onClick={() => {
+                    const payload = JSON.stringify({
+                      id:       editId ? editRow?.id        : "(uuid — auto-generated on save)",
+                      bankCode: editId ? editRow?.bankCode  : "(e.g. BNK-017 — auto-assigned)",
+                      name:     form.name    || "(empty)",
+                      code:     form.code    || "(empty)",
+                      hq:       form.hq      || "(empty)",
+                      state:    form.state   || "(empty)",
+                      branches: "(derived — count of branches linked to this bank)",
+                      status:   form.status,
+                    }, null, 2);
+                    navigator.clipboard.writeText(payload).then(() => {
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    });
+                  }}
+                  style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:6, border:"1px solid #30363d", background:copied?"#238636":"#21262d", color:copied?"#fff":"#8b949e", fontSize:10, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}>
+                  <i className={copied ? "ri-check-line" : "ri-file-copy-line"} style={{ fontSize:11 }}/>
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+
+              {/* Highlighted JSON */}
+              <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:260, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
+{colorizeJson(JSON.stringify({
+  id:       editId ? editRow?.id        : "(uuid — auto-generated on save)",
+  bankCode: editId ? editRow?.bankCode  : "(e.g. BNK-017 — auto-assigned)",
+  name:     form.name    || "(empty)",
+  code:     form.code    || "(empty)",
+  hq:       form.hq      || "(empty)",
+  state:    form.state   || "(empty)",
+  branches: "(derived — count of branches linked to this bank)",
+  status:   form.status,
+}, null, 2))}
+              </pre>
+            </details>
+
           </div>
         </div>
 
