@@ -6,8 +6,15 @@ type QType     = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "RATING_1_5" | "NUMERIC"
 type RiskLevel = "HIGH" | "MEDIUM" | "LOW";
 type QStatus   = "Active" | "Draft" | "Inactive";
 
+// UUID v4 generator — replaces crypto.randomUUID() for mock/SSR safety
+const uuid = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+  const r = Math.random() * 16 | 0;
+  return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+});
+
 interface Question {
-  id:           string;
+  id:           string;   // UUID — database primary key
+  questionCode: string;   // "Q-001" — human-readable display code
   textEn:       string;
   textHi:       string;
   type:         QType;
@@ -30,14 +37,14 @@ interface Question {
   createdOn:    string;
 }
 
-// ── Seed Data — 33 questions aligned to original audit checklist ──────────────
+// ── Seed Data — 50 questions aligned to original audit checklist ─────────────
 const D = "01 Jan 2024";
 const mkQ = (
-  id: string, section: string, textEn: string, textHi: string,
+  questionCode: string, section: string, textEn: string, textHi: string,
   recommendHi = "ठीक है", category = "General",
   helpEn = "", type: QType = "YES_NO_NA"
 ): Question => ({
-  id, section, textEn, textHi, type, category,
+  id: uuid(), questionCode, section, textEn, textHi, type, category,
   riskLevel: "HIGH", weightage: 5,
   helpEn, helpHi: "", recommendEn: "COMPLIED", recommendHi,
   mandatory: true, allowRemarks: true, allowPhoto: false,
@@ -397,7 +404,7 @@ export default function QuestionLibraryPage() {
   // ── Filter ────────────────────────────────────────────────────────────────────
   const filtered = questions.filter(q => {
     const s = search.toLowerCase();
-    return (!s || q.textEn.toLowerCase().includes(s) || q.id.toLowerCase().includes(s))
+    return (!s || q.textEn.toLowerCase().includes(s) || q.questionCode.toLowerCase().includes(s))
       && (sectionF === "All Sections" || q.section === sectionF)
       && (statusF  === "All Status"   || q.status  === statusF);
   });
@@ -447,9 +454,9 @@ export default function QuestionLibraryPage() {
     if (isEditMode && editRow) {
       setQuestions(qs => qs.map(q => q.id === editRow.id ? { ...q, ...form } : q));
     } else {
-      const maxNum = questions.reduce((m, q) => { const n = parseInt(q.id.replace("Q-",""),10); return isNaN(n)?m:Math.max(m,n); }, 0);
-      const newId = `Q-${String(maxNum + 1).padStart(3,"0")}`;
-      setQuestions(qs => [...qs, { id:newId, ...form, usedIn:0, createdOn:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) }]);
+      const maxNum = questions.reduce((m, q) => { const n = parseInt(q.questionCode.replace("Q-",""),10); return isNaN(n)?m:Math.max(m,n); }, 0);
+      const newCode = `Q-${String(maxNum + 1).padStart(3,"0")}`;
+      setQuestions(qs => [...qs, { id:uuid(), questionCode:newCode, ...form, usedIn:0, createdOn:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) }]);
     }
     closePanel();
   };
@@ -526,7 +533,7 @@ export default function QuestionLibraryPage() {
               <div>
                 <div style={{ fontSize:14, fontWeight:800, color:"#111827", display:"flex", alignItems:"center", gap:7 }}>
                   <i className={isEditMode ? "ri-edit-line" : "ri-add-circle-line"} style={{ fontSize:15, color: isEditMode ? "#d97706" : "#16a34a" }}/>
-                  {isEditMode ? `Edit — ${editRow?.id}` : "New Question"}
+                  {isEditMode ? `Edit — ${editRow?.questionCode}` : "New Question"}
                 </div>
                 <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>
                   {isEditMode ? "Modify and save the question below" : "Fill all fields then save or draft"}
@@ -669,10 +676,13 @@ export default function QuestionLibraryPage() {
                 </summary>
                 <pre style={{ margin:0, padding:"10px 12px", fontSize:10, color:"#374151", background:"#fafafa", overflowX:"auto", lineHeight:1.6 }}>
 {JSON.stringify({
+  id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
+  questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",
   textEn:       form.textEn       || "(empty)",
   textHi:       form.textHi       || "(empty)",
   type:         form.type,
   section:      form.section,
+  category:     form.category,
   weightage:    form.weightage,
   mandatory:    form.mandatory,
   allowRemarks: form.allowRemarks,
@@ -760,7 +770,7 @@ export default function QuestionLibraryPage() {
                           {(p-1)*PAGE_SIZE + idx + 1}
                         </td>
                         <td style={TD}>
-                          <span style={{ fontSize:10, fontWeight:700, color:"#374151", background:"#f3f4f6", borderRadius:5, padding:"2px 7px", fontFamily:"monospace" }}>{q.id}</span>
+                          <span style={{ fontSize:10, fontWeight:700, color:"#374151", background:"#f3f4f6", borderRadius:5, padding:"2px 7px", fontFamily:"monospace" }}>{q.questionCode}</span>
                         </td>
                         <td style={{ ...TD, maxWidth:260 }}>
                           <div style={{ fontWeight:600, color:"#111827", fontSize:12, lineHeight:1.4 }}>{q.textEn}</div>
@@ -855,7 +865,7 @@ export default function QuestionLibraryPage() {
             {/* Question preview */}
             <div style={{ background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:10, padding:"12px 14px" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <span style={{ fontSize:10, fontWeight:700, color:"#374151", background:"#e5e7eb", borderRadius:5, padding:"2px 7px", fontFamily:"monospace" }}>{deleteTarget.id}</span>
+                <span style={{ fontSize:10, fontWeight:700, color:"#374151", background:"#e5e7eb", borderRadius:5, padding:"2px 7px", fontFamily:"monospace" }}>{deleteTarget.questionCode}</span>
                 <span style={{ fontSize:10, fontWeight:700, color:"#16a34a", background:"#dcfce7", borderRadius:5, padding:"2px 8px" }}>{deleteTarget.section}</span>
               </div>
               <div style={{ fontSize:13, fontWeight:600, color:"#111827", lineHeight:1.5 }}>{deleteTarget.textEn}</div>
