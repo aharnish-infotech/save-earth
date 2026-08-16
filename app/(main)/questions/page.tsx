@@ -321,6 +321,7 @@ export default function QuestionLibraryPage() {
   const sections = new Set(questions.map(q=>q.section)).size;
 
   return (
+    <>
     <div style={{ padding:"24px 0" }}>
 
       {/* Header */}
@@ -718,5 +719,6 @@ export default function QuestionLibraryPage() {
         </div>
       </div>
     )}
+    </>
   );
 }
