@@ -231,10 +231,82 @@ const SEED: Question[] = [
   mkQ("Q-033","DG Set / Generator",
     "Whether electrical safety and energy saving awareness meeting with the staff members was conducted after electrical safety audit of the branch/office by the auditor",
     "क्या शाखा/कार्यालय के विद्युत सुरक्षा ऑडिट के बाद ऑडिटर द्वारा कर्मचारियों के साथ विद्युत सुरक्षा और ऊर्जा बचत जागरूकता बैठक आयोजित की गई है?"),
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ONSITE ATM  —  Q-034 to Q-050
+  // ══════════════════════════════════════════════════════════════════════════════
+  mkQ("Q-034","Onsite ATM",
+    "5 Kg ABC Automatic Modular Fire Extinguisher is provided and protected in the back room",
+    "क्या बैक रूम में 5 Kg ABC ऑटोमैटिक मॉड्यूलर अग्निशामक यंत्र प्रदान और संरक्षित किया गया है?",
+    "ठीक है","Safety"),
+  mkQ("Q-035","Onsite ATM",
+    "ATM room is having fire detector connected through branch AFDS (Applicable for Onsite ATMs only)",
+    "क्या ATM रूम में शाखा के AFDS से जुड़ा फायर डिटेक्टर है? (केवल ऑनसाइट ATM के लिए लागू)",
+    "ठीक है","Safety"),
+  mkQ("Q-036","Onsite ATM",
+    "Whether MCCB/MCB/ELCB are provided and apparently in working condition",
+    "क्या MCCB/MCB/ELCB प्रदान किए गए हैं और स्पष्ट रूप से कार्यशील स्थिति में हैं?",
+    "ठीक है","Safety"),
+  mkQ("Q-037","Onsite ATM",
+    "AC units are provided with timer circuit device",
+    "क्या AC इकाइयों में टाइमर सर्किट डिवाइस प्रदान किया गया है?",
+    "ठीक है","Safety"),
+  mkQ("Q-038","Onsite ATM",
+    "Main supply switch/MCB to cut-off the electric supply of ATM has been marked",
+    "क्या ATM की विद्युत आपूर्ति काटने के लिए मेन सप्लाई स्विच/MCB को स्पष्ट रूप से चिह्नित किया गया है?",
+    "ठीक है","Safety"),
+  mkQ("Q-039","Onsite ATM",
+    "Power supply to AC, UPS and ATM machines is through metal clad plug receptacle socket",
+    "क्या AC, UPS और ATM मशीनों को मेटल क्लैड प्लग रिसेप्टेकल सॉकेट के माध्यम से बिजली आपूर्ति दी जाती है?",
+    "ठीक है","Safety"),
+  mkQ("Q-040","Onsite ATM",
+    "Electrical wires are properly covered/insulated to prevent exposure of wire",
+    "क्या विद्युत तारों के खुलेपन को रोकने के लिए वे ठीक से ढकी/इंसुलेटेड हैं?",
+    "ठीक है","Safety"),
+  mkQ("Q-041","Onsite ATM",
+    "Is there any cooking stove/electric heater coil stove noticed in the ATM",
+    "क्या ATM में कोई कुकिंग स्टोव/इलेक्ट्रिक हीटर कॉइल स्टोव पाया गया है?",
+    "ठीक है","Safety"),
+  mkQ("Q-042","Onsite ATM",
+    "Is there any water accumulation/seepage in the premises or dripping on electrical gadgets",
+    "क्या परिसर में कोई जल जमाव/रिसाव है या विद्युत उपकरणों पर टपकाव हो रहा है?",
+    "ठीक है","Safety"),
+  mkQ("Q-043","Onsite ATM",
+    "Any combustible container provided in the ATM",
+    "क्या ATM में कोई ज्वलनशील कंटेनर रखा गया है?",
+    "ठीक है","Safety"),
+  mkQ("Q-044","Onsite ATM",
+    "Steel dustbin container provided in the ATM",
+    "क्या ATM में स्टील का डस्टबिन कंटेनर प्रदान किया गया है?",
+    "ठीक है","Safety"),
+  mkQ("Q-045","Onsite ATM",
+    "No smoking board is provided in the ATM cabin",
+    "क्या ATM केबिन में नो-स्मोकिंग बोर्ड लगाया गया है?",
+    "ठीक है","Safety"),
+  mkQ("Q-046","Onsite ATM",
+    "Main entrance shutter is in working condition",
+    "क्या मुख्य प्रवेश शटर कार्यशील स्थिति में है?",
+    "ठीक है","Safety"),
+  mkQ("Q-047","Onsite ATM",
+    "Proper locking arrangement is there at the main shutter",
+    "क्या मुख्य शटर पर उचित लॉकिंग व्यवस्था है?",
+    "ठीक है","Safety"),
+  mkQ("Q-048","Onsite ATM",
+    "All electrical lights are in working condition",
+    "क्या सभी विद्युत लाइटें कार्यशील स्थिति में हैं?",
+    "ठीक है","Safety"),
+  mkQ("Q-049","Onsite ATM",
+    "ATM is provided with external CCTV camera",
+    "क्या ATM में बाहरी CCTV कैमरा लगाया गया है?",
+    "ठीक है","Safety"),
+  mkQ("Q-050","Onsite ATM",
+    "CCTV is in working condition",
+    "क्या CCTV कार्यशील स्थिति में है?",
+    "ठीक है","Safety"),
 ];
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const SECTIONS   = ["All Sections","General","Electrical Safety","Fire Prevention Measures","Server and UPS Room","Fire Protection","DG Set / Generator"];
+const SECTIONS   = ["All Sections","General","Electrical Safety","Fire Prevention Measures","Server and UPS Room","Fire Protection","DG Set / Generator","Onsite ATM"];
 const CATEGORIES = ["General","Safety","Compliance","Maintenance"];
 const Q_TYPES    = ["YES_NO_NA","YES_NO","OK_NOT_OK","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
 const RISK_LEVELS= ["HIGH","MEDIUM","LOW"] as const;
@@ -252,9 +324,10 @@ const TYPE_STYLE: Record<QType,{color:string;bg:string}> = {
   "TEXT":{color:"#374151",bg:"#f3f4f6"},"MULTI_CHOICE":{color:"#d97706",bg:"#fef3c7"},
 };
 const SECTION_COLOR: Record<string,string> = {
-  "Electrical Safety":"#ca8a04","Fire Prevention Measures":"#dc2626",
-  "Server and UPS Room":"#2563eb","Fire Protection":"#ea580c",
-  "DG Set / Generator":"#7c3aed","General":"#16a34a",
+  "General":"#16a34a","Electrical Safety":"#ca8a04",
+  "Fire Prevention Measures":"#dc2626","Server and UPS Room":"#2563eb",
+  "Fire Protection":"#ea580c","DG Set / Generator":"#7c3aed",
+  "Onsite ATM":"#0891b2",
 };
 
 // ── Form ───────────────────────────────────────────────────────────────────────
