@@ -141,33 +141,46 @@ export default function Sidebar() {
         </div>
 
         <div className="zf-accordion" id="sidebar-scroll">
-          {/* Section label */}
-          <div style={{
-            padding: "12px 16px 6px",
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--text-muted, #9ca3af)",
-            userSelect: "none",
-          }}>
-            {activeRailItem.label}
-          </div>
-
-          {/* Only the active section's items */}
-          <div className="zf-accord-section expanded" style={{ border: "none" }}>
-            <div className="zf-accord-body" style={{ maxHeight: `${activeSectionItems.length * 44 + 8}px` }}>
-              {activeSectionItems.map(nav => {
-                const isNavActive = pathname === nav.href;
-                return (
-                  <Link key={nav.href} href={nav.href} className={`zf-nav-link${isNavActive ? " active" : ""}`}>
-                    {nav.icon && <i className={`${nav.icon} zf-nav-link-icon`} />}
-                    <span>{nav.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          {RAIL_ITEMS.map(item => {
+            const isExpanded = activeId === item.id && panelOpen;
+            const allItems = item.sections.flatMap(s => s.items);
+            return (
+              <div key={item.id} className={`zf-accord-section${isExpanded ? " expanded" : ""}`}>
+                {/* Section header — clicking toggles this section */}
+                <div
+                  className={`zf-accord-header${isExpanded ? " active" : ""}`}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleIconClick(item.id)}
+                >
+                  <span className="zf-accord-header-icon">{SECTION_ICONS[item.id]}</span>
+                  <span className="zf-accord-title">{item.label}</span>
+                  <i className={`ri-arrow-right-s-line`} style={{
+                    marginLeft: "auto",
+                    fontSize: 16,
+                    transition: "transform 0.2s",
+                    transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                    opacity: 0.5,
+                  }} />
+                </div>
+                {/* Items — only visible when expanded */}
+                <div className="zf-accord-body" style={{
+                  maxHeight: isExpanded ? `${allItems.length * 44 + 8}px` : "0px",
+                  overflow: "hidden",
+                  transition: "max-height 0.25s ease",
+                }}>
+                  {allItems.map(nav => {
+                    const isNavActive = pathname === nav.href;
+                    return (
+                      <Link key={nav.href} href={nav.href} className={`zf-nav-link${isNavActive ? " active" : ""}`}>
+                        {nav.icon && <i className={`${nav.icon} zf-nav-link-icon`} />}
+                        <span>{nav.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
