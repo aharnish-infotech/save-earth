@@ -193,38 +193,59 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Security */}
-          <div style={{ maxWidth: "50%" }}>
+          {/* Audit History */}
           <div style={CARD}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <i className="ri-shield-keyhole-line" style={{ fontSize: 17, color: "#dc2626" }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#111827" }}>Security</div>
-                <div style={{ fontSize: 11, color: "#9ca3af" }}>Password and authentication settings</div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                { label: "Current Password", placeholder: "Enter current password" },
-                { label: "New Password",     placeholder: "At least 8 characters" },
-                { label: "Confirm Password", placeholder: "Re-enter new password" },
-              ].map(f => (
-                <div key={f.label}>
-                  <label style={LABEL}>{f.label}</label>
-                  <div style={{ position: "relative" }}>
-                    <i className="ri-lock-password-line" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: 13 }} />
-                    <input type="password" placeholder={f.placeholder} style={{ ...FIELD, paddingLeft: 30 }} />
-                  </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <i className="ri-history-line" style={{ fontSize: 16, color: "#7c3aed" }} />
                 </div>
-              ))}
-              <button style={{ alignSelf: "flex-end", padding: "9px 20px", borderRadius: 9, border: "none", background: "#dc2626", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 7 }}>
-                <i className="ri-key-2-line" /> Update Password
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#111827" }}>Audit History</div>
+                  <div style={{ fontSize: 11, color: "#9ca3af" }}>Your last 5 audit submissions</div>
+                </div>
+              </div>
+              <button style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
+                <i className="ri-download-line" style={{ fontSize: 13 }} /> Export
               </button>
             </div>
-          </div>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f9fafb" }}>
+                  {["Audit ID", "Branch", "Date", "Status", "Action"].map(h => (
+                    <th key={h} style={{ padding: "9px 14px", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.05em", textAlign: "left" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {AUDIT_HISTORY.map((a, i) => {
+                  const ss = STATUS_STYLE[a.status];
+                  return (
+                    <tr key={a.id} style={{ background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                      <td style={{ padding: "11px 14px", fontSize: 12, fontWeight: 700, color: "#374151", borderBottom: "1px solid #f3f4f6", fontFamily: "monospace" }}>{a.id}</td>
+                      <td style={{ padding: "11px 14px", fontSize: 13, color: "#111827", fontWeight: 600, borderBottom: "1px solid #f3f4f6" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          <i className="ri-building-2-line" style={{ fontSize: 13, color: "#9ca3af" }} /> {a.branch}
+                        </div>
+                      </td>
+                      <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", borderBottom: "1px solid #f3f4f6" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <i className="ri-calendar-line" style={{ fontSize: 12, color: "#9ca3af" }} /> {a.date}
+                        </div>
+                      </td>
+                      <td style={{ padding: "11px 14px", borderBottom: "1px solid #f3f4f6" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, borderRadius: 20, padding: "3px 10px" }}>{a.status}</span>
+                      </td>
+                      <td style={{ padding: "11px 14px", borderBottom: "1px solid #f3f4f6" }}>
+                        <button style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                          <i className="ri-eye-line" style={{ fontSize: 12 }} /> View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -315,63 +336,38 @@ export default function ProfilePage() {
             ))}
           </div>
 
-        </div>
-      </div>
-
-      {/* ── Audit History ── */}
-      <div style={{ ...CARD, marginTop: 18 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="ri-history-line" style={{ fontSize: 16, color: "#7c3aed" }} />
+          {/* Security */}
+          <div style={CARD}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <i className="ri-shield-keyhole-line" style={{ fontSize: 17, color: "#dc2626" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#111827" }}>Security</div>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>Password and authentication settings</div>
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#111827" }}>Audit History</div>
-              <div style={{ fontSize: 11, color: "#9ca3af" }}>Your last 5 audit submissions</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "Current Password", placeholder: "Enter current password" },
+                { label: "New Password",     placeholder: "At least 8 characters" },
+                { label: "Confirm Password", placeholder: "Re-enter new password" },
+              ].map(f => (
+                <div key={f.label}>
+                  <label style={LABEL}>{f.label}</label>
+                  <div style={{ position: "relative" }}>
+                    <i className="ri-lock-password-line" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: 13 }} />
+                    <input type="password" placeholder={f.placeholder} style={{ ...FIELD, paddingLeft: 30 }} />
+                  </div>
+                </div>
+              ))}
+              <button style={{ alignSelf: "flex-end", padding: "9px 20px", borderRadius: 9, border: "none", background: "#dc2626", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 7 }}>
+                <i className="ri-key-2-line" /> Update Password
+              </button>
             </div>
           </div>
-          <button style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
-            <i className="ri-download-line" style={{ fontSize: 13 }} /> Export
-          </button>
-        </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#f9fafb" }}>
-              {["Audit ID", "Branch", "Date", "Status", "Action"].map(h => (
-                <th key={h} style={{ padding: "9px 14px", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.05em", textAlign: "left" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {AUDIT_HISTORY.map((a, i) => {
-              const ss = STATUS_STYLE[a.status];
-              return (
-                <tr key={a.id} style={{ background: i % 2 === 0 ? "#fff" : "#fafafa", transition: "background 0.15s" }}>
-                  <td style={{ padding: "11px 14px", fontSize: 12, fontWeight: 700, color: "#374151", borderBottom: "1px solid #f3f4f6", fontFamily: "monospace" }}>{a.id}</td>
-                  <td style={{ padding: "11px 14px", fontSize: 13, color: "#111827", fontWeight: 600, borderBottom: "1px solid #f3f4f6" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <i className="ri-building-2-line" style={{ fontSize: 13, color: "#9ca3af" }} /> {a.branch}
-                    </div>
-                  </td>
-                  <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", borderBottom: "1px solid #f3f4f6" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <i className="ri-calendar-line" style={{ fontSize: 12, color: "#9ca3af" }} /> {a.date}
-                    </div>
-                  </td>
-                  <td style={{ padding: "11px 14px", borderBottom: "1px solid #f3f4f6" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, borderRadius: 20, padding: "3px 10px" }}>{a.status}</span>
-                  </td>
-                  <td style={{ padding: "11px 14px", borderBottom: "1px solid #f3f4f6" }}>
-                    <button style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-                      <i className="ri-eye-line" style={{ fontSize: 12 }} /> View
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        </div>
       </div>
     </div>
   );
