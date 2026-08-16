@@ -17,10 +17,9 @@ const CARD: React.CSSProperties = {
 };
 
 const STATS = [
-  { label: "In Progress",      value: 3,   icon: "ri-loader-4-line",        color: "#2563eb", bg: "#eff6ff" },
-  { label: "Completed",        value: 18,  icon: "ri-checkbox-circle-line", color: "#16a34a", bg: "#f0fdf4" },
-  { label: "Branches Covered", value: 12,  icon: "ri-building-2-line",      color: "#7c3aed", bg: "#f5f3ff" },
-  { label: "Drafts Saved",     value: 5,   icon: "ri-draft-line",           color: "#d97706", bg: "#fffbeb" },
+  { label: "Total",       value: 21,  icon: "ri-file-list-3-line",     color: "#374151", bg: "#f9fafb" },
+  { label: "In Progress", value: 3,   icon: "ri-loader-4-line",        color: "#2563eb", bg: "#eff6ff" },
+  { label: "Completed",   value: 18,  icon: "ri-checkbox-circle-line", color: "#16a34a", bg: "#f0fdf4" },
 ];
 
 const AUDIT_HISTORY = [
@@ -105,9 +104,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats bar */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid #bbf7d0", marginTop: 8, background: "rgba(255,255,255,0.5)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", borderTop: "1px solid #bbf7d0", marginTop: 8, background: "rgba(255,255,255,0.5)" }}>
           {STATS.map((s, i) => (
-            <div key={s.label} style={{ padding: "16px 20px", borderRight: i < 3 ? "1px solid #bbf7d0" : "none", textAlign: "center" }}>
+            <div key={s.label} style={{ padding: "16px 20px", borderRight: i < 2 ? "1px solid #bbf7d0" : "none", textAlign: "center" }}>
               <div style={{ fontSize: 26, fontWeight: 800, color: "#16a34a" }}>{s.value}</div>
               <div style={{ fontSize: 10, color: "#6b7280", fontWeight: 600, marginTop: 2 }}>{s.label}</div>
             </div>
@@ -282,7 +281,7 @@ export default function ProfilePage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {STATS.slice(0, 2).map(s => (
+              {STATS.map(s => (
                 <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: s.bg, borderRadius: 9 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <i className={s.icon} style={{ fontSize: 15, color: s.color }} />
