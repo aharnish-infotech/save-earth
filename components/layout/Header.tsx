@@ -52,12 +52,15 @@ function DigitalClock() {
 }
 
 export default function Header() {
-  const [quickOpen, setQuickOpen] = useState(false);
-  const quickRef = useRef<HTMLDivElement>(null);
+  const [quickOpen,   setQuickOpen]   = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const quickRef   = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (quickRef.current && !quickRef.current.contains(e.target as Node)) setQuickOpen(false);
+      if (quickRef.current   && !quickRef.current.contains(e.target as Node))   setQuickOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -134,7 +137,7 @@ export default function Header() {
                 </div>
                 {([
                   { label: "New Audit",       icon: "ri-file-add-line",   href: "/audits/new"   },
-                  { label: "Register Branch", icon: "ri-building-2-line", href: "/branches/new" },
+                  { label: "Register Branch", icon: "ri-building-2-line", href: "/branches" },
                 ] as const).map(item => (
                   <Link key={item.label} href={item.href} onClick={() => setQuickOpen(false)} style={quickItemStyle}>
                     <span style={quickIconWrap}><i className={item.icon} style={{ fontSize: 15 }} /></span>
@@ -161,16 +164,57 @@ export default function Header() {
           <div style={{ width: 1, height: 24, background: "var(--default-border)", margin: "0 6px" }} />
 
           {/* Profile */}
-          <button style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 8 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #16a34a, #86efac)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-              AU
-            </div>
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--default-text-color)", lineHeight: 1.2 }}>Admin User</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.2 }}>Super Admin</div>
-            </div>
-            <i className="ri-arrow-down-s-line" style={{ fontSize: 14, color: "var(--text-muted)" }} />
-          </button>
+          <div ref={profileRef} style={{ position: "relative" }}>
+            <button onClick={() => setProfileOpen(o => !o)}
+              style={{ display: "flex", alignItems: "center", gap: 8, background: profileOpen ? "rgba(22,163,74,0.06)" : "none", border: profileOpen ? "1px solid rgba(22,163,74,0.2)" : "1px solid transparent", cursor: "pointer", padding: "4px 8px", borderRadius: 9, transition: "all 0.15s" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #16a34a, #86efac)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                AU
+              </div>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--default-text-color)", lineHeight: 1.2 }}>Admin User</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.2 }}>Super Admin</div>
+              </div>
+              <i className="ri-arrow-down-s-line" style={{ fontSize: 14, color: "var(--text-muted)", transform: profileOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+            </button>
+
+            {profileOpen && (
+              <div style={{ position: "absolute", top: "calc(100% + 10px)", right: 0, minWidth: 220, zIndex: 9999, borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,0.14)", border: "1px solid var(--default-border)", background: "var(--custom-white)", padding: "6px", overflow: "hidden" }}>
+
+                {/* Profile identity */}
+                <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid var(--default-border)", marginBottom: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg, #16a34a, #86efac)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                      AU
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--default-text-color)" }}>Admin User</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>admin@saveearth.in</div>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: "#16a34a", background: "#dcfce7", borderRadius: 20, padding: "1px 8px", marginTop: 2, display: "inline-block" }}>SUPER ADMIN</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu items */}
+                <Link href="/profile" onClick={() => setProfileOpen(false)} style={profileItemStyle}>
+                  <span style={{ ...profileIconWrap, background: "#eff6ff", color: "#2563eb" }}><i className="ri-user-3-line" style={{ fontSize: 14 }} /></span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--default-text-color)" }}>View Profile</div>
+                    <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Account details & settings</div>
+                  </div>
+                </Link>
+
+                <div style={{ height: 1, background: "var(--default-border)", margin: "4px 0" }} />
+
+                <Link href="/login" onClick={() => setProfileOpen(false)} style={{ ...profileItemStyle, borderRadius: 8 }}>
+                  <span style={{ ...profileIconWrap, background: "#fef2f2", color: "#dc2626" }}><i className="ri-logout-box-r-line" style={{ fontSize: 14 }} /></span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#dc2626" }}>Logout</div>
+                    <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Sign out of your account</div>
+                  </div>
+                </Link>
+              </div>
+            )}
+          </div>
 
         </div>
       </div>
@@ -196,6 +240,17 @@ const quickIconWrap: React.CSSProperties = {
   background: "#dcfce7", display: "flex",
   alignItems: "center", justifyContent: "center",
   color: "#16a34a", flexShrink: 0,
+};
+
+const profileItemStyle: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 10,
+  padding: "8px 10px", borderRadius: 8,
+  textDecoration: "none", cursor: "pointer",
+};
+
+const profileIconWrap: React.CSSProperties = {
+  width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+  display: "flex", alignItems: "center", justifyContent: "center",
 };
 
 function badge(bg: string): React.CSSProperties {
