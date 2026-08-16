@@ -47,7 +47,7 @@ export default function ProfilePage() {
   const fp = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   return (
-    <div style={{ padding: "24px 0", maxWidth: 1100 }}>
+    <div style={{ padding: "24px 0" }}>
 
       {/* Breadcrumb */}
       <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 20 }}>
@@ -56,31 +56,33 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Hero Card ── */}
-      <div style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 60%, #166534 100%)", borderRadius: 18, padding: "32px 32px 0", marginBottom: 20, position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)", borderRadius: 18, padding: "32px 32px 0", marginBottom: 20, position: "relative", overflow: "hidden", border: "1px solid #bbf7d0" }}>
 
-        {/* Background circles */}
-        <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-        <div style={{ position: "absolute", bottom: -60, right: 80, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        {/* Decorative circles */}
+        <div style={{ position: "absolute", top: -40, right: -40, width: 220, height: 220, borderRadius: "50%", background: "rgba(22,163,74,0.07)" }} />
+        <div style={{ position: "absolute", bottom: -60, right: 100, width: 180, height: 180, borderRadius: "50%", background: "rgba(22,163,74,0.05)" }} />
+        {/* Green top accent bar */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg, #16a34a, #4ade80)", borderRadius: "18px 18px 0 0" }} />
 
         <div style={{ display: "flex", alignItems: "flex-end", gap: 24, position: "relative", zIndex: 1 }}>
 
           {/* Avatar */}
-          <div style={{ width: 88, height: 88, borderRadius: "50%", background: "linear-gradient(135deg, #bbf7d0, #86efac)", border: "4px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#15803d", fontWeight: 900, fontSize: 30, flexShrink: 0 }}>
+          <div style={{ width: 88, height: 88, borderRadius: "50%", background: "linear-gradient(135deg, #16a34a, #4ade80)", border: "4px solid #fff", boxShadow: "0 4px 16px rgba(22,163,74,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 30, flexShrink: 0 }}>
             AU
           </div>
 
           {/* Identity */}
           <div style={{ paddingBottom: 24 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>{form.name}</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>{form.email}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#111827", letterSpacing: "-0.02em" }}>{form.name}</div>
+            <div style={{ fontSize: 13, color: "#6b7280", marginTop: 2 }}>{form.email}</div>
             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", background: "#fff", borderRadius: 20, padding: "3px 12px" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "#16a34a", borderRadius: 20, padding: "3px 12px" }}>
                 {form.role}
               </span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.9)", background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 12px", border: "1px solid rgba(255,255,255,0.2)" }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#15803d", background: "#fff", borderRadius: 20, padding: "3px 12px", border: "1px solid #bbf7d0" }}>
                 ID: {form.empId}
               </span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.9)", background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 12px", border: "1px solid rgba(255,255,255,0.2)" }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#15803d", background: "#fff", borderRadius: 20, padding: "3px 12px", border: "1px solid #bbf7d0" }}>
                 <i className="ri-map-pin-line" style={{ marginRight: 3 }} />{form.zone}
               </span>
             </div>
@@ -89,7 +91,7 @@ export default function ProfilePage() {
           {/* Edit toggle */}
           <div style={{ marginLeft: "auto", paddingBottom: 24 }}>
             <button onClick={() => setEditMode(e => !e)}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.3)", background: editMode ? "#fff" : "rgba(255,255,255,0.15)", color: editMode ? "#16a34a" : "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}>
+              style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 10, border: "1px solid #16a34a", background: editMode ? "#16a34a" : "#fff", color: editMode ? "#fff" : "#16a34a", fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}>
               <i className={editMode ? "ri-close-line" : "ri-edit-line"} />
               {editMode ? "Cancel Edit" : "Edit Profile"}
             </button>
@@ -97,11 +99,11 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats bar */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(255,255,255,0.15)", marginTop: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid #bbf7d0", marginTop: 8, background: "rgba(255,255,255,0.5)" }}>
           {STATS.map((s, i) => (
-            <div key={s.label} style={{ padding: "16px 20px", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.1)" : "none", textAlign: "center" }}>
-              <div style={{ fontSize: 24, fontWeight: 800, color: "#fff" }}>{s.value}</div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", fontWeight: 600, marginTop: 2 }}>{s.label}</div>
+            <div key={s.label} style={{ padding: "16px 20px", borderRight: i < 3 ? "1px solid #bbf7d0" : "none", textAlign: "center" }}>
+              <div style={{ fontSize: 26, fontWeight: 800, color: "#16a34a" }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: "#6b7280", fontWeight: 600, marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
         </div>
