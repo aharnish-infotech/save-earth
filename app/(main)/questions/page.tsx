@@ -53,7 +53,7 @@ const SEED: Question[] = [
   //   • Q-001: MCCBs/MCBs + ELCBs merged into one question (was two separate)
   //   • Q-009: new question — "7a Additional electrical load" (was missing)
   //   • Q-010: helpEn carries R/Y/B/N AMPS observation prompt
-  //   • Q-016: type changed to OK_NOT_OK (was incorrectly YES_NO_NA)
+  //   • Q-016: type is YES_NO_NA (original document used OK/NOT OK, unified to YES_NO_NA)
   // ══════════════════════════════════════════════════════════════════════════════
 
   // ── MERGED: original Q1 (MCCBs/MCBs) + ELCBs combined as one question ───────
@@ -310,7 +310,7 @@ const SECTIONS   = ["All Sections","General","Electrical Safety","Fire Preventio
 const CATEGORIES = ["General","Safety","Compliance","Maintenance"];
 const Q_TYPES    = ["YES_NO_NA","YES_NO","OK_NOT_OK","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
 const RISK_LEVELS= ["HIGH","MEDIUM","LOW"] as const;
-const STATUS_LIST= ["All Status","Active","Draft","Inactive"];
+const STATUS_LIST= ["All Status","Active","Inactive"];
 const PAGE_SIZE  = 10;
 
 const TYPE_LABEL: Record<QType,string> = {
@@ -447,7 +447,8 @@ export default function QuestionLibraryPage() {
     if (isEditMode && editRow) {
       setQuestions(qs => qs.map(q => q.id === editRow.id ? { ...q, ...form } : q));
     } else {
-      const newId = `Q-${String(questions.length + 1).padStart(3,"0")}`;
+      const maxNum = questions.reduce((m, q) => { const n = parseInt(q.id.replace("Q-",""),10); return isNaN(n)?m:Math.max(m,n); }, 0);
+      const newId = `Q-${String(maxNum + 1).padStart(3,"0")}`;
       setQuestions(qs => [...qs, { id:newId, ...form, usedIn:0, createdOn:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) }]);
     }
     closePanel();
@@ -569,12 +570,20 @@ export default function QuestionLibraryPage() {
                   style={{ ...INP, resize:"none", lineHeight:1.5, background:translating.textHi?"#f9fafb":"#fff", color:translating.textHi?"#9ca3af":"#374151", fontStyle:translating.textHi?"italic":"normal" }}/>
               </div>
 
-              {/* Section */}
-              <div>
-                <label style={LBL}>Section <span style={{ color:"#dc2626" }}>*</span></label>
-                <select value={form.section} onChange={e=>fp("section",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
-                  {SECTIONS.slice(1).map(s=><option key={s}>{s}</option>)}
-                </select>
+              {/* Section + Category */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                <div>
+                  <label style={LBL}>Section <span style={{ color:"#dc2626" }}>*</span></label>
+                  <select value={form.section} onChange={e=>fp("section",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
+                    {SECTIONS.slice(1).map(s=><option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={LBL}>Category <span style={{ color:"#dc2626" }}>*</span></label>
+                  <select value={form.category} onChange={e=>fp("category",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
+                    {CATEGORIES.map(c=><option key={c}>{c}</option>)}
+                  </select>
+                </div>
               </div>
 
               {/* Type + Weightage — read-only */}
@@ -781,7 +790,7 @@ export default function QuestionLibraryPage() {
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
                           <button onClick={()=>handleToggle(q.id)}
-                            style={{ fontSize:10, fontWeight:700, color:q.status==="Active"?"#16a34a":q.status==="Draft"?"#d97706":"#9ca3af", background:q.status==="Active"?"#dcfce7":q.status==="Draft"?"#fef9c3":"#f3f4f6", border:"none", borderRadius:20, padding:"3px 9px", cursor:"pointer" }}>
+                            style={{ fontSize:10, fontWeight:700, color:q.status==="Active"?"#16a34a":"#dc2626", background:q.status==="Active"?"#dcfce7":"#fee2e2", border:"none", borderRadius:20, padding:"3px 9px", cursor:"pointer" }}>
                             {q.status}
                           </button>
                         </td>
