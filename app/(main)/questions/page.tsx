@@ -475,7 +475,7 @@ export default function QuestionLibraryPage() {
   // ── Stats ─────────────────────────────────────────────────────────────────────
   const total    = questions.length;
   const active   = questions.filter(q=>q.status==="Active").length;
-  const mandatory= questions.filter(q=>q.mandatory).length;
+  const inactive = questions.filter(q=>q.status==="Inactive").length;
   const sections = new Set(questions.map(q=>q.section)).size;
 
   return (
@@ -498,7 +498,7 @@ export default function QuestionLibraryPage() {
         {[
           { label:"Total Questions", value:total,     color:"#2563eb", bg:"#eff6ff", icon:"ri-questionnaire-line",   border:"#2563eb" },
           { label:"Active",          value:active,    color:"#16a34a", bg:"#f0fdf4", icon:"ri-checkbox-circle-line", border:"#16a34a" },
-          { label:"Mandatory",       value:mandatory, color:"#dc2626", bg:"#fef2f2", icon:"ri-error-warning-line",   border:"#dc2626" },
+          { label:"Inactive",        value:inactive,  color:"#dc2626", bg:"#fef2f2", icon:"ri-close-circle-line",    border:"#dc2626" },
           { label:"Sections",        value:sections,  color:"#7c3aed", bg:"#f5f3ff", icon:"ri-folder-line",          border:"#7c3aed" },
         ].map(c => (
           <div key={c.label} style={{ background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", padding:"12px 14px", display:"flex", alignItems:"center", gap:10, borderLeft:`4px solid ${c.border}`, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
