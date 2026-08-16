@@ -89,6 +89,7 @@ export default function BranchesPage() {
   const [gps, setGps]                   = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading]     = useState(false);
   const [gpsError, setGpsError]         = useState("");
+  const [gpsDenied, setGpsDenied]       = useState(false);
   const [htlt, setHtlt]                 = useState<"HT" | "LT" | "">("");
   const [sld, setSld]                   = useState("");
   const [circle, setCircle]             = useState("");
@@ -135,11 +136,16 @@ export default function BranchesPage() {
 
   // ── GPS fetch ────────────────────────────────────────────────
   const fetchGPS = () => {
-    if (!navigator.geolocation) { setGpsError("Geolocation not supported by this browser."); return; }
-    setGpsLoading(true); setGpsError("");
+    if (!navigator.geolocation) { setGpsError("not-supported"); return; }
+    setGpsLoading(true); setGpsError(""); setGpsDenied(false);
     navigator.geolocation.getCurrentPosition(
       pos => { setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsLoading(false); },
-      ()  => { setGpsError("Location access denied. Please allow location in browser settings."); setGpsLoading(false); },
+      err => {
+        setGpsLoading(false);
+        if (err.code === 1) { setGpsDenied(true); setGpsError("denied"); }
+        else if (err.code === 2) setGpsError("unavailable");
+        else setGpsError("timeout");
+      },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
@@ -177,7 +183,7 @@ export default function BranchesPage() {
 
   const handleReset = () => {
     setSelectedBank(BANK_LIST[0]); setIfscSuffix(""); setIfscData(null); setIfscError("");
-    setGps(null); setGpsError(""); setHtlt(""); setSld("");
+    setGps(null); setGpsError(""); setGpsDenied(false); setHtlt(""); setSld("");
     setCircle(""); setRbo(""); setBranchType("Urban"); setBranchStatus("Active");
     setSuccess(false);
   };
@@ -320,19 +326,60 @@ export default function BranchesPage() {
           <SectionCard icon="ri-map-pin-2-line" iconBg="#fef9c3" iconColor="#ca8a04" title="GPS Co-ordinates">
             {!gps ? (
               <>
-                <div style={{ fontSize:12, color:"#9ca3af", marginBottom:10 }}>Tap to fetch current location coordinates</div>
-                {gpsError && (
-                  <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"8px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
-                    <i className="ri-error-warning-line"/>{gpsError}
+                {/* Permission denied — show how to enable */}
+                {gpsDenied ? (
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:10, padding:"12px 14px", marginBottom:10 }}>
+                      <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:8 }}>
+                        <i className="ri-lock-line" style={{ color:"#ea580c", fontSize:18, flexShrink:0, marginTop:1 }}/>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:800, color:"#9a3412" }}>Location Access Blocked</div>
+                          <div style={{ fontSize:11, color:"#c2410c", marginTop:2 }}>Your browser has blocked location access for this site. Follow the steps below to enable it.</div>
+                        </div>
+                      </div>
+                      <div style={{ borderTop:"1px solid #fed7aa", paddingTop:10, display:"flex", flexDirection:"column", gap:6 }}>
+                        {[
+                          { step:"1", text:'Click the 🔒 lock icon in your browser\'s address bar' },
+                          { step:"2", text:'Find "Location" and change it to "Allow"' },
+                          { step:"3", text:'Refresh the page, then click Fetch GPS again' },
+                        ].map(s => (
+                          <div key={s.step} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+                            <span style={{ width:18, height:18, borderRadius:"50%", background:"#ea580c", color:"#fff", fontSize:10, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{s.step}</span>
+                            <span style={{ fontSize:11, color:"#7c2d12", lineHeight:1.5 }}>{s.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <button onClick={() => window.location.reload()}
+                      style={{ width:"100%", padding:"9px", borderRadius:8, border:"1px solid #fed7aa", background:"#fff7ed", color:"#ea580c", cursor:"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                      <i className="ri-refresh-line"/>Refresh Page &amp; Retry
+                    </button>
                   </div>
+                ) : gpsError === "unavailable" ? (
+                  <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
+                    <i className="ri-map-pin-off-line" style={{ fontSize:16 }}/>Position unavailable. Check your device GPS or network and try again.
+                  </div>
+                ) : gpsError === "timeout" ? (
+                  <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
+                    <i className="ri-time-line" style={{ fontSize:16 }}/>Location request timed out. Move to a better signal area and retry.
+                  </div>
+                ) : gpsError === "not-supported" ? (
+                  <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
+                    <i className="ri-error-warning-line" style={{ fontSize:16 }}/>Geolocation is not supported by this browser. Please use Chrome or Edge.
+                  </div>
+                ) : (
+                  <div style={{ fontSize:12, color:"#9ca3af", marginBottom:10 }}>Tap to fetch current location coordinates</div>
                 )}
-                <button
-                  onClick={fetchGPS}
-                  disabled={gpsLoading}
-                  style={{ width:"100%", padding:"11px", borderRadius:9, border:"none", background: gpsLoading?"#9ca3af":"#16a34a", color:"#fff", cursor:gpsLoading?"not-allowed":"pointer", fontWeight:800, fontSize:12, letterSpacing:"0.06em", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}
-                >
-                  {gpsLoading ? <><i className="ri-loader-4-line" style={{ animation:"spin 1s linear infinite" }}/>FETCHING…</> : <><i className="ri-crosshair-2-line"/>FETCH GPS CO-ORDINATES</>}
-                </button>
+
+                {!gpsDenied && (
+                  <button
+                    onClick={fetchGPS}
+                    disabled={gpsLoading}
+                    style={{ width:"100%", padding:"11px", borderRadius:9, border:"none", background:gpsLoading?"#9ca3af":"#16a34a", color:"#fff", cursor:gpsLoading?"not-allowed":"pointer", fontWeight:800, fontSize:12, letterSpacing:"0.06em", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}
+                  >
+                    {gpsLoading ? <><i className="ri-loader-4-line" style={{ animation:"spin 1s linear infinite" }}/>FETCHING LOCATION…</> : <><i className="ri-crosshair-2-line"/>FETCH GPS CO-ORDINATES</>}
+                  </button>
+                )}
               </>
             ) : (
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
