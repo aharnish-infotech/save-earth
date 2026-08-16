@@ -337,6 +337,7 @@ const EMPTY = {
   helpEn:"", helpHi:"", recommendEn:"COMPLIED", recommendHi:"ठीक है",
   mandatory:true, allowRemarks:true, allowPhoto:false,
   multiPhoto:false, numericValue:false, allowNA:false,
+  status:"Active" as QStatus,
 };
 type FormData = typeof EMPTY;
 type HindiField = "textHi" | "recommendHi";
@@ -436,17 +437,18 @@ export default function QuestionLibraryPage() {
       section:q.section, riskLevel:q.riskLevel, weightage:q.weightage,
       helpEn:q.helpEn, helpHi:q.helpHi, recommendEn:q.recommendEn, recommendHi:q.recommendHi,
       mandatory:q.mandatory, allowRemarks:q.allowRemarks, allowPhoto:q.allowPhoto,
-      multiPhoto:q.multiPhoto, numericValue:q.numericValue, allowNA:q.allowNA });
+      multiPhoto:q.multiPhoto, numericValue:q.numericValue, allowNA:q.allowNA,
+      status:q.status });
   };
   const closePanel = () => { setAddPanel(false); setEditRow(null); };
 
-  const handleSave = (status: QStatus) => {
+  const handleSave = () => {
     if (!form.textEn.trim()) return;
     if (isEditMode && editRow) {
-      setQuestions(qs => qs.map(q => q.id === editRow.id ? { ...q, ...form, status } : q));
+      setQuestions(qs => qs.map(q => q.id === editRow.id ? { ...q, ...form } : q));
     } else {
       const newId = `Q-${String(questions.length + 1).padStart(3,"0")}`;
-      setQuestions(qs => [...qs, { id:newId, ...form, status, usedIn:0, createdOn:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) }]);
+      setQuestions(qs => [...qs, { id:newId, ...form, usedIn:0, createdOn:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) }]);
     }
     closePanel();
   };
@@ -606,6 +608,24 @@ export default function QuestionLibraryPage() {
                 </div>
               </div>
 
+              {/* Status */}
+              <div>
+                <label style={LBL}>Question Status</label>
+                <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+                  {(["Active","Draft","Inactive"] as QStatus[]).map((s, i) => {
+                    const active = form.status === s;
+                    const col = s==="Active" ? "#16a34a" : s==="Draft" ? "#d97706" : "#6b7280";
+                    return (
+                      <button key={s} onClick={() => fp("status", s)}
+                        style={{ flex:1, padding:"8px 4px", border:"none", borderRight:i<2?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:active ? col : "#fff", color:active?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                        <i className={s==="Active"?"ri-checkbox-circle-line":s==="Draft"?"ri-draft-line":"ri-forbid-line"} style={{ fontSize:13 }}/>
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Recommendation English */}
               <div>
                 <label style={LBL}>Default Recommendation (English)</label>
@@ -650,7 +670,7 @@ export default function QuestionLibraryPage() {
   allowPhoto:   form.allowPhoto,
   recommendEn:  form.recommendEn,
   recommendHi:  form.recommendHi  || "(empty)",
-  status:       "Active",
+  status:       form.status,
 }, null, 2)}
                 </pre>
               </details>
@@ -661,14 +681,10 @@ export default function QuestionLibraryPage() {
               <button onClick={()=>{ setForm({ ...EMPTY }); setEditRow(null); setAddPanel(true); }} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
                 Clear
               </button>
-              <button onClick={()=>handleSave("Draft")}
-                style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:700, fontSize:12 }}>
-                Save Draft
-              </button>
-              <button onClick={()=>handleSave("Active")} disabled={!form.textEn.trim()}
-                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af": isEditMode?"#2563eb":"#16a34a", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+              <button onClick={handleSave} disabled={!form.textEn.trim()}
+                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af": form.status==="Active"?(isEditMode?"#2563eb":"#16a34a"):form.status==="Draft"?"#d97706":"#6b7280", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
                 <i className={isEditMode ? "ri-save-line" : "ri-check-line"}/>
-                {isEditMode ? "UPDATE" : "SAVE & ACTIVATE"}
+                {isEditMode ? `UPDATE AS ${form.status.toUpperCase()}` : `SAVE AS ${form.status.toUpperCase()}`}
               </button>
             </div>
           </div>
