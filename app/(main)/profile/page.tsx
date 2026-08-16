@@ -23,13 +23,18 @@ const STATS = [
   { label: "Drafts Saved",     value: 5,   icon: "ri-draft-line",           color: "#d97706", bg: "#fffbeb" },
 ];
 
-const ACTIVITY = [
-  { action: "Completed audit for Koramangala Branch",   time: "2 hours ago",  icon: "ri-checkbox-circle-line", color: "#16a34a" },
-  { action: "Updated Question Library — Q-016 type",    time: "5 hours ago",  icon: "ri-edit-line",            color: "#2563eb" },
-  { action: "Added new Branch — Whitefield",            time: "Yesterday",    icon: "ri-building-2-line",      color: "#7c3aed" },
-  { action: "Generated audit report for MG Road",       time: "2 days ago",   icon: "ri-file-chart-line",      color: "#d97706" },
-  { action: "Logged in from 192.168.1.6",               time: "2 days ago",   icon: "ri-login-box-line",       color: "#6b7280" },
+const AUDIT_HISTORY = [
+  { id: "AUD-2026-018", branch: "Koramangala Branch",  date: "14 Aug 2026", status: "Completed"   },
+  { id: "AUD-2026-017", branch: "Whitefield Branch",   date: "12 Aug 2026", status: "Completed"   },
+  { id: "AUD-2026-016", branch: "MG Road Branch",      date: "10 Aug 2026", status: "In Progress" },
+  { id: "AUD-2026-015", branch: "Indiranagar Branch",  date: "08 Aug 2026", status: "Draft"       },
+  { id: "AUD-2026-014", branch: "HSR Layout Branch",   date: "05 Aug 2026", status: "Completed"   },
 ];
+const STATUS_STYLE: Record<string, { color: string; bg: string }> = {
+  "Completed":   { color: "#16a34a", bg: "#f0fdf4" },
+  "In Progress": { color: "#2563eb", bg: "#eff6ff" },
+  "Draft":       { color: "#d97706", bg: "#fffbeb" },
+};
 
 export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false);
@@ -189,6 +194,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Security */}
+          <div style={{ maxWidth: "50%" }}>
           <div style={CARD}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -219,6 +225,7 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
+          </div>
         </div>
 
         {/* RIGHT — Stats + Activity */}
@@ -229,6 +236,37 @@ export default function ProfilePage() {
             <div style={{ fontSize: 13, fontWeight: 800, color: "#111827", marginBottom: 14, display: "flex", alignItems: "center", gap: 7 }}>
               <i className="ri-bar-chart-2-line" style={{ color: "#16a34a" }} /> Performance
             </div>
+
+            {/* Completion Donut */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+              <div style={{ position: "relative", width: 88, height: 88 }}>
+                <svg width="88" height="88" viewBox="0 0 88 88">
+                  <circle cx="44" cy="44" r="36" fill="none" stroke="#e5e7eb" strokeWidth="9" />
+                  <circle cx="44" cy="44" r="36" fill="none" stroke="#16a34a" strokeWidth="9"
+                    strokeDasharray={`${226.2 * 0.857} 226.2`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 44 44)" />
+                  <circle cx="44" cy="44" r="36" fill="none" stroke="#fbbf24" strokeWidth="9"
+                    strokeDasharray={`${226.2 * 0.143} 226.2`}
+                    strokeDashoffset={`${-226.2 * 0.857}`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 44 44)" />
+                </svg>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#111827", lineHeight: 1 }}>85%</div>
+                  <div style={{ fontSize: 8, color: "#9ca3af", fontWeight: 700, letterSpacing: "0.05em", marginTop: 2 }}>COMPLETE</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#6b7280" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#16a34a", display: "inline-block" }} /> 18 Completed
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#6b7280" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fbbf24", display: "inline-block" }} /> 3 Remaining
+              </div>
+            </div>
+
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {STATS.map(s => (
                 <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: s.bg, borderRadius: 9 }}>
@@ -264,26 +302,63 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* Recent Activity */}
-          <div style={CARD}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#111827", marginBottom: 14, display: "flex", alignItems: "center", gap: 7 }}>
-              <i className="ri-history-line" style={{ color: "#7c3aed" }} /> Recent Activity
+        </div>
+      </div>
+
+      {/* ── Audit History ── */}
+      <div style={{ ...CARD, marginTop: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <i className="ri-history-line" style={{ fontSize: 16, color: "#7c3aed" }} />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {ACTIVITY.map((a, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < ACTIVITY.length - 1 ? "1px solid #f9fafb" : "none" }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: `${a.color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                    <i className={a.icon} style={{ fontSize: 12, color: a.color }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#374151", fontWeight: 500, lineHeight: 1.4 }}>{a.action}</div>
-                    <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{a.time}</div>
-                  </div>
-                </div>
-              ))}
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#111827" }}>Audit History</div>
+              <div style={{ fontSize: 11, color: "#9ca3af" }}>Your last 5 audit submissions</div>
             </div>
           </div>
+          <button style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
+            <i className="ri-download-line" style={{ fontSize: 13 }} /> Export
+          </button>
         </div>
+
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: "#f9fafb" }}>
+              {["Audit ID", "Branch", "Date", "Status", "Action"].map(h => (
+                <th key={h} style={{ padding: "9px 14px", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.05em", textAlign: "left" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {AUDIT_HISTORY.map((a, i) => {
+              const ss = STATUS_STYLE[a.status];
+              return (
+                <tr key={a.id} style={{ background: i % 2 === 0 ? "#fff" : "#fafafa", transition: "background 0.15s" }}>
+                  <td style={{ padding: "11px 14px", fontSize: 12, fontWeight: 700, color: "#374151", borderBottom: "1px solid #f3f4f6", fontFamily: "monospace" }}>{a.id}</td>
+                  <td style={{ padding: "11px 14px", fontSize: 13, color: "#111827", fontWeight: 600, borderBottom: "1px solid #f3f4f6" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <i className="ri-building-2-line" style={{ fontSize: 13, color: "#9ca3af" }} /> {a.branch}
+                    </div>
+                  </td>
+                  <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", borderBottom: "1px solid #f3f4f6" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <i className="ri-calendar-line" style={{ fontSize: 12, color: "#9ca3af" }} /> {a.date}
+                    </div>
+                  </td>
+                  <td style={{ padding: "11px 14px", borderBottom: "1px solid #f3f4f6" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, borderRadius: 20, padding: "3px 10px" }}>{a.status}</span>
+                  </td>
+                  <td style={{ padding: "11px 14px", borderBottom: "1px solid #f3f4f6" }}>
+                    <button style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                      <i className="ri-eye-line" style={{ fontSize: 12 }} /> View
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
