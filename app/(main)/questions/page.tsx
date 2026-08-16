@@ -2,9 +2,9 @@
 import React, { useState } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type QType    = "YES_NO_NA" | "YES_NO" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
-type RiskLevel= "HIGH" | "MEDIUM" | "LOW";
-type QStatus  = "Active" | "Draft" | "Inactive";
+type QType     = "YES_NO_NA" | "YES_NO" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
+type RiskLevel = "HIGH" | "MEDIUM" | "LOW";
+type QStatus   = "Active" | "Draft" | "Inactive";
 
 interface Question {
   id:           string;
@@ -30,160 +30,160 @@ interface Question {
   createdOn:    string;
 }
 
-// ── Seed Data ──────────────────────────────────────────────────────────────────
+// ── Seed Data — 32 real questions with full Hindi translations ─────────────────
+const D = "01 Jan 2024";
+const mkQ = (id: string, section: string, textEn: string, textHi: string, recommendHi = "अनुपालित", category = "Safety"): Question => ({
+  id, section, textEn, textHi,
+  type: "YES_NO_NA", category, riskLevel: "HIGH", weightage: 5,
+  helpEn: "", helpHi: "", recommendEn: "COMPLIED", recommendHi,
+  mandatory: true, allowRemarks: true, allowPhoto: false,
+  multiPhoto: false, numericValue: false, allowNA: false,
+  status: "Active", usedIn: 0, createdOn: D,
+});
+
 const SEED: Question[] = [
-  { id:"Q-001", section:"Electrical Safety", category:"Safety",      type:"YES_NO_NA",   riskLevel:"HIGH",   weightage:8, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:false, numericValue:false, allowNA:true,  status:"Active", usedIn:4, createdOn:"01 Jan 2024",
-    textEn:"Whether ELCBs are provided with proper rating to cater the load?",
-    textHi:"क्या ELCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?",
-    helpEn:"Inspect ELCB rating label and compare with connected load.",
-    helpHi:"ELCB की रेटिंग लेबल जाँचें और कनेक्टेड लोड से मिलाएं।",
-    recommendEn:"Install ELCB of appropriate rating as per connected load.",
-    recommendHi:"कनेक्टेड लोड के अनुसार उचित रेटिंग का ELCB स्थापित करें।",
-  },
-  { id:"Q-002", section:"Electrical Safety", category:"Safety",      type:"YES_NO_NA",   riskLevel:"HIGH",   weightage:9, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:true,  numericValue:false, allowNA:false, status:"Active", usedIn:4, createdOn:"01 Jan 2024",
-    textEn:"Are all electrical connections properly insulated with no exposed wiring?",
-    textHi:"क्या सभी विद्युत कनेक्शन ठीक से इन्सुलेटेड हैं और कोई खुला तार नहीं है?",
-    helpEn:"Check all wiring for exposed conductors, damaged insulation.",
-    helpHi:"सभी तारों में खुले कंडक्टर, क्षतिग्रस्त इन्सुलेशन की जाँच करें।",
-    recommendEn:"Re-insulate all exposed wiring immediately.",
-    recommendHi:"सभी खुले तारों को तुरंत इन्सुलेट करें।",
-  },
-  { id:"Q-003", section:"Electrical Safety", category:"Maintenance", type:"RATING_1_5",  riskLevel:"MEDIUM", weightage:6, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:false, numericValue:false, allowNA:false, status:"Active", usedIn:3, createdOn:"01 Jan 2024",
-    textEn:"Rate the overall condition of the UPS / inverter backup system.",
-    textHi:"UPS / इन्वर्टर बैकअप सिस्टम की समग्र स्थिति को रेट करें।",
-    helpEn:"Check battery health, runtime, and last maintenance date.",
-    helpHi:"बैटरी स्वास्थ्य, रनटाइम और अंतिम रखरखाव तिथि जाँचें।",
-    recommendEn:"Schedule UPS battery replacement if runtime is below 30 minutes.",
-    recommendHi:"यदि रनटाइम 30 मिनट से कम है तो UPS बैटरी बदलें।",
-  },
-  { id:"Q-004", section:"Electrical Safety", category:"Compliance",  type:"YES_NO_NA",   riskLevel:"HIGH",   weightage:8, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:false, numericValue:false, allowNA:false, status:"Active", usedIn:4, createdOn:"02 Jan 2024",
-    textEn:"Is the earthing system properly installed and tested within the last 6 months?",
-    textHi:"क्या अर्थिंग सिस्टम ठीक से स्थापित है और पिछले 6 महीनों में परीक्षण किया गया है?",
-    helpEn:"Check earthing test certificate date and resistance value.",
-    helpHi:"अर्थिंग परीक्षण प्रमाणपत्र तिथि और प्रतिरोध मान जाँचें।",
-    recommendEn:"Conduct earthing resistance test and obtain certificate.",
-    recommendHi:"अर्थिंग प्रतिरोध परीक्षण करें और प्रमाणपत्र प्राप्त करें।",
-  },
-  { id:"Q-005", section:"Electrical Safety", category:"Safety",      type:"YES_NO_NA",   riskLevel:"HIGH",   weightage:7, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:false, numericValue:false, allowNA:false, status:"Active", usedIn:4, createdOn:"02 Jan 2024",
-    textEn:"Is the DG Set functional and tested within the last quarter?",
-    textHi:"क्या DG सेट कार्यात्मक है और पिछली तिमाही में परीक्षण किया गया है?",
-    helpEn:"Check DG log book for last test run date and duration.",
-    helpHi:"DG लॉग बुक में अंतिम परीक्षण रन तिथि और अवधि जाँचें।",
-    recommendEn:"Conduct monthly test run of DG Set and maintain log.",
-    recommendHi:"DG सेट का मासिक परीक्षण रन करें और लॉग बनाए रखें।",
-  },
-  { id:"Q-006", section:"Electrical Safety", category:"Maintenance", type:"NUMERIC",     riskLevel:"MEDIUM", weightage:4, mandatory:false, allowRemarks:true,  allowPhoto:false, multiPhoto:false, numericValue:true,  allowNA:true,  status:"Active", usedIn:2, createdOn:"03 Jan 2024",
-    textEn:"What is the current earthing resistance value (in Ohms)?",
-    textHi:"वर्तमान अर्थिंग प्रतिरोध मान (ओम में) क्या है?",
-    helpEn:"Record value from last earthing test certificate.",
-    helpHi:"अंतिम अर्थिंग परीक्षण प्रमाणपत्र से मान दर्ज करें।",
-    recommendEn:"Resistance should be below 1 Ohm as per IS standards.",
-    recommendHi:"IS मानकों के अनुसार प्रतिरोध 1 ओम से कम होना चाहिए।",
-  },
-  { id:"Q-007", section:"Fire Safety", category:"Safety",            type:"YES_NO_NA",   riskLevel:"HIGH",   weightage:9, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:true,  numericValue:false, allowNA:false, status:"Active", usedIn:4, createdOn:"01 Jan 2024",
-    textEn:"Are adequate fire extinguishers installed at all required locations?",
-    textHi:"क्या सभी आवश्यक स्थानों पर पर्याप्त अग्निशामक यंत्र स्थापित हैं?",
-    helpEn:"Check type, quantity, and placement as per NBC norms.",
-    helpHi:"NBC मानकों के अनुसार प्रकार, मात्रा और स्थापना जाँचें।",
-    recommendEn:"Install CO2 and DCP extinguishers at all designated points.",
-    recommendHi:"सभी नामित बिंदुओं पर CO2 और DCP अग्निशामक स्थापित करें।",
-  },
-  { id:"Q-008", section:"Fire Safety", category:"Compliance",        type:"YES_NO_NA",   riskLevel:"HIGH",   weightage:8, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:false, numericValue:false, allowNA:false, status:"Active", usedIn:4, createdOn:"01 Jan 2024",
-    textEn:"Are fire extinguishers within validity date and last serviced within 1 year?",
-    textHi:"क्या अग्निशामक यंत्र वैधता तिथि के भीतर हैं और पिछले 1 वर्ष में सर्विस किए गए हैं?",
-    helpEn:"Check service tag on each extinguisher for last service date.",
-    helpHi:"प्रत्येक अग्निशामक पर सर्विस टैग में अंतिम सर्विस तिथि जाँचें।",
-    recommendEn:"Service all extinguishers immediately and update tags.",
-    recommendHi:"सभी अग्निशामकों को तुरंत सर्विस करें और टैग अपडेट करें।",
-  },
-  { id:"Q-009", section:"Fire Safety", category:"Safety",            type:"YES_NO_NA",   riskLevel:"HIGH",   weightage:7, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:false, numericValue:false, allowNA:false, status:"Active", usedIn:3, createdOn:"01 Jan 2024",
-    textEn:"Is the fire alarm system operational and tested monthly?",
-    textHi:"क्या अग्नि अलार्म सिस्टम चालू है और मासिक परीक्षण किया जाता है?",
-    helpEn:"Ask for fire alarm test register and check last test date.",
-    helpHi:"अग्नि अलार्म परीक्षण रजिस्टर मांगें और अंतिम परीक्षण तिथि जाँचें।",
-    recommendEn:"Conduct monthly fire alarm test and maintain register.",
-    recommendHi:"मासिक अग्नि अलार्म परीक्षण करें और रजिस्टर बनाए रखें।",
-  },
-  { id:"Q-010", section:"Security Systems", category:"Safety",       type:"YES_NO_NA",   riskLevel:"HIGH",   weightage:9, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:true,  numericValue:false, allowNA:false, status:"Active", usedIn:4, createdOn:"01 Jan 2024",
-    textEn:"Is the CCTV system fully operational with all cameras functional?",
-    textHi:"क्या CCTV सिस्टम पूरी तरह से चालू है और सभी कैमरे कार्यात्मक हैं?",
-    helpEn:"Check DVR/NVR live feed for all camera angles.",
-    helpHi:"सभी कैमरा कोणों के लिए DVR/NVR लाइव फीड जाँचें।",
-    recommendEn:"Replace faulty cameras and ensure 100% coverage.",
-    recommendHi:"खराब कैमरे बदलें और 100% कवरेज सुनिश्चित करें।",
-  },
-  { id:"Q-011", section:"General Compliance", category:"Compliance", type:"YES_NO_NA",   riskLevel:"MEDIUM", weightage:5, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:false, numericValue:false, allowNA:false, status:"Active", usedIn:4, createdOn:"01 Jan 2024",
-    textEn:"Is the branch licence and other statutory certificates displayed prominently?",
-    textHi:"क्या शाखा लाइसेंस और अन्य वैधानिक प्रमाणपत्र प्रमुखता से प्रदर्शित हैं?",
-    helpEn:"Verify all statutory certificates are current and prominently displayed.",
-    helpHi:"सभी वैधानिक प्रमाणपत्र वर्तमान हैं और प्रमुखता से प्रदर्शित हैं, सत्यापित करें।",
-    recommendEn:"Frame and display all certificates at the branch entrance.",
-    recommendHi:"सभी प्रमाणपत्रों को फ्रेम करें और शाखा प्रवेश पर प्रदर्शित करें।",
-  },
-  { id:"Q-012", section:"Civil & Structural", category:"Maintenance", type:"RATING_1_5", riskLevel:"LOW",    weightage:4, mandatory:false, allowRemarks:true,  allowPhoto:true,  multiPhoto:true,  numericValue:false, allowNA:false, status:"Active", usedIn:2, createdOn:"02 Jan 2024",
-    textEn:"Rate the overall structural condition of the building (walls, roof, flooring).",
-    textHi:"भवन की समग्र संरचनात्मक स्थिति (दीवारें, छत, फर्श) को रेट करें।",
-    helpEn:"Look for cracks, seepage, peeling paint, broken tiles.",
-    helpHi:"दरारें, रिसाव, छिलती पेंट, टूटी टाइलें देखें।",
-    recommendEn:"Undertake civil repair work for all structural deficiencies.",
-    recommendHi:"सभी संरचनात्मक कमियों के लिए सिविल मरम्मत कार्य करें।",
-  },
-  { id:"Q-013", section:"IT Infrastructure", category:"Compliance",  type:"YES_NO_NA",   riskLevel:"MEDIUM", weightage:6, mandatory:true,  allowRemarks:true,  allowPhoto:true,  multiPhoto:false, numericValue:false, allowNA:false, status:"Draft", usedIn:0, createdOn:"10 Feb 2024",
-    textEn:"Are all ATM/CDM machines functional and stocked?",
-    textHi:"क्या सभी ATM/CDM मशीनें कार्यात्मक और भरी हुई हैं?",
-    helpEn:"Check ATM status screen and cash availability.",
-    helpHi:"ATM स्थिति स्क्रीन और नकद उपलब्धता जाँचें।",
-    recommendEn:"Ensure ATM uptime above 95% and cash replenishment on schedule.",
-    recommendHi:"ATM अपटाइम 95% से ऊपर और निर्धारित समय पर नकद पुनःपूर्ति सुनिश्चित करें।",
-  },
+  // ── General Section (Q-001 – Q-018) ──────────────────────────────────────────
+  mkQ("Q-001","General",
+    "Whether MCCBs/MCBs are provided with proper rating to cater the load",
+    "क्या MCCB/MCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?", "अनुपालित", "General"),
+  mkQ("Q-002","General",
+    "Whether ELCBs are provided with proper rating to cater the load",
+    "क्या ELCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?", "अनुपालित", "General"),
+  mkQ("Q-003","General",
+    "Whether light and emergency light are provided in electrical rooms/operating areas for easy operation & maintenance works",
+    "क्या विद्युत कक्षों/संचालन क्षेत्रों में सामान्य और आपातकालीन प्रकाश आसान संचालन और रखरखाव के लिए प्रदान किए गए हैं?", "अनुपालित", "General"),
+  mkQ("Q-004","General",
+    "Whether Pump room, DG set room, UPS room, electrical room etc. are maintained dry and in good condition and obsolete/hazardous/old items are not dumped there",
+    "क्या पंप रूम, DG सेट रूम, UPS रूम, विद्युत कक्ष आदि शुष्क और अच्छी स्थिति में रखे गए हैं और वहाँ पुराने/खतरनाक/अनुपयोगी सामान नहीं डाले गए हैं?", "अनुपालित", "General"),
+  mkQ("Q-005","General",
+    "Whether Water Seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc.",
+    "क्या किसी विद्युत पैनल, वितरण बोर्ड, विद्युत उपकरण आदि के पास जल रिसाव देखा गया है?", "अनुपालित", "General"),
+  mkQ("Q-006","General",
+    "Whether Earthing pits are provided and connected to the equipment, Body of the connected equipment",
+    "क्या अर्थिंग पिट प्रदान किए गए हैं और उपकरण तथा संबंधित उपकरण के बॉडी से जुड़े हैं?", "अनुपालित", "General"),
+  mkQ("Q-007","General",
+    "Whether the Earthing Pits are properly maintained",
+    "क्या अर्थिंग पिट उचित तरीके से रखरखाव किए जा रहे हैं?", "अनुपालित", "General"),
+  mkQ("Q-008","General",
+    "Whether proper exhaust fan for ventilation of panel room/electrical room/UPS room is provided and paper, old materials or any other scrap kept near DB/Panels/UPS/Batteries etc. are not kept there",
+    "क्या पैनल रूम/विद्युत कक्ष/UPS रूम के वेंटिलेशन के लिए उचित एग्जॉस्ट फैन लगाया गया है और DB/पैनल/UPS/बैटरी आदि के पास कागज, पुराना सामान या कोई अन्य कबाड़ नहीं रखा गया है?", "अनुपालित", "General"),
+  mkQ("Q-009","General",
+    "Whether Penalty is being imposed in electricity bills on account of higher load/poor power factor etc. (it may be ascertained from the electricity bill of April/May/Jun/July). Additional electrical load required if any (from Power Distribution company)",
+    "क्या अधिक लोड/खराब पावर फैक्टर आदि के कारण बिजली बिल में जुर्माना लगाया जा रहा है? (अप्रैल/मई/जून/जुलाई के बिजली बिल से जाँचें)। यदि आवश्यक हो तो बिजली वितरण कंपनी से अतिरिक्त विद्युत भार की माँग।", "अनुपालित", "General"),
+  mkQ("Q-010","General",
+    "Whether load is distributed in all three phases to avoid unbalancing of phases and no loose electrical connection/haphazard wirings observed in the Branch/office premises",
+    "क्या फेज असंतुलन से बचने के लिए लोड तीनों फेज में वितरित किया गया है और शाखा/कार्यालय परिसर में कोई ढीला विद्युत कनेक्शन/अव्यवस्थित वायरिंग नहीं देखी गई है?", "अनुपालित", "General"),
+  mkQ("Q-011","General",
+    "Whether isolating switch is provided for the switching off of non-essential loads premises during night and main switch to switch off the power supply to the branch in case of Fire/emergency",
+    "क्या रात के समय गैर-आवश्यक लोड बंद करने के लिए आइसोलेटिंग स्विच और आग/आपातकाल की स्थिति में शाखा की बिजली आपूर्ति बंद करने के लिए मेन स्विच प्रदान किया गया है?", "अनुपालित", "General"),
+  mkQ("Q-012","General",
+    "Whether electrical equipments of pantry etc. are properly connected to iron socket box with MCBs or latest type switches are provided to switch on/off the AC's and protect them from Overload",
+    "क्या पेंट्री आदि के विद्युत उपकरण MCB के साथ आयरन सॉकेट बॉक्स से ठीक से जुड़े हैं या AC को चालू/बंद करने और ओवरलोड से बचाने के लिए नवीनतम प्रकार के स्विच लगाए गए हैं?", "अनुपालित", "General"),
+  mkQ("Q-013","General",
+    "Whether Proper preventive maintenance after opening of panel boards and distribution boards are carried out by the license holder Electrician or skilled technicians of Equipment manufacturers/service providers",
+    "क्या पैनल बोर्ड और वितरण बोर्ड खोलने के बाद उचित निवारक रखरखाव लाइसेंस धारक इलेक्ट्रीशियन या उपकरण निर्माताओं/सेवा प्रदाताओं के कुशल तकनीशियनों द्वारा किया जाता है?", "अनुपालित", "General"),
+  mkQ("Q-014","General",
+    "Whether mechanical timers used in the changeover of Air conditioners for server Room A/Cs and for Signage Boards to make auto ON/OFF (for Schedule timings). The thermostat of AC's at server rooms should be set to say 30 degree centigrade so they are not run only when the temperature is too high (to minimize chances of fire due to idle running of AC's during the night)",
+    "क्या सर्वर रूम AC और साइनेज बोर्ड के ऑटो ON/OFF के लिए मैकेनिकल टाइमर का उपयोग किया जाता है? सर्वर रूम AC का थर्मोस्टेट 30 डिग्री सेल्सियस पर सेट होना चाहिए ताकि रात में निष्क्रिय AC चलने से आग लगने की संभावना कम हो।", "अनुपालित", "General"),
+  mkQ("Q-015","General",
+    "Whether Preventive Maintenance of electric installation and equipment is carried out by skilled license holder electricians/skilled technician",
+    "क्या विद्युत प्रतिष्ठान और उपकरणों का निवारक रखरखाव कुशल लाइसेंस धारक इलेक्ट्रीशियन/कुशल तकनीशियन द्वारा किया जाता है?", "अनुपालित", "General"),
+  mkQ("Q-016","General",
+    "General condition of electrical control panels, main switch, electric meter board and change over switch AC's, water cooler, water filter, wiring cables etc. is good and all DB's, Panels, switch boards are properly covered",
+    "विद्युत कंट्रोल पैनल, मेन स्विच, इलेक्ट्रिक मीटर बोर्ड, चेंजओवर स्विच, AC, वाटर कूलर, वाटर फिल्टर, वायरिंग केबल आदि की सामान्य स्थिति अच्छी है और सभी DB, पैनल, स्विच बोर्ड ठीक से ढके हुए हैं?", "अनुपालित", "General"),
+  mkQ("Q-017","General",
+    "Whether the contact numbers of persons, electricians, power distribution company, Generator service provider, vendor, UPS vendors, ACs etc. are available with Accountant/Security guard and other staff and they are displayed in Electric room/UPS room",
+    "क्या इलेक्ट्रीशियन, बिजली वितरण कंपनी, जनरेटर सेवा प्रदाता, UPS विक्रेता, AC आदि के संपर्क नंबर अकाउंटेंट/सुरक्षा गार्ड और अन्य कर्मचारियों के पास उपलब्ध हैं और विद्युत कक्ष/UPS रूम में प्रदर्शित हैं?", "अनुपालित", "General"),
+  mkQ("Q-018","General",
+    "Whether the power factor panel of appropriate rating is installed",
+    "क्या उचित रेटिंग का पावर फैक्टर पैनल स्थापित किया गया है?", "अनुपालित", "General"),
+
+  // ── Fire Prevention Measures (Q-019 – Q-023) ────────────────────────────────
+  mkQ("Q-019","Fire Prevention Measures",
+    "All old disposable records, broken furniture etc. accumulated at the premises have been cleared",
+    "परिसर में जमा सभी पुराने निपटान योग्य रिकॉर्ड, टूटा हुआ फर्नीचर आदि हटाया गया है?"),
+  mkQ("Q-020","Fire Prevention Measures",
+    "Combustible leaf, litter/waste papers etc. in and around the branch is removed/cleaned periodically",
+    "शाखा के अंदर और आसपास दहनशील पत्ते, कूड़ा/अपशिष्ट कागज आदि समय-समय पर हटाए/साफ किए जाते हैं?"),
+  mkQ("Q-021","Fire Prevention Measures",
+    "No stationary/Records/old obsolete items are stored/kept in the system/UPS room",
+    "सिस्टम/UPS रूम में कोई स्टेशनरी/रिकॉर्ड/पुराने अनुपयोगी सामान संग्रहीत/नहीं रखे गए हैं?"),
+  mkQ("Q-022","Fire Prevention Measures",
+    "Storage racks in Stationery/Record room kept at a safe distance of at least 3 FEET from electrical points/switch/junction boxes",
+    "स्टेशनरी/रिकॉर्ड रूम में भंडारण रैक विद्युत बिंदुओं/स्विच/जंक्शन बॉक्स से कम से कम 3 फीट की सुरक्षित दूरी पर रखे गए हैं?"),
+  mkQ("Q-023","Fire Prevention Measures",
+    "In the pantry/canteen LPG is used (YES/NO)",
+    "क्या पेंट्री/कैंटीन में LPG का उपयोग किया जाता है? (हाँ/नहीं)"),
+
+  // ── Server and UPS Room (Q-024 – Q-026) ─────────────────────────────────────
+  mkQ("Q-024","Server and UPS Room",
+    "Server room has dual AC units having timer circuit device with independent circuit",
+    "क्या सर्वर रूम में स्वतंत्र सर्किट के साथ टाइमर सर्किट डिवाइस युक्त दोहरी AC इकाइयाँ हैं?"),
+  mkQ("Q-025","Server and UPS Room",
+    "Whether metal body Exhaust fan installed in UPS room",
+    "क्या UPS रूम में धातु के बॉडी वाला एग्जॉस्ट फैन स्थापित किया गया है?"),
+  mkQ("Q-026","Server and UPS Room",
+    "Whether ceiling fans installed are of BLDC type",
+    "क्या स्थापित सीलिंग फैन BLDC प्रकार के हैं?"),
+
+  // ── Electrical Safety continued (Q-027 – Q-029) ─────────────────────────────
+  mkQ("Q-027","Electrical Safety",
+    "Power Supply to record/Stationary room is made through plug and socket arrangement",
+    "क्या रिकॉर्ड/स्टेशनरी रूम को प्लग और सॉकेट व्यवस्था के माध्यम से बिजली आपूर्ति की जाती है?"),
+  mkQ("Q-028","Electrical Safety",
+    "Whether LED lights have been installed. If not, specify number of 2x2 (36W), Down lights (12/15W), 4 Feet (28W) LED lights required in the branch/office",
+    "क्या LED लाइटें स्थापित की गई हैं? यदि नहीं, तो शाखा/कार्यालय में आवश्यक 2x2 (36W), डाउन लाइट (12/15W), 4 फीट (28W) LED लाइटों की संख्या बताएं।"),
+  mkQ("Q-029","Electrical Safety",
+    "Whether motion sensors/occupancy sensors have been installed",
+    "क्या मोशन सेंसर/ऑक्यूपेंसी सेंसर स्थापित किए गए हैं?"),
+
+  // ── Fire Protection (Q-030) ──────────────────────────────────────────────────
+  mkQ("Q-030","Fire Protection",
+    "Are fire extinguishers available in the following work areas and clearly marked and accessible? (A. System/UPS Room: CO2 3Kg/4.5Kg × 1-Modular, 2-Powder  B. Banking Hall: Powder type-1  C. Stationery Room: CO2 type-1)",
+    "क्या निम्नलिखित कार्य क्षेत्रों में अग्निशामक यंत्र उपलब्ध हैं और स्पष्ट रूप से चिह्नित तथा सुलभ हैं? (A. सिस्टम/UPS रूम: CO2 3Kg/4.5Kg × 1-मॉड्यूलर, 2-पाउडर  B. बैंकिंग हॉल: पाउडर प्रकार-1  C. स्टेशनरी रूम: CO2 प्रकार-1)"),
+
+  // ── DG Set / Generator (Q-031 – Q-032) ──────────────────────────────────────
+  mkQ("Q-031","DG Set / Generator",
+    "At least two 6 Kg. ABC Capacity fire extinguishers are placed near the diesel generator",
+    "डीजल जनरेटर के पास कम से कम दो 6 Kg. ABC क्षमता के अग्निशामक यंत्र रखे गए हैं?"),
+  mkQ("Q-032","DG Set / Generator",
+    "Whether electrical safety and energy saving awareness meeting with the staff members conducted after electrical safety audit of the branch/office by the auditor",
+    "क्या शाखा/कार्यालय के विद्युत सुरक्षा ऑडिट के बाद ऑडिटर द्वारा कर्मचारियों के साथ विद्युत सुरक्षा और ऊर्जा बचत जागरूकता बैठक आयोजित की गई है?"),
 ];
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const SECTIONS    = ["All Sections","Electrical Safety","Fire Safety","Civil & Structural","Security Systems","IT Infrastructure","General Compliance"];
-const CATEGORIES  = ["Safety","Compliance","Maintenance","General"];
-const Q_TYPES     = ["YES_NO_NA","YES_NO","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
-const RISK_LEVELS = ["HIGH","MEDIUM","LOW"] as const;
-const STATUS_LIST = ["All Status","Active","Draft","Inactive"];
-const PAGE_SIZE   = 8;
+const SECTIONS   = ["All Sections","General","Electrical Safety","Fire Prevention Measures","Server and UPS Room","Fire Protection","DG Set / Generator"];
+const CATEGORIES = ["General","Safety","Compliance","Maintenance"];
+const Q_TYPES    = ["YES_NO_NA","YES_NO","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
+const RISK_LEVELS= ["HIGH","MEDIUM","LOW"] as const;
+const STATUS_LIST= ["All Status","Active","Draft","Inactive"];
+const PAGE_SIZE  = 10;
 
-const TYPE_LABEL: Record<QType, string> = {
-  "YES_NO_NA":   "YES / NO / NA",
-  "YES_NO":      "YES / NO",
-  "RATING_1_5":  "Rating 1–5",
-  "NUMERIC":     "Numeric",
-  "TEXT":        "Text",
-  "MULTI_CHOICE":"Multiple Choice",
+const TYPE_LABEL: Record<QType,string> = {
+  "YES_NO_NA":"YES / NO / NA","YES_NO":"YES / NO","RATING_1_5":"Rating 1–5",
+  "NUMERIC":"Numeric","TEXT":"Text","MULTI_CHOICE":"Multiple Choice",
 };
-const TYPE_STYLE: Record<QType, { color: string; bg: string }> = {
-  "YES_NO_NA":   { color:"#16a34a", bg:"#dcfce7" },
-  "YES_NO":      { color:"#2563eb", bg:"#dbeafe" },
-  "RATING_1_5":  { color:"#7c3aed", bg:"#f5f3ff" },
-  "NUMERIC":     { color:"#0891b2", bg:"#ecfeff" },
-  "TEXT":        { color:"#374151", bg:"#f3f4f6" },
-  "MULTI_CHOICE":{ color:"#d97706", bg:"#fef3c7" },
+const TYPE_STYLE: Record<QType,{color:string;bg:string}> = {
+  "YES_NO_NA":{color:"#16a34a",bg:"#dcfce7"},"YES_NO":{color:"#2563eb",bg:"#dbeafe"},
+  "RATING_1_5":{color:"#7c3aed",bg:"#f5f3ff"},"NUMERIC":{color:"#0891b2",bg:"#ecfeff"},
+  "TEXT":{color:"#374151",bg:"#f3f4f6"},"MULTI_CHOICE":{color:"#d97706",bg:"#fef3c7"},
 };
-const RISK_STYLE: Record<RiskLevel, { color: string; bg: string }> = {
-  "HIGH":   { color:"#dc2626", bg:"#fee2e2" },
-  "MEDIUM": { color:"#d97706", bg:"#fef3c7" },
-  "LOW":    { color:"#16a34a", bg:"#dcfce7" },
-};
-const SECTION_COLOR: Record<string, string> = {
-  "Electrical Safety":  "#ca8a04",
-  "Fire Safety":        "#dc2626",
-  "Civil & Structural": "#0891b2",
-  "Security Systems":   "#7c3aed",
-  "IT Infrastructure":  "#2563eb",
-  "General Compliance": "#16a34a",
+const SECTION_COLOR: Record<string,string> = {
+  "Electrical Safety":"#ca8a04","Fire Prevention Measures":"#dc2626",
+  "Server and UPS Room":"#2563eb","Fire Protection":"#ea580c",
+  "DG Set / Generator":"#7c3aed","General":"#16a34a",
 };
 
-// ── EMPTY FORM ─────────────────────────────────────────────────────────────────
+// ── Form ───────────────────────────────────────────────────────────────────────
 const EMPTY = {
-  textEn:"", textHi:"", type:"YES_NO_NA" as QType, category:"Safety", section:"Electrical Safety",
-  riskLevel:"HIGH" as RiskLevel, weightage:5,
-  helpEn:"", helpHi:"", recommendEn:"", recommendHi:"",
-  mandatory:true, allowRemarks:true, allowPhoto:true,
+  textEn:"", textHi:"", type:"YES_NO_NA" as QType, category:"General",
+  section:"General", riskLevel:"HIGH" as RiskLevel, weightage:5,
+  helpEn:"", helpHi:"", recommendEn:"COMPLIED", recommendHi:"",
+  mandatory:true, allowRemarks:true, allowPhoto:false,
   multiPhoto:false, numericValue:false, allowNA:false,
 };
+type FormData = typeof EMPTY;
+type HindiField = "textHi" | "recommendHi";
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const TH: React.CSSProperties = { padding:"10px 12px", fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.05em", background:"#f9fafb", borderBottom:"1px solid #e5e7eb", whiteSpace:"nowrap" as const, textAlign:"left" as const };
@@ -191,20 +191,49 @@ const TD: React.CSSProperties = { padding:"10px 12px", verticalAlign:"middle" as
 const SEL: React.CSSProperties = { border:"1px solid #e5e7eb", borderRadius:7, padding:"6px 10px", fontSize:12, color:"#374151", background:"#fff", outline:"none", cursor:"pointer" };
 const LBL: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:4, textTransform:"uppercase" as const, letterSpacing:"0.04em" };
 const INP: React.CSSProperties = { width:"100%", border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 11px", fontSize:13, color:"#374151", outline:"none", boxSizing:"border-box" as const, background:"#fff" };
-const INP_FOCUS = "#16a34a";
+const PB: React.CSSProperties  = { display:"inline-flex", alignItems:"center", gap:6, padding:"8px 16px", background:"#16a34a", color:"#fff", border:"none", borderRadius:9, fontWeight:700, fontSize:13, cursor:"pointer" };
+const OB: React.CSSProperties  = { display:"inline-flex", alignItems:"center", gap:6, padding:"8px 14px", background:"#fff", color:"#374151", border:"1px solid #e5e7eb", borderRadius:9, fontWeight:600, fontSize:13, cursor:"pointer" };
 
+// ── Page ───────────────────────────────────────────────────────────────────────
 export default function QuestionLibraryPage() {
   const [questions, setQuestions] = useState<Question[]>(SEED);
-  const [form,   setForm]   = useState({ ...EMPTY });
-  const [editing, setEditing] = useState<string | null>(null);
+  const [form,      setForm]      = useState<FormData>({ ...EMPTY });
+
+  // Panel state — open by default for Add
+  const [addPanel, setAddPanel] = useState(true);
+  const [editRow,  setEditRow]  = useState<Question | null>(null);
+  const panelOpen  = addPanel || !!editRow;
+  const isEditMode = !!editRow;
+
+  // Translation
+  const [translating, setTranslating] = useState<Record<HindiField,boolean>>({ textHi:false, recommendHi:false });
 
   // Table filters
-  const [search,   setSearch]  = useState("");
-  const [sectionF, setSectionF]= useState("All Sections");
-  const [statusF,  setStatusF] = useState("All Status");
-  const [page,     setPage]    = useState(1);
+  const [search,   setSearch]   = useState("");
+  const [sectionF, setSectionF] = useState("All Sections");
+  const [statusF,  setStatusF]  = useState("All Status");
+  const [page,     setPage]     = useState(1);
 
-  // ── Filter ─────────────────────────────────────────────────────────────────
+  // ── Field helper ──────────────────────────────────────────────────────────────
+  const fp = (key: keyof FormData, val: unknown) => setForm(f => ({ ...f, [key]: val }));
+
+  // ── Auto-translate ────────────────────────────────────────────────────────────
+  const translateToHindi = async (englishText: string, field: HindiField) => {
+    if (!englishText.trim()) return;
+    setTranslating(prev => ({ ...prev, [field]: true }));
+    try {
+      const res  = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(englishText)}&langpair=en|hi`);
+      const data = await res.json();
+      if (data.responseStatus === 200 && data.responseData?.translatedText)
+        fp(field, data.responseData.translatedText);
+    } catch { /* silent */ }
+    finally { setTranslating(prev => ({ ...prev, [field]: false })); }
+  };
+  const onHindiFocus = (en: string, field: HindiField, cur: string) => {
+    if (!cur.trim()) translateToHindi(en, field);
+  };
+
+  // ── Filter ────────────────────────────────────────────────────────────────────
   const filtered = questions.filter(q => {
     const s = search.toLowerCase();
     return (!s || q.textEn.toLowerCase().includes(s) || q.id.toLowerCase().includes(s))
@@ -214,59 +243,96 @@ export default function QuestionLibraryPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const p     = Math.min(page, totalPages);
   const paged = filtered.slice((p-1)*PAGE_SIZE, p*PAGE_SIZE);
-  const nums  = () => { const n:number[]=[]; for(let i=Math.max(1,p-2);i<=Math.min(totalPages,p+2);i++)n.push(i); return n; };
 
-  const fp = (key: keyof typeof EMPTY, val: unknown) => setForm(f => ({ ...f, [key]: val }));
-
-  // ── CRUD ───────────────────────────────────────────────────────────────────
-  const handleSave = (status: QStatus) => {
-    if (!form.textEn.trim() || !form.textHi.trim()) return;
-    if (editing) {
-      setQuestions(qs => qs.map(q => q.id===editing ? { ...q, ...form, status } : q));
-    } else {
-      const newId = `Q-${String(questions.length+1).padStart(3,"0")}`;
-      setQuestions(qs => [...qs, { id:newId, ...form, status, usedIn:0, createdOn: new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) }]);
+  // Ellipsis pagination: always show first 2, last 1, and window around current
+  const pageItems = (): (number | "...")[] => {
+    if (totalPages <= 6) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
-    setForm({ ...EMPTY });
-    setEditing(null);
+    const items: (number | "...")[] = [];
+    const addPage = (n: number) => { if (!items.includes(n)) items.push(n); };
+    // First two
+    addPage(1); addPage(2);
+    // Around current
+    for (let i = Math.max(3, p - 1); i <= Math.min(totalPages - 1, p + 1); i++) addPage(i);
+    // Last
+    addPage(totalPages);
+    // Insert ellipsis
+    const result: (number | "...")[] = [];
+    let prev = 0;
+    for (const item of items as number[]) {
+      if (item - prev > 1) result.push("...");
+      result.push(item);
+      prev = item;
+    }
+    return result;
   };
 
-  const handleEdit = (q: Question) => {
-    setForm({ textEn:q.textEn, textHi:q.textHi, type:q.type, category:q.category, section:q.section,
-      riskLevel:q.riskLevel, weightage:q.weightage, helpEn:q.helpEn, helpHi:q.helpHi,
-      recommendEn:q.recommendEn, recommendHi:q.recommendHi,
+  // ── Panel actions ─────────────────────────────────────────────────────────────
+  const openAdd = () => { setForm({ ...EMPTY }); setEditRow(null); setAddPanel(true); };
+  const openEdit = (q: Question) => {
+    setEditRow(q); setAddPanel(false);
+    setForm({ textEn:q.textEn, textHi:q.textHi, type:q.type, category:q.category,
+      section:q.section, riskLevel:q.riskLevel, weightage:q.weightage,
+      helpEn:q.helpEn, helpHi:q.helpHi, recommendEn:q.recommendEn, recommendHi:q.recommendHi,
       mandatory:q.mandatory, allowRemarks:q.allowRemarks, allowPhoto:q.allowPhoto,
       multiPhoto:q.multiPhoto, numericValue:q.numericValue, allowNA:q.allowNA });
-    setEditing(q.id);
+  };
+  const closePanel = () => { setAddPanel(false); setEditRow(null); };
+
+  const handleSave = (status: QStatus) => {
+    if (!form.textEn.trim()) return;
+    if (isEditMode && editRow) {
+      setQuestions(qs => qs.map(q => q.id === editRow.id ? { ...q, ...form, status } : q));
+    } else {
+      const newId = `Q-${String(questions.length + 1).padStart(3,"0")}`;
+      setQuestions(qs => [...qs, { id:newId, ...form, status, usedIn:0, createdOn:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) }]);
+    }
+    closePanel();
   };
 
-  const handleDelete  = (id: string) => setQuestions(qs => qs.filter(q => q.id!==id));
-  const handleCancel  = () => { setForm({ ...EMPTY }); setEditing(null); };
-  const handleToggle  = (id: string) => setQuestions(qs => qs.map(q => q.id===id ? { ...q, status: q.status==="Active"?"Inactive":"Active" as QStatus } : q));
+  const handleDelete = (id: string) => {
+    if (editRow?.id === id) closePanel();
+    setQuestions(qs => qs.filter(q => q.id !== id));
+  };
+  const handleToggle = (id: string) =>
+    setQuestions(qs => qs.map(q => q.id===id ? { ...q, status:q.status==="Active"?"Inactive":"Active" as QStatus } : q));
 
-  const chk = (key: keyof typeof EMPTY) => (
+  const chk = (key: "mandatory"|"allowRemarks"|"allowPhoto") => (
     <label key={key} style={{ display:"inline-flex", alignItems:"center", gap:5, cursor:"pointer", fontSize:12, color:"#374151", userSelect:"none" }}>
-      <input type="checkbox" checked={!!form[key]} onChange={e=>fp(key, e.target.checked)}
+      <input type="checkbox" checked={!!form[key]} onChange={e=>fp(key,e.target.checked)}
         style={{ width:14, height:14, accentColor:"#16a34a", cursor:"pointer" }}/>
-      {key==="mandatory"?"Mandatory":key==="allowRemarks"?"Allow Remarks":key==="allowPhoto"?"Allow Photo":key==="multiPhoto"?"Multi-Photo":key==="numericValue"?"Numeric Value":"Allow N/A"}
+      {key==="mandatory"?"Mandatory":key==="allowRemarks"?"Allow Recommendation":"Allow Photo"}
     </label>
   );
 
+  // ── Stats ─────────────────────────────────────────────────────────────────────
+  const total    = questions.length;
+  const active   = questions.filter(q=>q.status==="Active").length;
+  const mandatory= questions.filter(q=>q.mandatory).length;
+  const sections = new Set(questions.map(q=>q.section)).size;
+
   return (
     <div style={{ padding:"24px 0" }}>
+
       {/* Header */}
-      <div style={{ marginBottom:20 }}>
-        <h4 style={{ fontSize:22, fontWeight:800, color:"#111827", margin:0 }}>Question Library</h4>
-        <div style={{ fontSize:12, color:"#9ca3af", marginTop:3 }}>Dashboard / Audit Questions / <span style={{ color:"#16a34a", fontWeight:600 }}>Question Library</span></div>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+        <div>
+          <h4 style={{ fontSize:22, fontWeight:800, color:"#111827", margin:0 }}>Question Library</h4>
+          <div style={{ fontSize:12, color:"#9ca3af", marginTop:3 }}>
+            Dashboard / Audit Questions / <span style={{ color:"#16a34a", fontWeight:600 }}>Question Library</span>
+          </div>
+        </div>
+        <button onClick={openAdd} style={PB}><i className="ri-add-line"/> Add Question</button>
       </div>
 
-      {/* Stats row */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:20 }}>
+      {/* Stats */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, margin:"20px 0" }}>
         {[
-          { label:"Total Questions", value:questions.length,                              color:"#2563eb", bg:"#eff6ff", icon:"ri-questionnaire-line",   border:"#2563eb" },
-          { label:"Active",          value:questions.filter(q=>q.status==="Active").length, color:"#16a34a", bg:"#f0fdf4", icon:"ri-checkbox-circle-line", border:"#16a34a" },
-          { label:"Mandatory",       value:questions.filter(q=>q.mandatory).length,       color:"#dc2626", bg:"#fef2f2", icon:"ri-error-warning-line",   border:"#dc2626" },
-          { label:"Sections",        value:new Set(questions.map(q=>q.section)).size,     color:"#7c3aed", bg:"#f5f3ff", icon:"ri-folder-line",          border:"#7c3aed" },
+          { label:"Total Questions", value:total,     color:"#2563eb", bg:"#eff6ff", icon:"ri-questionnaire-line",   border:"#2563eb" },
+          { label:"Active",          value:active,    color:"#16a34a", bg:"#f0fdf4", icon:"ri-checkbox-circle-line", border:"#16a34a" },
+          { label:"Mandatory",       value:mandatory, color:"#dc2626", bg:"#fef2f2", icon:"ri-error-warning-line",   border:"#dc2626" },
+          { label:"Sections",        value:sections,  color:"#7c3aed", bg:"#f5f3ff", icon:"ri-folder-line",          border:"#7c3aed" },
         ].map(c => (
           <div key={c.label} style={{ background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", padding:"12px 14px", display:"flex", alignItems:"center", gap:10, borderLeft:`4px solid ${c.border}`, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
             <div style={{ width:36, height:36, borderRadius:9, background:c.bg, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -280,135 +346,185 @@ export default function QuestionLibraryPage() {
         ))}
       </div>
 
-      {/* ── MAIN SPLIT LAYOUT ─────────────────────────────────────────────────── */}
-      <div style={{ display:"grid", gridTemplateColumns:"400px 1fr", gap:18, alignItems:"start" }}>
+      {/* ── MAIN SPLIT ─────────────────────────────────────────────────────────── */}
+      <div style={{ display:"flex", alignItems:"flex-start", gap:18 }}>
 
-        {/* ── LEFT — FORM ──────────────────────────────────────────────────────── */}
-        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", position:"sticky", top:80 }}>
-          {/* Form header */}
-          <div style={{ padding:"14px 18px", borderBottom:"1px solid #f3f4f6", background:editing?"#fffbeb":"#f9fafb", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <div>
-              <div style={{ fontSize:14, fontWeight:800, color:"#111827" }}>{editing ? `Edit — ${editing}` : "Add / Edit Question"}</div>
-              <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>{editing ? "Modify and save the question below" : "Fill all fields then save"}</div>
-            </div>
-            {editing && (
-              <button onClick={handleCancel} style={{ fontSize:11, color:"#6b7280", background:"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", fontWeight:600 }}>
-                × Cancel
+        {/* ── LEFT PANEL — Add / Edit ───────────────────────────────────────────── */}
+        {panelOpen && (
+          <div style={{ width:380, flexShrink:0, background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden", position:"sticky", top:80 }}>
+
+            {/* Panel header */}
+            <div style={{ padding:"14px 18px", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between", background: isEditMode ? "#fffbeb" : "#f0fdf4" }}>
+              <div>
+                <div style={{ fontSize:14, fontWeight:800, color:"#111827", display:"flex", alignItems:"center", gap:7 }}>
+                  <i className={isEditMode ? "ri-edit-line" : "ri-add-circle-line"} style={{ fontSize:15, color: isEditMode ? "#d97706" : "#16a34a" }}/>
+                  {isEditMode ? `Edit — ${editRow?.id}` : "New Question"}
+                </div>
+                <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>
+                  {isEditMode ? "Modify and save the question below" : "Fill all fields then save or draft"}
+                </div>
+              </div>
+              <button onClick={closePanel} style={{ background:"none", border:"none", cursor:"pointer", color:"#9ca3af", fontSize:18, lineHeight:1, padding:2 }}>
+                <i className="ri-close-line"/>
               </button>
-            )}
-          </div>
-
-          {/* Bilingual notice */}
-          <div style={{ margin:"14px 18px 0", padding:"10px 14px", background:"#eff6ff", borderLeft:"3px solid #2563eb", borderRadius:"0 8px 8px 0", fontSize:12, color:"#1d4ed8", lineHeight:1.5 }}>
-            <strong>Bilingual input required.</strong> Every question must be entered in both English and Hindi before it can be saved. The platform is designed for field auditors who may be more comfortable reading Hindi.
-          </div>
-
-          <div style={{ padding:"14px 18px", display:"flex", flexDirection:"column", gap:12 }}>
-            {/* English text */}
-            <div>
-              <label style={LBL}>Question Text — English <span style={{ color:"#dc2626" }}>*</span></label>
-              <textarea value={form.textEn} onChange={e=>fp("textEn",e.target.value)} rows={2}
-                placeholder="Whether ELCBs are provided with proper rating to cater the load?"
-                style={{ ...INP, resize:"none", lineHeight:1.5 }}/>
-            </div>
-            {/* Hindi text */}
-            <div>
-              <label style={LBL}>Question Text — Hindi <span style={{ color:"#dc2626" }}>*</span></label>
-              <textarea value={form.textHi} onChange={e=>fp("textHi",e.target.value)} rows={2}
-                placeholder="क्या ELCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?"
-                style={{ ...INP, resize:"none", lineHeight:1.5 }}/>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              {/* Type */}
+            {/* Auto-translate notice */}
+            <div style={{ margin:"12px 16px 0", padding:"9px 13px", background:"#eff6ff", borderLeft:"3px solid #2563eb", borderRadius:"0 8px 8px 0", fontSize:11, color:"#1d4ed8", lineHeight:1.5 }}>
+              <strong>Auto-translation on.</strong> Type English → click Hindi field to auto-translate. Use <strong>↺</strong> to regenerate.
+            </div>
+
+            {/* Scrollable body */}
+            <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:11, maxHeight:"calc(100vh - 270px)", overflowY:"auto" }}>
+
+              {/* English */}
               <div>
-                <label style={LBL}>Question Type <span style={{ color:"#dc2626" }}>*</span></label>
-                <select value={form.type} onChange={e=>fp("type",e.target.value as QType)} style={{ ...INP, padding:"7px 10px" }}>
-                  {Q_TYPES.map(t=><option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+                <label style={LBL}>Question Text — English <span style={{ color:"#dc2626" }}>*</span></label>
+                <textarea value={form.textEn} onChange={e=>fp("textEn",e.target.value)} rows={3}
+                  placeholder="Whether MCCBs/MCBs are provided with proper rating to cater the load"
+                  style={{ ...INP, resize:"none", lineHeight:1.5 }}/>
+              </div>
+
+              {/* Hindi */}
+              <div>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                  <label style={{ ...LBL, marginBottom:0 }}>Question Text — Hindi <span style={{ color:"#dc2626" }}>*</span></label>
+                  {form.textEn.trim() && (
+                    <button onClick={()=>translateToHindi(form.textEn,"textHi")} disabled={translating.textHi}
+                      style={{ fontSize:10, fontWeight:700, color:translating.textHi?"#9ca3af":"#2563eb", background:translating.textHi?"#f3f4f6":"#eff6ff", border:"none", borderRadius:5, padding:"3px 8px", cursor:translating.textHi?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:3 }}>
+                      <i className={translating.textHi?"ri-loader-4-line":"ri-translate-2"} style={{ fontSize:11 }}/>
+                      {translating.textHi ? "Translating…" : "↺ Re-translate"}
+                    </button>
+                  )}
+                </div>
+                <textarea value={translating.textHi ? "" : form.textHi}
+                  onChange={e=>fp("textHi",e.target.value)}
+                  onFocus={()=>onHindiFocus(form.textEn,"textHi",form.textHi)}
+                  disabled={translating.textHi}
+                  rows={3} placeholder={translating.textHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
+                  style={{ ...INP, resize:"none", lineHeight:1.5, background:translating.textHi?"#f9fafb":"#fff", color:translating.textHi?"#9ca3af":"#374151", fontStyle:translating.textHi?"italic":"normal" }}/>
+              </div>
+
+              {/* Section */}
+              <div>
+                <label style={LBL}>Section <span style={{ color:"#dc2626" }}>*</span></label>
+                <select value={form.section} onChange={e=>fp("section",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
+                  {SECTIONS.slice(1).map(s=><option key={s}>{s}</option>)}
                 </select>
               </div>
-              {/* Category */}
-              <div>
-                <label style={LBL}>Category</label>
-                <select value={form.category} onChange={e=>fp("category",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
-                  {CATEGORIES.map(c=><option key={c}>{c}</option>)}
-                </select>
+
+              {/* Type + Weightage — read-only */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                <div>
+                  <label style={LBL}>Question Type</label>
+                  <div style={{ ...INP, padding:"8px 11px", background:"#f9fafb", display:"flex", alignItems:"center", gap:8, cursor:"default" }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:"#16a34a", background:"#dcfce7", borderRadius:6, padding:"2px 10px" }}>YES / NO / NA</span>
+                  </div>
+                </div>
+                <div>
+                  <label style={LBL}>Weightage</label>
+                  <div style={{ ...INP, padding:"8px 11px", background:"#f9fafb", display:"flex", alignItems:"center", gap:8, cursor:"default" }}>
+                    <i className="ri-lock-line" style={{ fontSize:12, color:"#9ca3af" }}/>
+                    <span style={{ fontWeight:700, color:"#374151" }}>5</span>
+                    <span style={{ fontSize:11, color:"#9ca3af", marginLeft:2 }}>/ 5 (fixed)</span>
+                  </div>
+                </div>
               </div>
-              {/* Risk Level */}
-              <div>
-                <label style={LBL}>Risk Level</label>
-                <select value={form.riskLevel} onChange={e=>fp("riskLevel",e.target.value as RiskLevel)} style={{ ...INP, padding:"7px 10px" }}>
-                  {RISK_LEVELS.map(r=><option key={r}>{r}</option>)}
-                </select>
+
+              {/* Question Behaviour */}
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:9, overflow:"hidden" }}>
+                <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ri-settings-3-line" style={{ fontSize:13, color:"#6b7280" }}/>
+                  <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Question Behaviour</span>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px 6px", padding:"10px 12px", background:"#f9fafb" }}>
+                  {(["mandatory","allowRemarks","allowPhoto"] as const).map(chk)}
+                </div>
               </div>
-              {/* Weightage */}
+
+              {/* Recommendation English */}
               <div>
-                <label style={LBL}>Weightage (0–10)</label>
-                <input type="number" min={0} max={10} value={form.weightage} onChange={e=>fp("weightage",+e.target.value)}
-                  style={{ ...INP, padding:"7px 10px" }}/>
+                <label style={LBL}>Default Recommendation (English)</label>
+                <input value={form.recommendEn} onChange={e=>fp("recommendEn",e.target.value)}
+                  placeholder="COMPLIED" style={INP}/>
               </div>
+
+              {/* Recommendation Hindi */}
+              <div>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                  <label style={{ ...LBL, marginBottom:0 }}>Default Recommendation (Hindi)</label>
+                  {form.recommendEn.trim() && (
+                    <button onClick={()=>translateToHindi(form.recommendEn,"recommendHi")} disabled={translating.recommendHi}
+                      style={{ fontSize:10, fontWeight:700, color:translating.recommendHi?"#9ca3af":"#2563eb", background:translating.recommendHi?"#f3f4f6":"#eff6ff", border:"none", borderRadius:5, padding:"3px 8px", cursor:translating.recommendHi?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:3 }}>
+                      <i className={translating.recommendHi?"ri-loader-4-line":"ri-translate-2"} style={{ fontSize:11 }}/>
+                      {translating.recommendHi ? "Translating…" : "↺ Re-translate"}
+                    </button>
+                  )}
+                </div>
+                <input value={translating.recommendHi ? "" : form.recommendHi}
+                  onChange={e=>fp("recommendHi",e.target.value)}
+                  onFocus={()=>onHindiFocus(form.recommendEn,"recommendHi",form.recommendHi)}
+                  disabled={translating.recommendHi}
+                  placeholder={translating.recommendHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
+                  style={{ ...INP, background:translating.recommendHi?"#f9fafb":"#fff", color:translating.recommendHi?"#9ca3af":"#374151", fontStyle:translating.recommendHi?"italic":"normal" }}/>
+              </div>
+
+              {/* API payload preview — for developer reference */}
+              <details style={{ border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+                <summary style={{ padding:"8px 12px", background:"#f9fafb", fontSize:11, fontWeight:700, color:"#6b7280", cursor:"pointer", textTransform:"uppercase" as const, letterSpacing:"0.04em", userSelect:"none" }}>
+                  <i className="ri-code-line" style={{ marginRight:5 }}/>API Payload Preview
+                </summary>
+                <pre style={{ margin:0, padding:"10px 12px", fontSize:10, color:"#374151", background:"#fafafa", overflowX:"auto", lineHeight:1.6 }}>
+{JSON.stringify({
+  textEn:       form.textEn       || "(empty)",
+  textHi:       form.textHi       || "(empty)",
+  type:         form.type,
+  section:      form.section,
+  weightage:    form.weightage,
+  mandatory:    form.mandatory,
+  allowRemarks: form.allowRemarks,
+  allowPhoto:   form.allowPhoto,
+  recommendEn:  form.recommendEn,
+  recommendHi:  form.recommendHi  || "(empty)",
+  status:       "Active",
+}, null, 2)}
+                </pre>
+              </details>
             </div>
 
-            {/* Section */}
-            <div>
-              <label style={LBL}>Section <span style={{ color:"#dc2626" }}>*</span></label>
-              <select value={form.section} onChange={e=>fp("section",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
-                {SECTIONS.slice(1).map(s=><option key={s}>{s}</option>)}
-              </select>
-            </div>
-
-            {/* Help text */}
-            <div>
-              <label style={LBL}>Help Text — English</label>
-              <input value={form.helpEn} onChange={e=>fp("helpEn",e.target.value)}
-                placeholder="Inspect ELCB rating label and compare with connected load..." style={INP}/>
-            </div>
-            <div>
-              <label style={LBL}>Help Text — Hindi</label>
-              <input value={form.helpHi} onChange={e=>fp("helpHi",e.target.value)}
-                placeholder="ELCB की रेटिंग लेबल जाँचें और कनेक्टेड लोड से मिलाएं..." style={INP}/>
-            </div>
-
-            {/* Checkboxes */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px 6px", padding:"10px 12px", background:"#f9fafb", borderRadius:9, border:"1px solid #e5e7eb" }}>
-              {(["mandatory","allowRemarks","allowPhoto","multiPhoto","numericValue","allowNA"] as const).map(chk)}
-            </div>
-
-            {/* Recommendations */}
-            <div>
-              <label style={LBL}>Default Recommendation (English)</label>
-              <input value={form.recommendEn} onChange={e=>fp("recommendEn",e.target.value)}
-                placeholder="Install ELCB of appropriate rating as per connected load..." style={INP}/>
-            </div>
-            <div>
-              <label style={LBL}>Default Recommendation (Hindi)</label>
-              <input value={form.recommendHi} onChange={e=>fp("recommendHi",e.target.value)}
-                placeholder="कनेक्टेड लोड के अनुसार उचित रेटिंग का ELCB स्थापित करें..." style={INP}/>
-            </div>
-
-            {/* Actions */}
-            <div style={{ display:"flex", gap:8, paddingTop:4 }}>
+            {/* Footer */}
+            <div style={{ padding:"12px 16px", borderTop:"1px solid #e5e7eb", display:"flex", gap:8, background:"#fff" }}>
+              <button onClick={closePanel} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
+                Cancel
+              </button>
               <button onClick={()=>handleSave("Draft")}
-                style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:700, fontSize:13 }}>
+                style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:700, fontSize:12 }}>
                 Save Draft
               </button>
-              <button onClick={()=>handleSave("Active")}
-                disabled={!form.textEn.trim() || !form.textHi.trim()}
-                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background: (!form.textEn.trim()||!form.textHi.trim())?"#9ca3af":"#16a34a", color:"#fff", cursor: (!form.textEn.trim()||!form.textHi.trim())?"not-allowed":"pointer", fontWeight:700, fontSize:13 }}>
-                {editing ? "Save & Update" : "Save & Activate"}
+              <button onClick={()=>handleSave("Active")} disabled={!form.textEn.trim()}
+                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af": isEditMode?"#2563eb":"#16a34a", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <i className={isEditMode ? "ri-save-line" : "ri-check-line"}/>
+                {isEditMode ? "UPDATE" : "SAVE & ACTIVATE"}
               </button>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ── RIGHT — TABLE ─────────────────────────────────────────────────────── */}
-        <div>
-          {/* Table filters */}
+        <div style={{ flex:1, minWidth:0 }}>
+
+          {/* Print-only Sr. No. styles */}
+          <style>{`
+            .sr-no-col { display: none; }
+            @media print { .sr-no-col { display: table-cell !important; } }
+          `}</style>
+
+          {/* Filters */}
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" }}>
             <div style={{ fontSize:12, color:"#6b7280" }}>
               Showing <strong style={{ color:"#111827" }}>{filtered.length}</strong> questions — Page <strong style={{ color:"#111827" }}>{p}</strong> of {totalPages}
             </div>
-            <div style={{ flex:1 }} />
+            <div style={{ flex:1 }}/>
             <select value={sectionF} onChange={e=>{setSectionF(e.target.value);setPage(1);}} style={SEL}>
               {SECTIONS.map(s=><option key={s}>{s}</option>)}
             </select>
@@ -427,11 +543,11 @@ export default function QuestionLibraryPage() {
             <div style={{ overflowX:"auto" }}>
               <table style={{ width:"100%", borderCollapse:"collapse" }}>
                 <thead><tr>
+                  <th className="sr-no-col" style={{ ...TH, textAlign:"center", width:36 }}>SR.</th>
                   <th style={TH}>ID</th>
                   <th style={TH}>QUESTION (EN / HI)</th>
                   <th style={TH}>SECTION</th>
                   <th style={{ ...TH, textAlign:"center" }}>TYPE</th>
-                  <th style={{ ...TH, textAlign:"center" }}>RISK</th>
                   <th style={{ ...TH, textAlign:"center" }}>WT</th>
                   <th style={{ ...TH, textAlign:"center" }}>FLAGS</th>
                   <th style={{ ...TH, textAlign:"center" }}>STATUS</th>
@@ -442,15 +558,17 @@ export default function QuestionLibraryPage() {
                     <tr><td colSpan={9} style={{ padding:"50px 20px", textAlign:"center", color:"#9ca3af" }}>
                       <i className="ri-questionnaire-line" style={{ fontSize:32, display:"block", marginBottom:8, opacity:0.3 }}/>No questions found
                     </td></tr>
-                  ) : paged.map(q => {
+                  ) : paged.map((q, idx) => {
                     const ts = TYPE_STYLE[q.type];
-                    const rs = RISK_STYLE[q.riskLevel];
                     const sc = SECTION_COLOR[q.section] || "#374151";
-                    const isEditing = editing === q.id;
+                    const isActive = editRow?.id === q.id;
                     return (
-                      <tr key={q.id} style={{ background: isEditing?"#f0fdf4":"transparent" }}
-                        onMouseEnter={e=>{ if(!isEditing) e.currentTarget.style.background="#f9fafb"; }}
-                        onMouseLeave={e=>{ if(!isEditing) e.currentTarget.style.background="transparent"; }}>
+                      <tr key={q.id} style={{ background:isActive?"#fffbeb":"transparent", transition:"background 0.15s" }}
+                        onMouseEnter={e=>{ if(!isActive) e.currentTarget.style.background="#f9fafb"; }}
+                        onMouseLeave={e=>{ if(!isActive) e.currentTarget.style.background="transparent"; }}>
+                        <td className="sr-no-col" style={{ ...TD, textAlign:"center", fontSize:11, fontWeight:700, color:"#6b7280" }}>
+                          {(p-1)*PAGE_SIZE + idx + 1}
+                        </td>
                         <td style={TD}>
                           <span style={{ fontSize:10, fontWeight:700, color:"#374151", background:"#f3f4f6", borderRadius:5, padding:"2px 7px", fontFamily:"monospace" }}>{q.id}</span>
                         </td>
@@ -465,24 +583,13 @@ export default function QuestionLibraryPage() {
                           <span style={{ fontSize:10, fontWeight:700, color:ts.color, background:ts.bg, borderRadius:5, padding:"2px 7px", whiteSpace:"nowrap" as const }}>{TYPE_LABEL[q.type]}</span>
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
-                          <span style={{ fontSize:10, fontWeight:700, color:rs.color, background:rs.bg, borderRadius:5, padding:"2px 7px" }}>{q.riskLevel}</span>
-                        </td>
-                        <td style={{ ...TD, textAlign:"center" }}>
-                          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                            <span style={{ fontSize:13, fontWeight:800, color:q.weightage>=7?"#dc2626":q.weightage>=4?"#d97706":"#16a34a" }}>{q.weightage}</span>
-                            <div style={{ display:"flex", gap:1 }}>
-                              {[1,2,3,4,5,6,7,8,9,10].map(n=>(
-                                <div key={n} style={{ width:3, height:3, borderRadius:2, background: n<=q.weightage ? (q.weightage>=7?"#dc2626":q.weightage>=4?"#d97706":"#16a34a") : "#e5e7eb" }}/>
-                              ))}
-                            </div>
-                          </div>
+                          <span style={{ fontSize:13, fontWeight:800, color:"#2563eb" }}>{q.weightage}</span>
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
                           <div style={{ display:"flex", gap:3, justifyContent:"center", flexWrap:"wrap" }}>
-                            {q.mandatory    && <span title="Mandatory"    style={{ fontSize:9, fontWeight:700, color:"#dc2626", background:"#fee2e2", borderRadius:4, padding:"1px 5px" }}>REQ</span>}
-                            {q.allowPhoto   && <span title="Photo"        style={{ fontSize:9, fontWeight:700, color:"#2563eb", background:"#dbeafe", borderRadius:4, padding:"1px 5px" }}>📷</span>}
-                            {q.allowRemarks && <span title="Remarks"      style={{ fontSize:9, fontWeight:700, color:"#7c3aed", background:"#f5f3ff", borderRadius:4, padding:"1px 5px" }}>RMK</span>}
-                            {q.allowNA      && <span title="Allow N/A"    style={{ fontSize:9, fontWeight:700, color:"#6b7280", background:"#f3f4f6", borderRadius:4, padding:"1px 5px" }}>N/A</span>}
+                            {q.mandatory    && <span title="Mandatory"       style={{ fontSize:9, fontWeight:700, color:"#dc2626", background:"#fee2e2", borderRadius:4, padding:"1px 5px" }}>REQ</span>}
+                            {q.allowPhoto   && <span title="Allow Photo"     style={{ fontSize:9, fontWeight:700, color:"#2563eb", background:"#dbeafe", borderRadius:4, padding:"1px 5px" }}>PHO</span>}
+                            {q.allowRemarks && <span title="Recommendation"  style={{ fontSize:9, fontWeight:700, color:"#7c3aed", background:"#f5f3ff", borderRadius:4, padding:"1px 5px" }}>REC</span>}
                           </div>
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
@@ -493,8 +600,8 @@ export default function QuestionLibraryPage() {
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
                           <div style={{ display:"flex", gap:4, justifyContent:"center" }}>
-                            <button onClick={()=>handleEdit(q)} title="Edit"
-                              style={{ width:27, height:27, borderRadius:6, border:`1px solid ${isEditing?"#16a34a":"#e5e7eb"}`, background:isEditing?"#dcfce7":"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:isEditing?"#16a34a":"#2563eb" }}>
+                            <button onClick={()=>openEdit(q)} title="Edit"
+                              style={{ width:27, height:27, borderRadius:6, border:`1px solid ${isActive?"#fbbf24":"#e5e7eb"}`, background:isActive?"#fef9c3":"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:isActive?"#d97706":"#2563eb" }}>
                               <i className="ri-edit-line" style={{ fontSize:12 }}/>
                             </button>
                             <button onClick={()=>handleDelete(q.id)} title="Delete"
@@ -509,12 +616,17 @@ export default function QuestionLibraryPage() {
                 </tbody>
               </table>
             </div>
+
             {/* Pagination */}
             <div style={{ padding:"10px 16px", borderTop:"1px solid #f3f4f6", display:"flex", alignItems:"center", justifyContent:"space-between", background:"#fafafa" }}>
               <span style={{ fontSize:11, color:"#6b7280" }}>Showing <strong style={{ color:"#111827" }}>{Math.min((p-1)*PAGE_SIZE+1,filtered.length)}–{Math.min(p*PAGE_SIZE,filtered.length)}</strong> of <strong style={{ color:"#111827" }}>{filtered.length}</strong></span>
               <div style={{ display:"flex", gap:3 }}>
                 <button onClick={()=>setPage(pp=>Math.max(1,pp-1))} disabled={p===1} style={{ padding:"4px 9px", border:"1px solid #e5e7eb", borderRadius:5, background:p===1?"#f9fafb":"#fff", color:p===1?"#d1d5db":"#374151", cursor:p===1?"not-allowed":"pointer", fontSize:12 }}>‹</button>
-                {nums().map(n=><button key={n} onClick={()=>setPage(n)} style={{ padding:"4px 9px", border:"1px solid #e5e7eb", borderRadius:5, fontSize:12, fontWeight:n===p?700:400, background:n===p?"#16a34a":"#fff", color:n===p?"#fff":"#374151", cursor:"pointer" }}>{n}</button>)}
+                {pageItems().map((item, idx) =>
+                  item === "..."
+                    ? <span key={`ellipsis-${idx}`} style={{ padding:"4px 6px", fontSize:12, color:"#9ca3af", userSelect:"none" }}>…</span>
+                    : <button key={item} onClick={()=>setPage(item)} style={{ padding:"4px 9px", border:"1px solid #e5e7eb", borderRadius:5, fontSize:12, fontWeight:item===p?700:400, background:item===p?"#16a34a":"#fff", color:item===p?"#fff":"#374151", cursor:"pointer" }}>{item}</button>
+                )}
                 <button onClick={()=>setPage(pp=>Math.min(totalPages,pp+1))} disabled={p===totalPages} style={{ padding:"4px 9px", border:"1px solid #e5e7eb", borderRadius:5, background:p===totalPages?"#f9fafb":"#fff", color:p===totalPages?"#d1d5db":"#374151", cursor:p===totalPages?"not-allowed":"pointer", fontSize:12 }}>›</button>
               </div>
             </div>
