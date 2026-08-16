@@ -588,8 +588,8 @@ export default function QuestionLibraryPage() {
 
             {/* Footer */}
             <div style={{ padding:"12px 16px", borderTop:"1px solid #e5e7eb", display:"flex", gap:8, background:"#fff" }}>
-              <button onClick={closePanel} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
-                Cancel
+              <button onClick={()=>{ setForm({ ...EMPTY }); setEditRow(null); setAddPanel(true); }} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
+                Clear
               </button>
               <button onClick={()=>handleSave("Draft")}
                 style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:700, fontSize:12 }}>
