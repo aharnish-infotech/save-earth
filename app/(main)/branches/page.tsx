@@ -99,11 +99,13 @@ export default function BranchesPage() {
   const [success, setSuccess]           = useState(false);
   const [submitting, setSubmitting]     = useState(false);
   const [viewRow, setViewRow]           = useState<Row | null>(null);
+  const [editRow, setEditRow]           = useState<Row | null>(null);
   const suffixRef = useRef<HTMLInputElement>(null);
 
-  const fullIFSC  = `${selectedBank.code}${ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}`;
-  const ifscReady = ifscSuffix.trim().length === 7;
-  const canSubmit = ifscReady && ifscData && gps && htlt !== "" && (htlt === "LT" || (htlt === "HT" && sld !== ""));
+  const isEditMode = !!editRow;
+  const fullIFSC   = `${selectedBank.code}${ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}`;
+  const ifscReady  = isEditMode ? true : ifscSuffix.trim().length === 7;
+  const canSubmit  = ifscReady && ifscData && gps && htlt !== "" && (htlt === "LT" || (htlt === "HT" && sld !== ""));
 
   // ── IFSC API fetch ───────────────────────────────────────────
   const fetchIFSC = async (suffix: string) => {
@@ -182,8 +184,56 @@ export default function BranchesPage() {
     setTimeout(() => setSuccess(false), 4000);
   };
 
-  const handleReset = () => {
+  // ── Start Edit ───────────────────────────────────────────────
+  const handleStartEdit = (row: Row) => {
+    setEditRow(row);
     setViewRow(null);
+    // Pre-fill bank
+    const bank = BANK_LIST.find(b => row.ifsc.startsWith(b.code)) ?? BANK_LIST[0];
+    setSelectedBank(bank);
+    setIfscSuffix(row.ifsc.slice(4)); // last 7 chars
+    // Synthesize ifscData from row so canSubmit works
+    setIfscData({ STATE:row.state, DISTRICT:row.district, BRANCH:row.name, CENTRE:row.city,
+      ADDRESS:row.address, CITY:row.city, MICR:row.micr, ISO3166:"", CONTACT:row.contact,
+      BANK:row.bank, BANKCODE:row.ifsc.slice(0,4), IFSC:row.ifsc });
+    setIfscError("");
+    setGps(row.lat ? { lat: parseFloat(row.lat), lng: parseFloat(row.lng) } : null);
+    setGpsError(""); setGpsDenied(false);
+    setHtlt(row.htlt as "HT"|"LT"|"");
+    setSld(row.sld);
+    setCircle(""); setRbo(""); setBranchType("Urban");
+    setBranchStatus(row.status);
+    setSuccess(false);
+  };
+
+  // ── Update Row ───────────────────────────────────────────────
+  const handleUpdate = () => {
+    if (!editRow || !ifscData || !gps) return;
+    setSubmitting(true);
+    const updated: Row = {
+      ...editRow,
+      city:     ifscData.CITY    || editRow.city,
+      state:    ifscData.STATE   || editRow.state,
+      district: ifscData.DISTRICT|| editRow.district,
+      address:  ifscData.ADDRESS || editRow.address,
+      micr:     ifscData.MICR    || editRow.micr,
+      contact:  ifscData.CONTACT || editRow.contact,
+      lat:      String(gps.lat),
+      lng:      String(gps.lng),
+      htlt,
+      sld:      htlt === "HT" ? sld : "Yes",
+      status:   branchStatus,
+    };
+    setRows(rs => rs.map(r => r.id === editRow.id ? updated : r));
+    setEditRow(null);
+    setViewRow(updated);
+    setSubmitting(false);
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 3000);
+  };
+
+  const handleReset = () => {
+    setViewRow(null); setEditRow(null);
     setSelectedBank(BANK_LIST[0]); setIfscSuffix(""); setIfscData(null); setIfscError("");
     setGps(null); setGpsError(""); setGpsDenied(false); setHtlt(""); setSld("");
     setCircle(""); setRbo(""); setBranchType("Urban"); setBranchStatus("Active");
@@ -239,18 +289,37 @@ export default function BranchesPage() {
           {/* Header */}
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
             <div>
-              <div style={{ fontSize:14, fontWeight:800, color:"#111827" }}>{viewRow ? `Viewing — ${viewRow.id}` : "Add New Branch"}</div>
-              <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>{viewRow ? viewRow.name : "Fill all sections to capture a branch"}</div>
+              <div style={{ fontSize:14, fontWeight:800, color:"#111827" }}>
+                {viewRow ? `Viewing — ${viewRow.id}` : isEditMode ? `Editing — ${editRow?.id}` : "Add New Branch"}
+              </div>
+              <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>
+                {viewRow ? viewRow.name : isEditMode ? "IFSC is locked — edit other fields freely" : "Fill all sections to capture a branch"}
+              </div>
             </div>
             {viewRow
               ? <button onClick={() => setViewRow(null)} style={{ fontSize:11, color:"#2563eb", background:"#eff6ff", border:"none", borderRadius:6, padding:"5px 11px", cursor:"pointer", fontWeight:700 }}>← Add New</button>
-              : <button onClick={handleReset} style={{ fontSize:11, color:"#6b7280", background:"#f3f4f6", border:"none", borderRadius:6, padding:"5px 11px", cursor:"pointer", fontWeight:600 }}>Reset</button>
+              : isEditMode
+                ? <button onClick={() => { setEditRow(null); setViewRow(editRow); handleReset(); setTimeout(()=>setViewRow(rows.find(r=>r.id===editRow?.id)||null),50); }} style={{ fontSize:11, color:"#6b7280", background:"#f3f4f6", border:"none", borderRadius:6, padding:"5px 11px", cursor:"pointer", fontWeight:600 }}>× Cancel</button>
+                : <button onClick={handleReset} style={{ fontSize:11, color:"#6b7280", background:"#f3f4f6", border:"none", borderRadius:6, padding:"5px 11px", cursor:"pointer", fontWeight:600 }}>Reset</button>
             }
           </div>
 
           {/* ── VIEW MODE ─────────────────────────────────────── */}
           {viewRow && (
             <>
+              {/* Edit prompt banner */}
+              <div style={{ background:"#f0f9ff", border:"1px solid #bae6fd", borderRadius:10, padding:"11px 14px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <i className="ri-edit-box-line" style={{ color:"#0284c7", fontSize:16 }}/>
+                  <span style={{ fontSize:12, fontWeight:600, color:"#0369a1" }}>Want to make changes to this branch?</span>
+                </div>
+                <button
+                  onClick={() => handleStartEdit(viewRow)}
+                  style={{ fontSize:12, fontWeight:800, color:"#fff", background:"#0284c7", border:"none", borderRadius:7, padding:"6px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}
+                >
+                  <i className="ri-edit-line"/>Edit
+                </button>
+              </div>
               <SectionCard icon="ri-bank-line" iconBg="#dbeafe" iconColor="#2563eb" title="Bank Details">
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                   {[
@@ -354,30 +423,48 @@ export default function BranchesPage() {
           </SectionCard>
 
           {/* 2. IFSC Code */}
-          <SectionCard icon="ri-barcode-line" iconBg="#dcfce7" iconColor="#16a34a" title="IFSC Code">
-            <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:8 }}>
-              {/* Bank code prefix pill */}
-              <div style={{ flexShrink:0, background:"#111827", color:"#fff", borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
-                {selectedBank.code}
+          <SectionCard icon="ri-barcode-line" iconBg="#dcfce7" iconColor="#16a34a" title={isEditMode ? "IFSC Code — Locked" : "IFSC Code"}>
+            {isEditMode ? (
+              /* READ-ONLY in edit mode */
+              <div>
+                <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:8 }}>
+                  <div style={{ flexShrink:0, background:"#374151", color:"#fff", borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
+                    {selectedBank.code}
+                  </div>
+                  <div style={{ flex:1, border:"1.5px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:15, color:"#6b7280", fontFamily:"monospace", letterSpacing:"0.1em", fontWeight:700, background:"#f9fafb" }}>
+                    {ifscSuffix.toUpperCase()}
+                  </div>
+                  <i className="ri-lock-line" style={{ color:"#9ca3af", fontSize:18 }}/>
+                </div>
+                <div style={{ fontSize:11, color:"#9ca3af", display:"flex", alignItems:"center", gap:5 }}>
+                  <i className="ri-information-line"/>IFSC cannot be changed. It is the key identifier for this branch.
+                </div>
               </div>
-              {/* Suffix input */}
-              <input
-                ref={suffixRef}
-                value={ifscSuffix}
-                onChange={e => handleSuffixChange(e.target.value)}
-                placeholder="0000000"
-                maxLength={7}
-                style={{ flex:1, border:`1.5px solid ${ifscSuffix.length===7?(ifscData?"#16a34a":ifscError?"#dc2626":"#e5e7eb"):"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:15, color:"#111827", outline:"none", fontFamily:"monospace", letterSpacing:"0.1em", fontWeight:700, textTransform:"uppercase", background:"#fafafa" }}
-              />
-              {ifscLoading && <i className="ri-loader-4-line" style={{ color:"#9ca3af", fontSize:18, animation:"spin 1s linear infinite" }}/>}
-              {ifscData && !ifscLoading && <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:18 }}/>}
-            </div>
+            ) : (
+              <>
+              <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:8 }}>
+                {/* Bank code prefix pill */}
+                <div style={{ flexShrink:0, background:"#111827", color:"#fff", borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
+                  {selectedBank.code}
+                </div>
+                {/* Suffix input */}
+                <input
+                  ref={suffixRef}
+                  value={ifscSuffix}
+                  onChange={e => handleSuffixChange(e.target.value)}
+                  placeholder="0000000"
+                  maxLength={7}
+                  style={{ flex:1, border:`1.5px solid ${ifscSuffix.length===7?(ifscData?"#16a34a":ifscError?"#dc2626":"#e5e7eb"):"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:15, color:"#111827", outline:"none", fontFamily:"monospace", letterSpacing:"0.1em", fontWeight:700, textTransform:"uppercase", background:"#fafafa" }}
+                />
+                {ifscLoading && <i className="ri-loader-4-line" style={{ color:"#9ca3af", fontSize:18, animation:"spin 1s linear infinite" }}/>}
+                {ifscData && !ifscLoading && <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:18 }}/>}
+              </div>
 
-            {/* Full IFSC preview */}
-            <div style={{ fontSize:12, color:"#6b7280", marginBottom:8 }}>
-              Full IFSC: <strong style={{ color:"#111827", fontFamily:"monospace", letterSpacing:"0.06em" }}>{selectedBank.code}{ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}</strong>
-              <span style={{ marginLeft:6, fontSize:10, color:"#9ca3af" }}>{ifscSuffix.length}/7 characters</span>
-            </div>
+              {/* Full IFSC preview */}
+              <div style={{ fontSize:12, color:"#6b7280", marginBottom:8 }}>
+                Full IFSC: <strong style={{ color:"#111827", fontFamily:"monospace", letterSpacing:"0.06em" }}>{selectedBank.code}{ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}</strong>
+                <span style={{ marginLeft:6, fontSize:10, color:"#9ca3af" }}>{ifscSuffix.length}/7 characters</span>
+              </div>
 
             {/* Error */}
             {ifscError && (
@@ -406,6 +493,8 @@ export default function BranchesPage() {
                   </div>
                 ) : null)}
               </div>
+            )}
+            </>
             )}
           </SectionCard>
 
@@ -572,23 +661,23 @@ export default function BranchesPage() {
             </div>
           </SectionCard>
 
-          {/* CAPTURE BANK */}
+          {/* CAPTURE BANK / UPDATE BRANCH */}
           <button
-            onClick={handleCapture}
+            onClick={isEditMode ? handleUpdate : handleCapture}
             disabled={!canSubmit || submitting}
             style={{
               width:"100%", padding:"14px",
               borderRadius:12, border:"none",
-              background: canSubmit ? "#16a34a" : "#d1d5db",
+              background: canSubmit ? (isEditMode ? "#0284c7" : "#16a34a") : "#d1d5db",
               color:"#fff", cursor: canSubmit ? "pointer" : "not-allowed",
               fontWeight:900, fontSize:13, letterSpacing:"0.08em",
-              boxShadow: canSubmit ? "0 4px 14px rgba(22,163,74,0.35)" : "none",
+              boxShadow: canSubmit ? `0 4px 14px ${isEditMode?"rgba(2,132,199,0.35)":"rgba(22,163,74,0.35)"}` : "none",
               transition:"all 0.2s",
               display:"flex", alignItems:"center", justifyContent:"center", gap:8,
             }}
           >
-            <i className="ri-map-pin-add-line"/>
-            CAPTURE BANK
+            <i className={isEditMode ? "ri-save-line" : "ri-map-pin-add-line"}/>
+            {isEditMode ? "UPDATE BRANCH" : "CAPTURE BANK"}
           </button>
 
           {/* Checklist */}
