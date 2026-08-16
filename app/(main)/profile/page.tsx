@@ -17,10 +17,10 @@ const CARD: React.CSSProperties = {
 };
 
 const STATS = [
-  { label: "Audits Assigned",   value: 24,  icon: "ri-file-list-3-line",   color: "#2563eb", bg: "#eff6ff" },
-  { label: "Audits Completed",  value: 18,  icon: "ri-checkbox-circle-line",color: "#16a34a", bg: "#f0fdf4" },
-  { label: "Branches Covered",  value: 12,  icon: "ri-building-2-line",     color: "#7c3aed", bg: "#f5f3ff" },
-  { label: "Pending Reviews",   value: 6,   icon: "ri-time-line",           color: "#d97706", bg: "#fffbeb" },
+  { label: "In Progress",      value: 3,   icon: "ri-loader-4-line",        color: "#2563eb", bg: "#eff6ff" },
+  { label: "Completed",        value: 18,  icon: "ri-checkbox-circle-line", color: "#16a34a", bg: "#f0fdf4" },
+  { label: "Branches Covered", value: 12,  icon: "ri-building-2-line",      color: "#7c3aed", bg: "#f5f3ff" },
+  { label: "Drafts Saved",     value: 5,   icon: "ri-draft-line",           color: "#d97706", bg: "#fffbeb" },
 ];
 
 const ACTIVITY = [

@@ -742,7 +742,7 @@ export default function QuestionLibraryPage() {
                           <div style={{ fontSize:11, color:"#9ca3af", marginTop:2, lineHeight:1.4 }}>{q.textHi}</div>
                         </td>
                         <td style={TD}>
-                          <span style={{ fontSize:10, fontWeight:700, color:sc, background:`${sc}18`, borderRadius:20, padding:"2px 8px", whiteSpace:"nowrap" as const }}>{q.section.split(" ")[0]}</span>
+                          <span style={{ fontSize:10, fontWeight:700, color:sc, background:`${sc}18`, borderRadius:20, padding:"2px 8px", whiteSpace:"nowrap" as const }}>{q.section}</span>
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
                           <span style={{ fontSize:10, fontWeight:700, color:ts.color, background:ts.bg, borderRadius:5, padding:"2px 7px", whiteSpace:"nowrap" as const }}>{TYPE_LABEL[q.type]}</span>
