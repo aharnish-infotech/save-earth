@@ -103,7 +103,7 @@ const SEED: Question[] = [
     "क्या किसी अतिरिक्त विद्युत भार की आवश्यकता है? (बिजली वितरण कंपनी से)",
     "ठीक है","General",
     "If YES — record the additional load required in KW in the observations field.",
-    "YES_NO"),
+    "YES_NO_NA"),
 
   // ── Phase load distribution — helpEn carries AMPS observation prompt ─────────
   mkQ("Q-010","General",
@@ -141,7 +141,7 @@ const SEED: Question[] = [
   mkQ("Q-016","General",
     "General condition of electrical control panels, Main switch, electric meter board and change over switch, ACs, Water coolers, water filter, wiring cables etc. is good and all DBs, Panels, Switch boards are properly covered",
     "विद्युत कंट्रोल पैनल, मेन स्विच, इलेक्ट्रिक मीटर बोर्ड, चेंजओवर स्विच, AC, वाटर कूलर, वाटर फिल्टर, वायरिंग केबल आदि की सामान्य स्थिति अच्छी है और सभी DB, पैनल, स्विच बोर्ड ठीक से ढके हुए हैं?",
-    "ठीक है","General","","OK_NOT_OK"),
+    "ठीक है","General","","YES_NO_NA"),
 
   mkQ("Q-017","General",
     "Whether the contact numbers of persons, electricians, power distribution company, Generator service provider, Vendor, UPS vendor, ACs etc. are available with Accountant/Security guard and other staff and they are displayed in Electric Room/UPS room",
