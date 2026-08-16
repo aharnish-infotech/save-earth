@@ -208,6 +208,10 @@ export default function QuestionLibraryPage() {
   // Translation
   const [translating, setTranslating] = useState<Record<HindiField,boolean>>({ textHi:false, recommendHi:false });
 
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<Question | null>(null);
+  const [deleteInput,  setDeleteInput]  = useState("");
+
   // Table filters
   const [search,   setSearch]   = useState("");
   const [sectionF, setSectionF] = useState("All Sections");
@@ -291,10 +295,14 @@ export default function QuestionLibraryPage() {
     closePanel();
   };
 
-  const handleDelete = (id: string) => {
-    if (editRow?.id === id) closePanel();
-    setQuestions(qs => qs.filter(q => q.id !== id));
+  const confirmDelete = () => {
+    if (!deleteTarget || deleteInput !== "DELETE") return;
+    if (editRow?.id === deleteTarget.id) closePanel();
+    setQuestions(qs => qs.filter(q => q.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    setDeleteInput("");
   };
+  const cancelDelete = () => { setDeleteTarget(null); setDeleteInput(""); };
   const handleToggle = (id: string) =>
     setQuestions(qs => qs.map(q => q.id===id ? { ...q, status:q.status==="Active"?"Inactive":"Active" as QStatus } : q));
 
@@ -604,8 +612,8 @@ export default function QuestionLibraryPage() {
                               style={{ width:27, height:27, borderRadius:6, border:`1px solid ${isActive?"#fbbf24":"#e5e7eb"}`, background:isActive?"#fef9c3":"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:isActive?"#d97706":"#2563eb" }}>
                               <i className="ri-edit-line" style={{ fontSize:12 }}/>
                             </button>
-                            <button onClick={()=>handleDelete(q.id)} title="Delete"
-                              style={{ width:27, height:27, borderRadius:6, border:"1px solid #e5e7eb", background:"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#dc2626" }}>
+                            <button onClick={()=>{ setDeleteTarget(q); setDeleteInput(""); }} title="Delete"
+                              style={{ width:27, height:27, borderRadius:6, border:"1px solid #fee2e2", background:"#fff5f5", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#dc2626" }}>
                               <i className="ri-delete-bin-line" style={{ fontSize:12 }}/>
                             </button>
                           </div>
@@ -634,5 +642,81 @@ export default function QuestionLibraryPage() {
         </div>
       </div>
     </div>
+
+    {/* ── DELETE CONFIRMATION MODAL ──────────────────────────────────────────── */}
+    {deleteTarget && (
+      <div style={{ position:"fixed", inset:0, zIndex:99999, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0.55)", backdropFilter:"blur(3px)" }}
+        onClick={e=>{ if(e.target===e.currentTarget) cancelDelete(); }}>
+        <div style={{ background:"#fff", borderRadius:16, width:460, boxShadow:"0 24px 64px rgba(0,0,0,0.22)", overflow:"hidden", animation:"slideUp 0.18s ease" }}>
+          <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+          {/* Modal header */}
+          <div style={{ background:"#fef2f2", padding:"18px 22px", borderBottom:"1px solid #fee2e2", display:"flex", alignItems:"flex-start", gap:14 }}>
+            <div style={{ width:42, height:42, borderRadius:12, background:"#fee2e2", border:"1px solid #fca5a5", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <i className="ri-delete-bin-2-line" style={{ fontSize:20, color:"#dc2626" }}/>
+            </div>
+            <div>
+              <div style={{ fontSize:16, fontWeight:800, color:"#111827" }}>Delete Question</div>
+              <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>This action is permanent and cannot be undone.</div>
+            </div>
+            <button onClick={cancelDelete} style={{ marginLeft:"auto", background:"none", border:"none", cursor:"pointer", color:"#9ca3af", fontSize:18, lineHeight:1, padding:2, flexShrink:0 }}>
+              <i className="ri-close-line"/>
+            </button>
+          </div>
+
+          {/* Modal body */}
+          <div style={{ padding:"20px 22px", display:"flex", flexDirection:"column", gap:14 }}>
+
+            {/* Question preview */}
+            <div style={{ background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:10, padding:"12px 14px" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                <span style={{ fontSize:10, fontWeight:700, color:"#374151", background:"#e5e7eb", borderRadius:5, padding:"2px 7px", fontFamily:"monospace" }}>{deleteTarget.id}</span>
+                <span style={{ fontSize:10, fontWeight:700, color:"#16a34a", background:"#dcfce7", borderRadius:5, padding:"2px 8px" }}>{deleteTarget.section}</span>
+              </div>
+              <div style={{ fontSize:13, fontWeight:600, color:"#111827", lineHeight:1.5 }}>{deleteTarget.textEn}</div>
+              {deleteTarget.textHi && (
+                <div style={{ fontSize:11, color:"#9ca3af", marginTop:4, lineHeight:1.4 }}>{deleteTarget.textHi}</div>
+              )}
+            </div>
+
+            {/* Warning */}
+            <div style={{ display:"flex", gap:8, background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8, padding:"10px 12px", alignItems:"flex-start" }}>
+              <i className="ri-error-warning-line" style={{ fontSize:15, color:"#d97706", flexShrink:0, marginTop:1 }}/>
+              <div style={{ fontSize:12, color:"#92400e", lineHeight:1.5 }}>
+                If this question is used in any audit template, deleting it may affect existing audit reports. Proceed only if you are certain.
+              </div>
+            </div>
+
+            {/* Type DELETE */}
+            <div>
+              <label style={{ display:"block", fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:6, textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>
+                Type <span style={{ color:"#dc2626", fontFamily:"monospace", fontSize:12, letterSpacing:"0.1em" }}>DELETE</span> to confirm
+              </label>
+              <input
+                autoFocus
+                value={deleteInput}
+                onChange={e => setDeleteInput(e.target.value)}
+                onKeyDown={e => { if(e.key==="Enter") confirmDelete(); if(e.key==="Escape") cancelDelete(); }}
+                placeholder="Type DELETE here"
+                style={{ width:"100%", border:`2px solid ${deleteInput==="DELETE"?"#dc2626":"#e5e7eb"}`, borderRadius:9, padding:"10px 13px", fontSize:14, fontWeight:700, fontFamily:"monospace", color:"#111827", outline:"none", boxSizing:"border-box" as const, letterSpacing:"0.08em", transition:"border-color 0.15s", background: deleteInput==="DELETE"?"#fff5f5":"#fff" }}
+              />
+            </div>
+          </div>
+
+          {/* Modal footer */}
+          <div style={{ padding:"14px 22px", borderTop:"1px solid #f3f4f6", display:"flex", gap:8, justifyContent:"flex-end", background:"#fafafa" }}>
+            <button onClick={cancelDelete}
+              style={{ padding:"9px 20px", borderRadius:9, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:13 }}>
+              Cancel
+            </button>
+            <button onClick={confirmDelete} disabled={deleteInput !== "DELETE"}
+              style={{ padding:"9px 22px", borderRadius:9, border:"none", background:deleteInput==="DELETE"?"#dc2626":"#fca5a5", color:"#fff", cursor:deleteInput==="DELETE"?"pointer":"not-allowed", fontWeight:700, fontSize:13, display:"flex", alignItems:"center", gap:7, transition:"background 0.15s" }}>
+              <i className="ri-delete-bin-2-line"/>
+              {deleteInput==="DELETE" ? "Permanently Delete" : "Type DELETE to confirm"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }
