@@ -97,14 +97,11 @@ export default function Sidebar() {
     return () => window.removeEventListener("zf:toggle-sidebar", handleToggle);
   }, []);
 
-  // Rail icon click: toggle panel if same icon clicked, otherwise switch section
+  // Rail icon click: open panel to that section
+  // Section header click: just expand/collapse that section, panel stays open
   const handleIconClick = (id: string) => {
-    if (id === activeId && panelOpen) {
-      setPanelOpen(false);
-    } else {
-      setActiveId(id);
-      setPanelOpen(true);
-    }
+    setPanelOpen(true);
+    setActiveId(prev => prev === id ? "" : id);
   };
 
   const activeRailItem = RAIL_ITEMS.find(r => r.id === activeId) ?? RAIL_ITEMS[0];
