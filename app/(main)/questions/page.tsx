@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type QType     = "YES_NO_NA" | "YES_NO" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
+type QType     = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
 type RiskLevel = "HIGH" | "MEDIUM" | "LOW";
 type QStatus   = "Active" | "Draft" | "Inactive";
 
@@ -30,75 +30,132 @@ interface Question {
   createdOn:    string;
 }
 
-// ── Seed Data — 32 real questions with full Hindi translations ─────────────────
+// ── Seed Data — 33 questions aligned to original audit checklist ──────────────
 const D = "01 Jan 2024";
-const mkQ = (id: string, section: string, textEn: string, textHi: string, recommendHi = "अनुपालित", category = "Safety"): Question => ({
-  id, section, textEn, textHi,
-  type: "YES_NO_NA", category, riskLevel: "HIGH", weightage: 5,
-  helpEn: "", helpHi: "", recommendEn: "COMPLIED", recommendHi,
+const mkQ = (
+  id: string, section: string, textEn: string, textHi: string,
+  recommendHi = "अनुपालित", category = "General",
+  helpEn = "", type: QType = "YES_NO_NA"
+): Question => ({
+  id, section, textEn, textHi, type, category,
+  riskLevel: "HIGH", weightage: 5,
+  helpEn, helpHi: "", recommendEn: "COMPLIED", recommendHi,
   mandatory: true, allowRemarks: true, allowPhoto: false,
   multiPhoto: false, numericValue: false, allowNA: false,
   status: "Active", usedIn: 0, createdOn: D,
 });
 
 const SEED: Question[] = [
-  // ── General Section (Q-001 – Q-018) ──────────────────────────────────────────
-  mkQ("Q-001","General",
-    "Whether MCCBs/MCBs are provided with proper rating to cater the load",
-    "क्या MCCB/MCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?", "अनुपालित", "General"),
-  mkQ("Q-002","General",
-    "Whether ELCBs are provided with proper rating to cater the load",
-    "क्या ELCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?", "अनुपालित", "General"),
-  mkQ("Q-003","General",
-    "Whether light and emergency light are provided in electrical rooms/operating areas for easy operation & maintenance works",
-    "क्या विद्युत कक्षों/संचालन क्षेत्रों में सामान्य और आपातकालीन प्रकाश आसान संचालन और रखरखाव के लिए प्रदान किए गए हैं?", "अनुपालित", "General"),
-  mkQ("Q-004","General",
-    "Whether Pump room, DG set room, UPS room, electrical room etc. are maintained dry and in good condition and obsolete/hazardous/old items are not dumped there",
-    "क्या पंप रूम, DG सेट रूम, UPS रूम, विद्युत कक्ष आदि शुष्क और अच्छी स्थिति में रखे गए हैं और वहाँ पुराने/खतरनाक/अनुपयोगी सामान नहीं डाले गए हैं?", "अनुपालित", "General"),
-  mkQ("Q-005","General",
-    "Whether Water Seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc.",
-    "क्या किसी विद्युत पैनल, वितरण बोर्ड, विद्युत उपकरण आदि के पास जल रिसाव देखा गया है?", "अनुपालित", "General"),
-  mkQ("Q-006","General",
-    "Whether Earthing pits are provided and connected to the equipment, Body of the connected equipment",
-    "क्या अर्थिंग पिट प्रदान किए गए हैं और उपकरण तथा संबंधित उपकरण के बॉडी से जुड़े हैं?", "अनुपालित", "General"),
-  mkQ("Q-007","General",
-    "Whether the Earthing Pits are properly maintained",
-    "क्या अर्थिंग पिट उचित तरीके से रखरखाव किए जा रहे हैं?", "अनुपालित", "General"),
-  mkQ("Q-008","General",
-    "Whether proper exhaust fan for ventilation of panel room/electrical room/UPS room is provided and paper, old materials or any other scrap kept near DB/Panels/UPS/Batteries etc. are not kept there",
-    "क्या पैनल रूम/विद्युत कक्ष/UPS रूम के वेंटिलेशन के लिए उचित एग्जॉस्ट फैन लगाया गया है और DB/पैनल/UPS/बैटरी आदि के पास कागज, पुराना सामान या कोई अन्य कबाड़ नहीं रखा गया है?", "अनुपालित", "General"),
-  mkQ("Q-009","General",
-    "Whether Penalty is being imposed in electricity bills on account of higher load/poor power factor etc. (it may be ascertained from the electricity bill of April/May/Jun/July). Additional electrical load required if any (from Power Distribution company)",
-    "क्या अधिक लोड/खराब पावर फैक्टर आदि के कारण बिजली बिल में जुर्माना लगाया जा रहा है? (अप्रैल/मई/जून/जुलाई के बिजली बिल से जाँचें)। यदि आवश्यक हो तो बिजली वितरण कंपनी से अतिरिक्त विद्युत भार की माँग।", "अनुपालित", "General"),
-  mkQ("Q-010","General",
-    "Whether load is distributed in all three phases to avoid unbalancing of phases and no loose electrical connection/haphazard wirings observed in the Branch/office premises",
-    "क्या फेज असंतुलन से बचने के लिए लोड तीनों फेज में वितरित किया गया है और शाखा/कार्यालय परिसर में कोई ढीला विद्युत कनेक्शन/अव्यवस्थित वायरिंग नहीं देखी गई है?", "अनुपालित", "General"),
-  mkQ("Q-011","General",
-    "Whether isolating switch is provided for the switching off of non-essential loads premises during night and main switch to switch off the power supply to the branch in case of Fire/emergency",
-    "क्या रात के समय गैर-आवश्यक लोड बंद करने के लिए आइसोलेटिंग स्विच और आग/आपातकाल की स्थिति में शाखा की बिजली आपूर्ति बंद करने के लिए मेन स्विच प्रदान किया गया है?", "अनुपालित", "General"),
-  mkQ("Q-012","General",
-    "Whether electrical equipments of pantry etc. are properly connected to iron socket box with MCBs or latest type switches are provided to switch on/off the AC's and protect them from Overload",
-    "क्या पेंट्री आदि के विद्युत उपकरण MCB के साथ आयरन सॉकेट बॉक्स से ठीक से जुड़े हैं या AC को चालू/बंद करने और ओवरलोड से बचाने के लिए नवीनतम प्रकार के स्विच लगाए गए हैं?", "अनुपालित", "General"),
-  mkQ("Q-013","General",
-    "Whether Proper preventive maintenance after opening of panel boards and distribution boards are carried out by the license holder Electrician or skilled technicians of Equipment manufacturers/service providers",
-    "क्या पैनल बोर्ड और वितरण बोर्ड खोलने के बाद उचित निवारक रखरखाव लाइसेंस धारक इलेक्ट्रीशियन या उपकरण निर्माताओं/सेवा प्रदाताओं के कुशल तकनीशियनों द्वारा किया जाता है?", "अनुपालित", "General"),
-  mkQ("Q-014","General",
-    "Whether mechanical timers used in the changeover of Air conditioners for server Room A/Cs and for Signage Boards to make auto ON/OFF (for Schedule timings). The thermostat of AC's at server rooms should be set to say 30 degree centigrade so they are not run only when the temperature is too high (to minimize chances of fire due to idle running of AC's during the night)",
-    "क्या सर्वर रूम AC और साइनेज बोर्ड के ऑटो ON/OFF के लिए मैकेनिकल टाइमर का उपयोग किया जाता है? सर्वर रूम AC का थर्मोस्टेट 30 डिग्री सेल्सियस पर सेट होना चाहिए ताकि रात में निष्क्रिय AC चलने से आग लगने की संभावना कम हो।", "अनुपालित", "General"),
-  mkQ("Q-015","General",
-    "Whether Preventive Maintenance of electric installation and equipment is carried out by skilled license holder electricians/skilled technician",
-    "क्या विद्युत प्रतिष्ठान और उपकरणों का निवारक रखरखाव कुशल लाइसेंस धारक इलेक्ट्रीशियन/कुशल तकनीशियन द्वारा किया जाता है?", "अनुपालित", "General"),
-  mkQ("Q-016","General",
-    "General condition of electrical control panels, main switch, electric meter board and change over switch AC's, water cooler, water filter, wiring cables etc. is good and all DB's, Panels, switch boards are properly covered",
-    "विद्युत कंट्रोल पैनल, मेन स्विच, इलेक्ट्रिक मीटर बोर्ड, चेंजओवर स्विच, AC, वाटर कूलर, वाटर फिल्टर, वायरिंग केबल आदि की सामान्य स्थिति अच्छी है और सभी DB, पैनल, स्विच बोर्ड ठीक से ढके हुए हैं?", "अनुपालित", "General"),
-  mkQ("Q-017","General",
-    "Whether the contact numbers of persons, electricians, power distribution company, Generator service provider, vendor, UPS vendors, ACs etc. are available with Accountant/Security guard and other staff and they are displayed in Electric room/UPS room",
-    "क्या इलेक्ट्रीशियन, बिजली वितरण कंपनी, जनरेटर सेवा प्रदाता, UPS विक्रेता, AC आदि के संपर्क नंबर अकाउंटेंट/सुरक्षा गार्ड और अन्य कर्मचारियों के पास उपलब्ध हैं और विद्युत कक्ष/UPS रूम में प्रदर्शित हैं?", "अनुपालित", "General"),
-  mkQ("Q-018","General",
-    "Whether the power factor panel of appropriate rating is installed",
-    "क्या उचित रेटिंग का पावर फैक्टर पैनल स्थापित किया गया है?", "अनुपालित", "General"),
 
-  // ── Fire Prevention Measures (Q-019 – Q-023) ────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  // GENERAL SECTION  —  Q-001 to Q-018
+  // Change log vs original:
+  //   • Q-001: MCCBs/MCBs + ELCBs merged into one question (was two separate)
+  //   • Q-009: new question — "7a Additional electrical load" (was missing)
+  //   • Q-010: helpEn carries R/Y/B/N AMPS observation prompt
+  //   • Q-016: type changed to OK_NOT_OK (was incorrectly YES_NO_NA)
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  // ── MERGED: original Q1 (MCCBs/MCBs) + ELCBs combined as one question ───────
+  mkQ("Q-001","General",
+    "Whether MCCBs/MCBs/ELCBs are provided with proper rating to cater the load",
+    "क्या MCCB/MCB/ELCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?",
+    "अनुपालित","General"),
+
+  mkQ("Q-002","General",
+    "Whether light and emergency light are provided in electrical rooms/operating areas for easy operation & maintenance works",
+    "क्या विद्युत कक्षों/संचालन क्षेत्रों में सामान्य और आपातकालीन प्रकाश आसान संचालन और रखरखाव के लिए प्रदान किए गए हैं?",
+    "अनुपालित","General"),
+
+  mkQ("Q-003","General",
+    "Whether Pump room, DG set room, UPS room, electrical room etc. are maintained dry and in good condition and obsolete/hazardous/old items are not dumped there",
+    "क्या पंप रूम, DG सेट रूम, UPS रूम, विद्युत कक्ष आदि शुष्क और अच्छी स्थिति में रखे गए हैं और वहाँ पुराने/खतरनाक/अनुपयोगी सामान नहीं डाले गए हैं?",
+    "अनुपालित","General"),
+
+  mkQ("Q-004","General",
+    "Whether water seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc.",
+    "क्या किसी विद्युत पैनल, वितरण बोर्ड, विद्युत उपकरण आदि के पास जल रिसाव देखा गया है?",
+    "अनुपालित","General"),
+
+  mkQ("Q-005","General",
+    "Whether Earthing pits are provided and connected to the equipment, body of the connected equipment",
+    "क्या अर्थिंग पिट प्रदान किए गए हैं और उपकरण तथा संबंधित उपकरण के बॉडी से जुड़े हैं?",
+    "अनुपालित","General"),
+
+  mkQ("Q-006","General",
+    "Whether the Earthing Pits are properly maintained",
+    "क्या अर्थिंग पिट उचित तरीके से रखरखाव किए जा रहे हैं?",
+    "अनुपालित","General"),
+
+  mkQ("Q-007","General",
+    "Whether proper exhaust fan for ventilation of panel room/electrical room/UPS room is provided and paper, old materials or any other scrap kept near DB/Panels/UPS/Batteries etc. are not kept there",
+    "क्या पैनल रूम/विद्युत कक्ष/UPS रूम के वेंटिलेशन के लिए उचित एग्जॉस्ट फैन लगाया गया है और DB/पैनल/UPS/बैटरी आदि के पास कागज, पुराना सामान या कोई अन्य कबाड़ नहीं रखा गया है?",
+    "अनुपालित","General"),
+
+  mkQ("Q-008","General",
+    "Whether penalty is being imposed in electricity bills on account of higher load/poor power factor etc. (it may be ascertained from the electricity bill of April/May/Jun/July)",
+    "क्या अधिक लोड/खराब पावर फैक्टर आदि के कारण बिजली बिल में जुर्माना लगाया जा रहा है? (अप्रैल/मई/जून/जुलाई के बिजली बिल से जाँचें।)",
+    "अनुपालित","General"),
+
+  // ── NEW — original 7a sub-question (was embedded in Q-008, now standalone) ──
+  mkQ("Q-009","General",
+    "Additional electrical load required if any (from Power Distribution Company)",
+    "क्या किसी अतिरिक्त विद्युत भार की आवश्यकता है? (बिजली वितरण कंपनी से)",
+    "अनुपालित","General",
+    "If YES — record the additional load required in KW in the observations field.",
+    "YES_NO"),
+
+  // ── Phase load distribution — helpEn carries AMPS observation prompt ─────────
+  mkQ("Q-010","General",
+    "Whether load is distributed in all 3 phases to avoid unbalancing of phases and no loose electrical connection/haphazard wiring observed in the branch/office premises",
+    "क्या फेज असंतुलन से बचने के लिए लोड तीनों फेज में वितरित किया गया है और शाखा/कार्यालय परिसर में कोई ढीला विद्युत कनेक्शन/अव्यवस्थित वायरिंग नहीं देखी गई है?",
+    "अनुपालित","General",
+    "Record phase-wise current readings in observations: R: ___ AMPS | Y: ___ AMPS | B: ___ AMPS | N: ___ AMPS"),
+
+  mkQ("Q-011","General",
+    "Whether isolating switches are provided for the switching off of non-essential loads premises during night and main switch to switch off the power supply to the branch in case of Fire/Emergency",
+    "क्या रात के समय गैर-आवश्यक लोड बंद करने के लिए आइसोलेटिंग स्विच और आग/आपातकाल की स्थिति में शाखा की बिजली आपूर्ति बंद करने के लिए मेन स्विच प्रदान किया गया है?",
+    "अनुपालित","General"),
+
+  mkQ("Q-012","General",
+    "Whether electrical equipments of Pantry etc. are properly connected to Iron socket box with MCBs. MCBs or latest type switches are provided to switch on/off the ACs and protect them from overload",
+    "क्या पेंट्री आदि के विद्युत उपकरण MCB के साथ आयरन सॉकेट बॉक्स से ठीक से जुड़े हैं? AC को चालू/बंद करने और ओवरलोड से बचाने के लिए MCB या नवीनतम प्रकार के स्विच लगाए गए हैं?",
+    "अनुपालित","General"),
+
+  mkQ("Q-013","General",
+    "Whether Proper preventive maintenance after opening of Panel boards and Distribution Boards are carried out by the license holder Electrician or skilled technicians of Equipment manufacturers/Service providers",
+    "क्या पैनल बोर्ड और वितरण बोर्ड खोलने के बाद उचित निवारक रखरखाव लाइसेंस धारक इलेक्ट्रीशियन या उपकरण निर्माताओं/सेवा प्रदाताओं के कुशल तकनीशियनों द्वारा किया जाता है?",
+    "अनुपालित","General"),
+
+  mkQ("Q-014","General",
+    "Whether appropriate timers used in the changeover of Air conditioners for Server Room ACs and for Signage Boards to make auto ON/OFF (for scheduled timings). The thermostat of ACs at server rooms should be set to 30°C so they run only when temperature is too high (to minimise fire risk from idle running of ACs during nights)",
+    "क्या सर्वर रूम AC और साइनेज बोर्ड के ऑटो ON/OFF के लिए उपयुक्त टाइमर का उपयोग किया जाता है? सर्वर रूम AC का थर्मोस्टेट 30°C पर सेट होना चाहिए ताकि रात में निष्क्रिय AC चलने से आग लगने का खतरा कम हो।",
+    "अनुपालित","General"),
+
+  mkQ("Q-015","General",
+    "Whether preventive maintenance of electric installation and equipment is carried out by skilled license holder electricians/skilled technician",
+    "क्या विद्युत प्रतिष्ठान और उपकरणों का निवारक रखरखाव कुशल लाइसेंस धारक इलेक्ट्रीशियन/कुशल तकनीशियन द्वारा किया जाता है?",
+    "अनुपालित","General"),
+
+  // ── Answer type OK/NOT OK — matches original document ────────────────────────
+  mkQ("Q-016","General",
+    "General condition of electrical control panels, Main switch, electric meter board and change over switch, ACs, Water coolers, water filter, wiring cables etc. is good and all DBs, Panels, Switch boards are properly covered",
+    "विद्युत कंट्रोल पैनल, मेन स्विच, इलेक्ट्रिक मीटर बोर्ड, चेंजओवर स्विच, AC, वाटर कूलर, वाटर फिल्टर, वायरिंग केबल आदि की सामान्य स्थिति अच्छी है और सभी DB, पैनल, स्विच बोर्ड ठीक से ढके हुए हैं?",
+    "ठीक है","General","","OK_NOT_OK"),
+
+  mkQ("Q-017","General",
+    "Whether the contact numbers of persons, electricians, power distribution company, Generator service provider, Vendor, UPS vendor, ACs etc. are available with Accountant/Security guard and other staff and they are displayed in Electric Room/UPS room",
+    "क्या इलेक्ट्रीशियन, बिजली वितरण कंपनी, जनरेटर सेवा प्रदाता, UPS विक्रेता, AC आदि के संपर्क नंबर अकाउंटेंट/सुरक्षा गार्ड और अन्य कर्मचारियों के पास उपलब्ध हैं और विद्युत कक्ष/UPS रूम में प्रदर्शित हैं?",
+    "अनुपालित","General"),
+
+  mkQ("Q-018","General",
+    "Whether the Power Factor (PF) panel of appropriate rating is installed",
+    "क्या उचित रेटिंग का पावर फैक्टर (PF) पैनल स्थापित किया गया है?",
+    "अनुपालित","General"),
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // FIRE PREVENTION MEASURES  —  Q-019 to Q-023  (no changes)
+  // ══════════════════════════════════════════════════════════════════════════════
   mkQ("Q-019","Fire Prevention Measures",
     "All old disposable records, broken furniture etc. accumulated at the premises have been cleared",
     "परिसर में जमा सभी पुराने निपटान योग्य रिकॉर्ड, टूटा हुआ फर्नीचर आदि हटाया गया है?"),
@@ -106,65 +163,91 @@ const SEED: Question[] = [
     "Combustible leaf, litter/waste papers etc. in and around the branch is removed/cleaned periodically",
     "शाखा के अंदर और आसपास दहनशील पत्ते, कूड़ा/अपशिष्ट कागज आदि समय-समय पर हटाए/साफ किए जाते हैं?"),
   mkQ("Q-021","Fire Prevention Measures",
-    "No stationary/Records/old obsolete items are stored/kept in the system/UPS room",
+    "No stationery/Records/old obsolete items are stored/kept in the system/UPS room",
     "सिस्टम/UPS रूम में कोई स्टेशनरी/रिकॉर्ड/पुराने अनुपयोगी सामान संग्रहीत/नहीं रखे गए हैं?"),
   mkQ("Q-022","Fire Prevention Measures",
-    "Storage racks in Stationery/Record room kept at a safe distance of at least 3 FEET from electrical points/switch/junction boxes",
+    "Storage racks in Stationery/Record room kept at a safe distance of at least 3 ft from electrical points/switch/junction boxes",
     "स्टेशनरी/रिकॉर्ड रूम में भंडारण रैक विद्युत बिंदुओं/स्विच/जंक्शन बॉक्स से कम से कम 3 फीट की सुरक्षित दूरी पर रखे गए हैं?"),
   mkQ("Q-023","Fire Prevention Measures",
-    "In the pantry/canteen LPG is used (YES/NO)",
-    "क्या पेंट्री/कैंटीन में LPG का उपयोग किया जाता है? (हाँ/नहीं)"),
+    "In the pantry/canteen LPG is used",
+    "क्या पेंट्री/कैंटीन में LPG का उपयोग किया जाता है?"),
 
-  // ── Server and UPS Room (Q-024 – Q-026) ─────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  // SERVER AND UPS ROOM  —  Q-024 to Q-026
+  // Change log: Q-026 updated to include ceiling fan count as observation prompt
+  // ══════════════════════════════════════════════════════════════════════════════
   mkQ("Q-024","Server and UPS Room",
     "Server room has dual AC units having timer circuit device with independent circuit",
     "क्या सर्वर रूम में स्वतंत्र सर्किट के साथ टाइमर सर्किट डिवाइस युक्त दोहरी AC इकाइयाँ हैं?"),
   mkQ("Q-025","Server and UPS Room",
-    "Whether metal body Exhaust fan installed in UPS room",
+    "Whether metal body exhaust fan is installed in UPS room",
     "क्या UPS रूम में धातु के बॉडी वाला एग्जॉस्ट फैन स्थापित किया गया है?"),
+  // ── Q-026: updated — count of fans captured as observation prompt ─────────────
   mkQ("Q-026","Server and UPS Room",
-    "Whether ceiling fans installed are of BLDC type",
-    "क्या स्थापित सीलिंग फैन BLDC प्रकार के हैं?"),
+    "Whether all ceiling fans installed are of BLDC type",
+    "क्या सभी स्थापित सीलिंग फैन BLDC प्रकार के हैं?",
+    "अनुपालित","Safety",
+    "Record total number of ceiling fans installed in the observations field (NOS: ___)"),
 
-  // ── Electrical Safety continued (Q-027 – Q-029) ─────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ELECTRICAL SAFETY  —  Q-027 to Q-029  (no changes)
+  // ══════════════════════════════════════════════════════════════════════════════
   mkQ("Q-027","Electrical Safety",
-    "Power Supply to record/Stationary room is made through plug and socket arrangement",
+    "Power supply to record/stationery room is made through plug and socket arrangement",
     "क्या रिकॉर्ड/स्टेशनरी रूम को प्लग और सॉकेट व्यवस्था के माध्यम से बिजली आपूर्ति की जाती है?"),
   mkQ("Q-028","Electrical Safety",
-    "Whether LED lights have been installed. If not, specify number of 2x2 (36W), Down lights (12/15W), 4 Feet (28W) LED lights required in the branch/office",
-    "क्या LED लाइटें स्थापित की गई हैं? यदि नहीं, तो शाखा/कार्यालय में आवश्यक 2x2 (36W), डाउन लाइट (12/15W), 4 फीट (28W) LED लाइटों की संख्या बताएं।"),
+    "Whether LED lights have been installed. If not, specify number required: Down lights (12/15W) — NOS: ___ | 2×2 Flush lights (36W) — NOS: ___",
+    "क्या LED लाइटें स्थापित की गई हैं? यदि नहीं, तो आवश्यक संख्या बताएं: डाउन लाइट (12/15W) — NOS: ___ | 2×2 फ्लश लाइट (36W) — NOS: ___"),
   mkQ("Q-029","Electrical Safety",
-    "Whether motion sensors/occupancy sensors have been installed",
-    "क्या मोशन सेंसर/ऑक्यूपेंसी सेंसर स्थापित किए गए हैं?"),
+    "Whether motion sensors/occupancy sensors have been installed. If not, record the number of sensors required in observations",
+    "क्या मोशन सेंसर/ऑक्यूपेंसी सेंसर स्थापित किए गए हैं? यदि नहीं, तो आवश्यक सेंसरों की संख्या टिप्पणी में दर्ज करें।"),
 
-  // ── Fire Protection (Q-030) ──────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  // FIRE PROTECTION  —  Q-030
+  // Change log: fire extinguisher types corrected to match original document
+  //   A. Systems/UPS Room  → CO2 (3kg/4.5kg) × 2
+  //   B. Banking Hall      → Water/CO2 type × 1
+  //   C. Stationery Room   → Water/CO2 type × 1
+  // ══════════════════════════════════════════════════════════════════════════════
   mkQ("Q-030","Fire Protection",
-    "Are fire extinguishers available in the following work areas and clearly marked and accessible? (A. System/UPS Room: CO2 3Kg/4.5Kg × 1-Modular, 2-Powder  B. Banking Hall: Powder type-1  C. Stationery Room: CO2 type-1)",
-    "क्या निम्नलिखित कार्य क्षेत्रों में अग्निशामक यंत्र उपलब्ध हैं और स्पष्ट रूप से चिह्नित तथा सुलभ हैं? (A. सिस्टम/UPS रूम: CO2 3Kg/4.5Kg × 1-मॉड्यूलर, 2-पाउडर  B. बैंकिंग हॉल: पाउडर प्रकार-1  C. स्टेशनरी रूम: CO2 प्रकार-1)"),
+    "Are fire extinguishers available in the following work areas, clearly marked and accessible? A. Systems/UPS Room: CO2 (3Kg/4.5Kg) × 2  |  B. Banking Hall: Water/CO2 type × 1  |  C. Stationery Room: Water/CO2 type × 1",
+    "क्या निम्नलिखित कार्य क्षेत्रों में अग्निशामक यंत्र उपलब्ध हैं, स्पष्ट रूप से चिह्नित और सुलभ हैं? A. सिस्टम/UPS रूम: CO2 (3Kg/4.5Kg) × 2  |  B. बैंकिंग हॉल: वाटर/CO2 प्रकार × 1  |  C. स्टेशनरी रूम: वाटर/CO2 प्रकार × 1"),
 
-  // ── DG Set / Generator (Q-031 – Q-032) ──────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  // DG SET / GENERATOR  —  Q-031 to Q-033
+  // Change log: Q-031 is a new parent question (was missing); former Q-031/Q-032
+  //             are now Q-032/Q-033
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  // ── NEW — original item 21 parent question (was missing) ─────────────────────
   mkQ("Q-031","DG Set / Generator",
-    "At least two 6 Kg. ABC Capacity fire extinguishers are placed near the diesel generator",
-    "डीजल जनरेटर के पास कम से कम दो 6 Kg. ABC क्षमता के अग्निशामक यंत्र रखे गए हैं?"),
+    "DG Set / Generator is installed at the branch/office",
+    "क्या शाखा/कार्यालय में DG सेट / जनरेटर स्थापित है?"),
+
   mkQ("Q-032","DG Set / Generator",
-    "Whether electrical safety and energy saving awareness meeting with the staff members conducted after electrical safety audit of the branch/office by the auditor",
+    "At least two 6 Kg. ABC capacity fire extinguishers are placed near the diesel generator",
+    "डीजल जनरेटर के पास कम से कम दो 6 Kg. ABC क्षमता के अग्निशामक यंत्र रखे गए हैं?"),
+
+  mkQ("Q-033","DG Set / Generator",
+    "Whether electrical safety and energy saving awareness meeting with the staff members was conducted after electrical safety audit of the branch/office by the auditor",
     "क्या शाखा/कार्यालय के विद्युत सुरक्षा ऑडिट के बाद ऑडिटर द्वारा कर्मचारियों के साथ विद्युत सुरक्षा और ऊर्जा बचत जागरूकता बैठक आयोजित की गई है?"),
 ];
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SECTIONS   = ["All Sections","General","Electrical Safety","Fire Prevention Measures","Server and UPS Room","Fire Protection","DG Set / Generator"];
 const CATEGORIES = ["General","Safety","Compliance","Maintenance"];
-const Q_TYPES    = ["YES_NO_NA","YES_NO","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
+const Q_TYPES    = ["YES_NO_NA","YES_NO","OK_NOT_OK","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
 const RISK_LEVELS= ["HIGH","MEDIUM","LOW"] as const;
 const STATUS_LIST= ["All Status","Active","Draft","Inactive"];
 const PAGE_SIZE  = 10;
 
 const TYPE_LABEL: Record<QType,string> = {
-  "YES_NO_NA":"YES / NO / NA","YES_NO":"YES / NO","RATING_1_5":"Rating 1–5",
-  "NUMERIC":"Numeric","TEXT":"Text","MULTI_CHOICE":"Multiple Choice",
+  "YES_NO_NA":"YES / NO / NA","YES_NO":"YES / NO","OK_NOT_OK":"OK / NOT OK",
+  "RATING_1_5":"Rating 1–5","NUMERIC":"Numeric","TEXT":"Text","MULTI_CHOICE":"Multiple Choice",
 };
 const TYPE_STYLE: Record<QType,{color:string;bg:string}> = {
   "YES_NO_NA":{color:"#16a34a",bg:"#dcfce7"},"YES_NO":{color:"#2563eb",bg:"#dbeafe"},
+  "OK_NOT_OK":{color:"#0891b2",bg:"#ecfeff"},
   "RATING_1_5":{color:"#7c3aed",bg:"#f5f3ff"},"NUMERIC":{color:"#0891b2",bg:"#ecfeff"},
   "TEXT":{color:"#374151",bg:"#f3f4f6"},"MULTI_CHOICE":{color:"#d97706",bg:"#fef3c7"},
 };
@@ -427,7 +510,9 @@ export default function QuestionLibraryPage() {
                 <div>
                   <label style={LBL}>Question Type</label>
                   <div style={{ ...INP, padding:"8px 11px", background:"#f9fafb", display:"flex", alignItems:"center", gap:8, cursor:"default" }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:"#16a34a", background:"#dcfce7", borderRadius:6, padding:"2px 10px" }}>YES / NO / NA</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:TYPE_STYLE[form.type].color, background:TYPE_STYLE[form.type].bg, borderRadius:6, padding:"2px 10px" }}>
+                      {TYPE_LABEL[form.type]}
+                    </span>
                   </div>
                 </div>
                 <div>
