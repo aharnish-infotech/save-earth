@@ -37,7 +37,8 @@ const STATUS_STYLE: Record<string, { color: string; bg: string }> = {
 };
 
 export default function ProfilePage() {
-  const [editMode, setEditMode] = useState(false);
+  const [editMode,   setEditMode]   = useState(false);
+  const [donutHover, setDonutHover] = useState(false);
   const [form, setForm] = useState({
     name:    "Admin User",
     email:   "admin@saveearth.in",
@@ -239,22 +240,35 @@ export default function ProfilePage() {
 
             {/* Completion Donut */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-              <div style={{ position: "relative", width: 88, height: 88 }}>
+              <div
+                onMouseEnter={() => setDonutHover(true)}
+                onMouseLeave={() => setDonutHover(false)}
+                style={{
+                  position: "relative", width: 88, height: 88, cursor: "pointer",
+                  transform: donutHover ? "scale(1.1)" : "scale(1)",
+                  transition: "transform 0.22s ease",
+                  filter: donutHover ? "drop-shadow(0 0 10px rgba(22,163,74,0.45))" : "none",
+                }}>
                 <svg width="88" height="88" viewBox="0 0 88 88">
                   <circle cx="44" cy="44" r="36" fill="none" stroke="#e5e7eb" strokeWidth="9" />
                   <circle cx="44" cy="44" r="36" fill="none" stroke="#16a34a" strokeWidth="9"
                     strokeDasharray={`${226.2 * 0.857} 226.2`}
                     strokeLinecap="round"
-                    transform="rotate(-90 44 44)" />
+                    transform="rotate(-90 44 44)"
+                    style={{ transition: "stroke 0.2s" }} />
                   <circle cx="44" cy="44" r="36" fill="none" stroke="#fbbf24" strokeWidth="9"
                     strokeDasharray={`${226.2 * 0.143} 226.2`}
                     strokeDashoffset={`${-226.2 * 0.857}`}
                     strokeLinecap="round"
                     transform="rotate(-90 44 44)" />
                 </svg>
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#111827", lineHeight: 1 }}>85%</div>
-                  <div style={{ fontSize: 8, color: "#9ca3af", fontWeight: 700, letterSpacing: "0.05em", marginTop: 2 }}>COMPLETE</div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+                  <div style={{ fontSize: donutHover ? 15 : 20, fontWeight: 900, color: donutHover ? "#16a34a" : "#111827", lineHeight: 1, transition: "all 0.2s" }}>
+                    {donutHover ? "18/21" : "85%"}
+                  </div>
+                  <div style={{ fontSize: 8, color: "#9ca3af", fontWeight: 700, letterSpacing: "0.05em", marginTop: 2 }}>
+                    {donutHover ? "AUDITS" : "COMPLETE"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -268,7 +282,7 @@ export default function ProfilePage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {STATS.map(s => (
+              {STATS.slice(0, 2).map(s => (
                 <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: s.bg, borderRadius: 9 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <i className={s.icon} style={{ fontSize: 15, color: s.color }} />
