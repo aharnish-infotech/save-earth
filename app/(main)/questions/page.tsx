@@ -612,13 +612,13 @@ export default function QuestionLibraryPage() {
               <div>
                 <label style={LBL}>Question Status</label>
                 <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
-                  {(["Active","Draft","Inactive"] as QStatus[]).map((s, i) => {
+                  {(["Active","Inactive"] as QStatus[]).map((s, i) => {
                     const active = form.status === s;
-                    const col = s==="Active" ? "#16a34a" : s==="Draft" ? "#d97706" : "#6b7280";
+                    const col = s==="Active" ? "#16a34a" : "#dc2626";
                     return (
                       <button key={s} onClick={() => fp("status", s)}
-                        style={{ flex:1, padding:"8px 4px", border:"none", borderRight:i<2?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:active ? col : "#fff", color:active?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
-                        <i className={s==="Active"?"ri-checkbox-circle-line":s==="Draft"?"ri-draft-line":"ri-forbid-line"} style={{ fontSize:13 }}/>
+                        style={{ flex:1, padding:"8px 4px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:active ? col : "#fff", color:active?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                        <i className={s==="Active"?"ri-checkbox-circle-line":"ri-close-circle-line"} style={{ fontSize:13 }}/>
                         {s}
                       </button>
                     );
@@ -682,7 +682,7 @@ export default function QuestionLibraryPage() {
                 Clear
               </button>
               <button onClick={handleSave} disabled={!form.textEn.trim()}
-                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af": form.status==="Active"?(isEditMode?"#2563eb":"#16a34a"):form.status==="Draft"?"#d97706":"#6b7280", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af": form.status==="Active"?(isEditMode?"#2563eb":"#16a34a"):"#dc2626", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
                 <i className={isEditMode ? "ri-save-line" : "ri-check-line"}/>
                 {isEditMode ? `UPDATE AS ${form.status.toUpperCase()}` : `SAVE AS ${form.status.toUpperCase()}`}
               </button>
