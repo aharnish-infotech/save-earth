@@ -358,6 +358,27 @@ const INP: React.CSSProperties = { width:"100%", border:"1px solid #e5e7eb", bor
 const PB: React.CSSProperties  = { display:"inline-flex", alignItems:"center", gap:6, padding:"8px 16px", background:"#16a34a", color:"#fff", border:"none", borderRadius:9, fontWeight:700, fontSize:13, cursor:"pointer" };
 const OB: React.CSSProperties  = { display:"inline-flex", alignItems:"center", gap:6, padding:"8px 14px", background:"#fff", color:"#374151", border:"1px solid #e5e7eb", borderRadius:9, fontWeight:600, fontSize:13, cursor:"pointer" };
 
+// ── JSON syntax highlighter ────────────────────────────────────────────────────
+function colorizeJson(json: string): React.ReactNode {
+  const regex = /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}[\],])/g;
+  const nodes: React.ReactNode[] = [];
+  let last = 0; let key = 0;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(json)) !== null) {
+    if (m.index > last) nodes.push(<span key={key++} style={{ color:"#d4d4d4" }}>{json.slice(last, m.index)}</span>);
+    const v = m[0];
+    let col = "#d4d4d4";
+    if (/^"/.test(v))      col = /:$/.test(v) ? "#9cdcfe" : "#ce9178";
+    else if (/true|false/.test(v)) col = "#569cd6";
+    else if (v === "null") col = "#569cd6";
+    else if (!isNaN(+v))   col = "#b5cea8";
+    nodes.push(<span key={key++} style={{ color: col }}>{v}</span>);
+    last = regex.lastIndex;
+  }
+  if (last < json.length) nodes.push(<span key={key++} style={{ color:"#d4d4d4" }}>{json.slice(last)}</span>);
+  return <>{nodes}</>;
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function QuestionLibraryPage() {
   const [questions, setQuestions] = useState<Question[]>(SEED);
@@ -375,6 +396,7 @@ export default function QuestionLibraryPage() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<Question | null>(null);
   const [deleteInput,  setDeleteInput]  = useState("");
+  const [copied,       setCopied]       = useState(false);
 
   // Table filters
   const [search,   setSearch]   = useState("");
@@ -670,12 +692,48 @@ export default function QuestionLibraryPage() {
               </div>
 
               {/* API payload preview — for developer reference */}
-              <details style={{ border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
-                <summary style={{ padding:"8px 12px", background:"#f9fafb", fontSize:11, fontWeight:700, color:"#6b7280", cursor:"pointer", textTransform:"uppercase" as const, letterSpacing:"0.04em", userSelect:"none" }}>
-                  <i className="ri-code-line" style={{ marginRight:5 }}/>API Payload Preview
+              <details style={{ border:"1px solid #30363d", borderRadius:10, overflow:"hidden" }}>
+                <summary style={{ padding:"9px 13px", background:"#161b22", fontSize:11, fontWeight:700, color:"#8b949e", cursor:"pointer", letterSpacing:"0.04em", userSelect:"none" as const, display:"flex", alignItems:"center", gap:6, listStyle:"none" }}>
+                  <i className="ri-code-s-slash-line" style={{ fontSize:13, color:"#58a6ff" }}/>
+                  <span style={{ flex:1, textTransform:"uppercase" as const, letterSpacing:"0.06em" }}>API Payload Preview</span>
+                  <span style={{ fontSize:9, color:"#3d444d", fontWeight:500 }}>click to expand</span>
                 </summary>
-                <pre style={{ margin:0, padding:"10px 12px", fontSize:10, color:"#374151", background:"#fafafa", overflowX:"auto", lineHeight:1.6 }}>
-{JSON.stringify({
+
+                {/* Toolbar */}
+                <div style={{ background:"#0d1117", borderTop:"1px solid #21262d", padding:"6px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:10, color:"#3d444d", fontWeight:600, letterSpacing:"0.05em" }}>application/json</span>
+                  <button
+                    onClick={() => {
+                      const payload = JSON.stringify({
+                        id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
+                        questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",
+                        textEn:       form.textEn       || "(empty)",
+                        textHi:       form.textHi       || "(empty)",
+                        type:         form.type,
+                        section:      form.section,
+                        category:     form.category,
+                        weightage:    form.weightage,
+                        mandatory:    form.mandatory,
+                        allowRemarks: form.allowRemarks,
+                        allowPhoto:   form.allowPhoto,
+                        recommendEn:  form.recommendEn,
+                        recommendHi:  form.recommendHi  || "(empty)",
+                        status:       form.status,
+                      }, null, 2);
+                      navigator.clipboard.writeText(payload).then(() => {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      });
+                    }}
+                    style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:6, border:"1px solid #30363d", background:copied?"#238636":"#21262d", color:copied?"#fff":"#8b949e", fontSize:10, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}>
+                    <i className={copied ? "ri-check-line" : "ri-file-copy-line"} style={{ fontSize:11 }}/>
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+
+                {/* Highlighted JSON */}
+                <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:280, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
+{colorizeJson(JSON.stringify({
   id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
   questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",
   textEn:       form.textEn       || "(empty)",
@@ -690,7 +748,7 @@ export default function QuestionLibraryPage() {
   recommendEn:  form.recommendEn,
   recommendHi:  form.recommendHi  || "(empty)",
   status:       form.status,
-}, null, 2)}
+}, null, 2))}
                 </pre>
               </details>
             </div>
