@@ -97,11 +97,18 @@ export default function Sidebar() {
     return () => window.removeEventListener("zf:toggle-sidebar", handleToggle);
   }, []);
 
-  // Rail icon click: open panel and highlight section (no collapse)
+  // Rail icon click: toggle panel if same icon clicked, otherwise switch section
   const handleIconClick = (id: string) => {
-    setActiveId(id);
-    setPanelOpen(true);
+    if (id === activeId && panelOpen) {
+      setPanelOpen(false);
+    } else {
+      setActiveId(id);
+      setPanelOpen(true);
+    }
   };
+
+  const activeRailItem = RAIL_ITEMS.find(r => r.id === activeId) ?? RAIL_ITEMS[0];
+  const activeSectionItems = activeRailItem.sections.flatMap(s => s.items);
 
   return (
     <aside className="zf-sidebar" id="sidebar">
@@ -126,7 +133,7 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Nav Panel — always open, all sections always expanded */}
+      {/* Nav Panel — only active section shown */}
       <div className={`zf-nav-panel${panelOpen ? " open" : ""}`} aria-hidden={!panelOpen}>
         <div className="zf-panel-header">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -134,29 +141,33 @@ export default function Sidebar() {
         </div>
 
         <div className="zf-accordion" id="sidebar-scroll">
-          {RAIL_ITEMS.map(item => {
-            const allItems = item.sections.flatMap(s => s.items);
-            return (
-              /* All sections always expanded — no accordion toggle */
-              <div key={item.id} className="zf-accord-section expanded">
-                <div className="zf-accord-header active" style={{ cursor: "default" }}>
-                  <span className="zf-accord-header-icon">{SECTION_ICONS[item.id]}</span>
-                  <span className="zf-accord-title">{item.label}</span>
-                </div>
-                <div className="zf-accord-body" style={{ maxHeight: `${allItems.length * 44 + 8}px` }}>
-                  {allItems.map(nav => {
-                    const isNavActive = pathname === nav.href;
-                    return (
-                      <Link key={nav.href} href={nav.href} className={`zf-nav-link${isNavActive ? " active" : ""}`}>
-                        {nav.icon && <i className={`${nav.icon} zf-nav-link-icon`} />}
-                        <span>{nav.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+          {/* Section label */}
+          <div style={{
+            padding: "12px 16px 6px",
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--text-muted, #9ca3af)",
+            userSelect: "none",
+          }}>
+            {activeRailItem.label}
+          </div>
+
+          {/* Only the active section's items */}
+          <div className="zf-accord-section expanded" style={{ border: "none" }}>
+            <div className="zf-accord-body" style={{ maxHeight: `${activeSectionItems.length * 44 + 8}px` }}>
+              {activeSectionItems.map(nav => {
+                const isNavActive = pathname === nav.href;
+                return (
+                  <Link key={nav.href} href={nav.href} className={`zf-nav-link${isNavActive ? " active" : ""}`}>
+                    {nav.icon && <i className={`${nav.icon} zf-nav-link-icon`} />}
+                    <span>{nav.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
