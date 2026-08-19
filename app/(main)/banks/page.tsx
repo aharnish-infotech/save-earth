@@ -128,7 +128,7 @@ export default function BanksPage() {
   };
 
   const fp = (k: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm(f => ({ ...f, [k]: k === "branches" ? +e.target.value : e.target.value }));
+    setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleSave = () => {
     if (!form.name.trim() || form.code.length !== 4) return;

@@ -55,11 +55,11 @@ export const RAIL_ITEMS: RailItem[] = [
     sections: [{
       section: "BANKING STRUCTURE",
       items: [
-        { label: "Branches",              href: "/branches",     icon: "ri-building-2-line"    },
-        { label: "Banks",                  href: "/banks",        icon: "ri-bank-line"          },
-        { label: "Circle / Zone / AO",    href: "/zones",        icon: "ri-global-line"        },
-        { label: "RBO / CO / Region / ZO",href: "/rbo",          icon: "ri-organization-chart" },
-        { label: "Branch Types",          href: "/branch-types", icon: "ri-git-branch-line"    },
+        { label: "Branches",         href: "/branches",      icon: "ri-building-2-line"    },
+        { label: "Banks",            href: "/banks",         icon: "ri-bank-line"          },
+        { label: "Organisation",     href: "/organisation",        icon: "ri-organization-chart" },
+        { label: "Hierarchy Levels", href: "/organisation/levels", icon: "ri-list-settings-line" },
+        { label: "Branch Types",     href: "/branch-types",  icon: "ri-git-branch-line"    },
       ],
     }],
   },
