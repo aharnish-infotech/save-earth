@@ -53,8 +53,9 @@ interface Meter {
   sanctionedLoad: string; meterNo: string;
   consumption: string; avgBill: string;
 }
+const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
 const newMeter = (): Meter => ({
-  id: crypto.randomUUID(),
+  id: uid(),
   provider:"", type:"", sanctionedLoad:"", meterNo:"", consumption:"", avgBill:"",
 });
 
