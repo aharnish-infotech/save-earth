@@ -253,6 +253,20 @@ export default function BranchesPage() {
   const paged = filtered.slice((p-1)*PAGE_SIZE, p*PAGE_SIZE);
   const nums  = () => { const n:number[]=[]; for(let i=Math.max(1,p-2);i<=Math.min(totalPages,p+2);i++)n.push(i); return n; };
 
+  // ── CSV Export ───────────────────────────────────────────────
+  const downloadCSV = () => {
+    const headers = ["ID","Branch Name","Bank","IFSC","City","District","State","HT/LT","SLD","GPS Lat","GPS Lng","Status"];
+    const csvRows = rows.map(r => [
+      r.id, `"${r.name.replace(/"/g,'""')}"`, `"${r.bank.replace(/"/g,'""')}"`,
+      r.ifsc, r.city, r.district, r.state, r.htlt, r.sld, r.lat, r.lng, r.status
+    ]);
+    const csv = [headers.join(","), ...csvRows.map(r => r.join(","))].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    a.download = `branches-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  };
+
   return (
     <div style={{ padding:"24px 0" }}>
       <div style={{ marginBottom:4 }}>
@@ -706,6 +720,10 @@ export default function BranchesPage() {
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" }}>
             <div style={{ fontSize:12, color:"#6b7280" }}>Showing <strong style={{ color:"#111827" }}>{filtered.length}</strong> branches</div>
             <div style={{ flex:1 }}/>
+            <button onClick={downloadCSV}
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 13px", borderRadius:7, border:"1px solid #d1fae5", background:"#f0fdf4", color:"#16a34a", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+              <i className="ri-download-2-line" style={{ fontSize:13 }}/>Export CSV
+            </button>
             <select value={bankF}   onChange={e=>{setBankF(e.target.value);setPage(1);}}   style={SEL}>{FILTER_BANKS.map(b=><option key={b}>{b}</option>)}</select>
             <select value={htltF}   onChange={e=>{setHtltF(e.target.value);setPage(1);}}   style={SEL}>{FILTER_HTLT.map(h=><option key={h}>{h}</option>)}</select>
             <select value={statusF} onChange={e=>{setStatusF(e.target.value);setPage(1);}} style={SEL}>{FILTER_STATUSES.map(s=><option key={s}>{s}</option>)}</select>
@@ -729,7 +747,7 @@ export default function BranchesPage() {
                   <th style={{ ...TH, textAlign:"center" }}>SLD</th>
                   <th style={{ ...TH, textAlign:"center" }}>GPS</th>
                   <th style={{ ...TH, textAlign:"center" }}>STATUS</th>
-                  <th style={{ ...TH, textAlign:"center" }}>VIEW</th>
+                  <th style={{ ...TH, textAlign:"center" }}>ACTION</th>
                 </tr></thead>
                 <tbody>
                   {paged.length === 0 ? (
@@ -766,13 +784,22 @@ export default function BranchesPage() {
                         <span style={{ fontSize:11, fontWeight:700, color:r.status==="Active"?"#16a34a":"#9ca3af", background:r.status==="Active"?"#dcfce7":"#f3f4f6", borderRadius:20, padding:"3px 10px" }}>{r.status}</span>
                       </td>
                       <td style={{ ...TD, textAlign:"center" }}>
-                        <button
-                          onClick={() => { setViewRow(r); setSuccess(false); }}
-                          style={{ width:28, height:28, borderRadius:6, border:"1px solid #e5e7eb", background: viewRow?.id===r.id?"#eff6ff":"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color: viewRow?.id===r.id?"#2563eb":"#6b7280" }}
-                          title="View branch details"
-                        >
-                          <i className="ri-eye-line" style={{ fontSize:13 }}/>
-                        </button>
+                        <div style={{ display:"flex", gap:5, justifyContent:"center" }}>
+                          <button
+                            onClick={() => { setViewRow(r); setEditRow(null); setSuccess(false); }}
+                            style={{ width:28, height:28, borderRadius:6, border:"1px solid #e5e7eb", background: viewRow?.id===r.id && !editRow?"#eff6ff":"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color: viewRow?.id===r.id && !editRow?"#2563eb":"#6b7280" }}
+                            title="View branch details"
+                          >
+                            <i className="ri-eye-line" style={{ fontSize:13 }}/>
+                          </button>
+                          <button
+                            onClick={() => handleStartEdit(r)}
+                            style={{ width:28, height:28, borderRadius:6, border:`1px solid ${editRow?.id===r.id?"#fbbf24":"#e5e7eb"}`, background: editRow?.id===r.id?"#fef9c3":"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color: editRow?.id===r.id?"#d97706":"#2563eb" }}
+                            title="Edit branch"
+                          >
+                            <i className="ri-edit-line" style={{ fontSize:13 }}/>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

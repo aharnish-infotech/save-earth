@@ -98,6 +98,16 @@ export default function BanksPage() {
   const [copied,  setCopied]  = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
+  const downloadCSV = () => {
+    const headers = ["Code","Bank Name","IFSC Prefix","HQ City","HQ State","Status"];
+    const csvRows = rows.map(r => [r.bankCode, `"${r.name.replace(/"/g,'""')}"`, r.code, r.hq, r.state, r.status]);
+    const csv = [headers.join(","), ...csvRows.map(r => r.join(","))].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    a.download = `banks-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  };
+
   const editRow = rows.find(r => r.id === editId) ?? null;
 
   const filtered = rows.filter(r => {
@@ -348,6 +358,10 @@ export default function BanksPage() {
               Showing <strong style={{ color:"#111827" }}>{filtered.length}</strong> banks
             </div>
             <div style={{ flex:1 }}/>
+            <button onClick={downloadCSV}
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 13px", borderRadius:7, border:"1px solid #d1fae5", background:"#f0fdf4", color:"#16a34a", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+              <i className="ri-download-2-line" style={{ fontSize:13 }}/>Export CSV
+            </button>
             <select value={statusF} onChange={e=>{setStatusF(e.target.value);setPage(1);}} style={SEL}>
               {STATUSES.map(s=><option key={s}>{s}</option>)}
             </select>
