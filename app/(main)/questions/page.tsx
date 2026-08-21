@@ -67,48 +67,48 @@ const SEED: Question[] = [
   mkQ("Q-001","General",
     "Whether MCCBs/MCBs/ELCBs are provided with proper rating to cater the load",
     "क्या MCCB/MCB/ELCB उचित रेटिंग के साथ लोड के अनुसार प्रदान किए गए हैं?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-002","General",
     "Whether light and emergency light are provided in electrical rooms/operating areas for easy operation & maintenance works",
     "क्या विद्युत कक्षों/संचालन क्षेत्रों में सामान्य और आपातकालीन प्रकाश आसान संचालन और रखरखाव के लिए प्रदान किए गए हैं?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-003","General",
     "Whether Pump room, DG set room, UPS room, electrical room etc. are maintained dry and in good condition and obsolete/hazardous/old items are not dumped there",
     "क्या पंप रूम, DG सेट रूम, UPS रूम, विद्युत कक्ष आदि शुष्क और अच्छी स्थिति में रखे गए हैं और वहाँ पुराने/खतरनाक/अनुपयोगी सामान नहीं डाले गए हैं?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-004","General",
     "Whether water seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc.",
     "क्या किसी विद्युत पैनल, वितरण बोर्ड, विद्युत उपकरण आदि के पास जल रिसाव देखा गया है?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-005","General",
     "Whether Earthing pits are provided and connected to the equipment, body of the connected equipment",
     "क्या अर्थिंग पिट प्रदान किए गए हैं और उपकरण तथा संबंधित उपकरण के बॉडी से जुड़े हैं?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-006","General",
     "Whether the Earthing Pits are properly maintained",
     "क्या अर्थिंग पिट उचित तरीके से रखरखाव किए जा रहे हैं?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-007","General",
     "Whether proper exhaust fan for ventilation of panel room/electrical room/UPS room is provided and paper, old materials or any other scrap kept near DB/Panels/UPS/Batteries etc. are not kept there",
     "क्या पैनल रूम/विद्युत कक्ष/UPS रूम के वेंटिलेशन के लिए उचित एग्जॉस्ट फैन लगाया गया है और DB/पैनल/UPS/बैटरी आदि के पास कागज, पुराना सामान या कोई अन्य कबाड़ नहीं रखा गया है?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-008","General",
     "Whether penalty is being imposed in electricity bills on account of higher load/poor power factor etc. (it may be ascertained from the electricity bill of April/May/Jun/July)",
     "क्या अधिक लोड/खराब पावर फैक्टर आदि के कारण बिजली बिल में जुर्माना लगाया जा रहा है? (अप्रैल/मई/जून/जुलाई के बिजली बिल से जाँचें।)",
-    "ठीक है","General"),
+    "ठीक है"),
 
   // ── NEW — original 7a sub-question (was embedded in Q-008, now standalone) ──
   mkQ("Q-009","General",
     "Additional electrical load required if any (from Power Distribution Company)",
     "क्या किसी अतिरिक्त विद्युत भार की आवश्यकता है? (बिजली वितरण कंपनी से)",
-    "ठीक है","General",
+    "ठीक है",
     "If YES — record the additional load required in KW in the observations field.",
     "YES_NO_NA"),
 
@@ -116,49 +116,49 @@ const SEED: Question[] = [
   mkQ("Q-010","General",
     "Whether load is distributed in all 3 phases to avoid unbalancing of phases and no loose electrical connection/haphazard wiring observed in the branch/office premises",
     "क्या फेज असंतुलन से बचने के लिए लोड तीनों फेज में वितरित किया गया है और शाखा/कार्यालय परिसर में कोई ढीला विद्युत कनेक्शन/अव्यवस्थित वायरिंग नहीं देखी गई है?",
-    "ठीक है","General",
+    "ठीक है",
     "Record phase-wise current readings in observations: R: ___ AMPS | Y: ___ AMPS | B: ___ AMPS | N: ___ AMPS"),
 
   mkQ("Q-011","General",
     "Whether isolating switches are provided for the switching off of non-essential loads premises during night and main switch to switch off the power supply to the branch in case of Fire/Emergency",
     "क्या रात के समय गैर-आवश्यक लोड बंद करने के लिए आइसोलेटिंग स्विच और आग/आपातकाल की स्थिति में शाखा की बिजली आपूर्ति बंद करने के लिए मेन स्विच प्रदान किया गया है?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-012","General",
     "Whether electrical equipments of Pantry etc. are properly connected to Iron socket box with MCBs. MCBs or latest type switches are provided to switch on/off the ACs and protect them from overload",
     "क्या पेंट्री आदि के विद्युत उपकरण MCB के साथ आयरन सॉकेट बॉक्स से ठीक से जुड़े हैं? AC को चालू/बंद करने और ओवरलोड से बचाने के लिए MCB या नवीनतम प्रकार के स्विच लगाए गए हैं?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-013","General",
     "Whether Proper preventive maintenance after opening of Panel boards and Distribution Boards are carried out by the license holder Electrician or skilled technicians of Equipment manufacturers/Service providers",
     "क्या पैनल बोर्ड और वितरण बोर्ड खोलने के बाद उचित निवारक रखरखाव लाइसेंस धारक इलेक्ट्रीशियन या उपकरण निर्माताओं/सेवा प्रदाताओं के कुशल तकनीशियनों द्वारा किया जाता है?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-014","General",
     "Whether appropriate timers used in the changeover of Air conditioners for Server Room ACs and for Signage Boards to make auto ON/OFF (for scheduled timings). The thermostat of ACs at server rooms should be set to 30°C so they run only when temperature is too high (to minimise fire risk from idle running of ACs during nights)",
     "क्या सर्वर रूम AC और साइनेज बोर्ड के ऑटो ON/OFF के लिए उपयुक्त टाइमर का उपयोग किया जाता है? सर्वर रूम AC का थर्मोस्टेट 30°C पर सेट होना चाहिए ताकि रात में निष्क्रिय AC चलने से आग लगने का खतरा कम हो।",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-015","General",
     "Whether preventive maintenance of electric installation and equipment is carried out by skilled license holder electricians/skilled technician",
     "क्या विद्युत प्रतिष्ठान और उपकरणों का निवारक रखरखाव कुशल लाइसेंस धारक इलेक्ट्रीशियन/कुशल तकनीशियन द्वारा किया जाता है?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   // ── Answer type OK/NOT OK — matches original document ────────────────────────
   mkQ("Q-016","General",
     "General condition of electrical control panels, Main switch, electric meter board and change over switch, ACs, Water coolers, water filter, wiring cables etc. is good and all DBs, Panels, Switch boards are properly covered",
     "विद्युत कंट्रोल पैनल, मेन स्विच, इलेक्ट्रिक मीटर बोर्ड, चेंजओवर स्विच, AC, वाटर कूलर, वाटर फिल्टर, वायरिंग केबल आदि की सामान्य स्थिति अच्छी है और सभी DB, पैनल, स्विच बोर्ड ठीक से ढके हुए हैं?",
-    "ठीक है","General","","YES_NO_NA"),
+    "ठीक है","","YES_NO_NA"),
 
   mkQ("Q-017","General",
     "Whether the contact numbers of persons, electricians, power distribution company, Generator service provider, Vendor, UPS vendor, ACs etc. are available with Accountant/Security guard and other staff and they are displayed in Electric Room/UPS room",
     "क्या इलेक्ट्रीशियन, बिजली वितरण कंपनी, जनरेटर सेवा प्रदाता, UPS विक्रेता, AC आदि के संपर्क नंबर अकाउंटेंट/सुरक्षा गार्ड और अन्य कर्मचारियों के पास उपलब्ध हैं और विद्युत कक्ष/UPS रूम में प्रदर्शित हैं?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   mkQ("Q-018","General",
     "Whether the Power Factor (PF) panel of appropriate rating is installed",
     "क्या उचित रेटिंग का पावर फैक्टर (PF) पैनल स्थापित किया गया है?",
-    "ठीक है","General"),
+    "ठीक है"),
 
   // ══════════════════════════════════════════════════════════════════════════════
   // FIRE PREVENTION MEASURES  —  Q-019 to Q-023  (no changes)
@@ -193,7 +193,7 @@ const SEED: Question[] = [
   mkQ("Q-026","Server and UPS Room",
     "Whether all ceiling fans installed are of BLDC type",
     "क्या सभी स्थापित सीलिंग फैन BLDC प्रकार के हैं?",
-    "ठीक है","Safety",
+    "ठीक है",
     "Record total number of ceiling fans installed in the observations field (NOS: ___)"),
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -245,76 +245,75 @@ const SEED: Question[] = [
   mkQ("Q-034","Onsite ATM",
     "5 Kg ABC Automatic Modular Fire Extinguisher is provided and protected in the back room",
     "क्या बैक रूम में 5 Kg ABC ऑटोमैटिक मॉड्यूलर अग्निशामक यंत्र प्रदान और संरक्षित किया गया है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-035","Onsite ATM",
     "ATM room is having fire detector connected through branch AFDS (Applicable for Onsite ATMs only)",
     "क्या ATM रूम में शाखा के AFDS से जुड़ा फायर डिटेक्टर है? (केवल ऑनसाइट ATM के लिए लागू)",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-036","Onsite ATM",
     "Whether MCCB/MCB/ELCB are provided and apparently in working condition",
     "क्या MCCB/MCB/ELCB प्रदान किए गए हैं और स्पष्ट रूप से कार्यशील स्थिति में हैं?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-037","Onsite ATM",
     "AC units are provided with timer circuit device",
     "क्या AC इकाइयों में टाइमर सर्किट डिवाइस प्रदान किया गया है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-038","Onsite ATM",
     "Main supply switch/MCB to cut-off the electric supply of ATM has been marked",
     "क्या ATM की विद्युत आपूर्ति काटने के लिए मेन सप्लाई स्विच/MCB को स्पष्ट रूप से चिह्नित किया गया है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-039","Onsite ATM",
     "Power supply to AC, UPS and ATM machines is through metal clad plug receptacle socket",
     "क्या AC, UPS और ATM मशीनों को मेटल क्लैड प्लग रिसेप्टेकल सॉकेट के माध्यम से बिजली आपूर्ति दी जाती है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-040","Onsite ATM",
     "Electrical wires are properly covered/insulated to prevent exposure of wire",
     "क्या विद्युत तारों के खुलेपन को रोकने के लिए वे ठीक से ढकी/इंसुलेटेड हैं?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-041","Onsite ATM",
     "Is there any cooking stove/electric heater coil stove noticed in the ATM",
     "क्या ATM में कोई कुकिंग स्टोव/इलेक्ट्रिक हीटर कॉइल स्टोव पाया गया है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-042","Onsite ATM",
     "Is there any water accumulation/seepage in the premises or dripping on electrical gadgets",
     "क्या परिसर में कोई जल जमाव/रिसाव है या विद्युत उपकरणों पर टपकाव हो रहा है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-043","Onsite ATM",
     "Any combustible container provided in the ATM",
     "क्या ATM में कोई ज्वलनशील कंटेनर रखा गया है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-044","Onsite ATM",
     "Steel dustbin container provided in the ATM",
     "क्या ATM में स्टील का डस्टबिन कंटेनर प्रदान किया गया है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-045","Onsite ATM",
     "No smoking board is provided in the ATM cabin",
     "क्या ATM केबिन में नो-स्मोकिंग बोर्ड लगाया गया है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-046","Onsite ATM",
     "Main entrance shutter is in working condition",
     "क्या मुख्य प्रवेश शटर कार्यशील स्थिति में है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-047","Onsite ATM",
     "Proper locking arrangement is there at the main shutter",
     "क्या मुख्य शटर पर उचित लॉकिंग व्यवस्था है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-048","Onsite ATM",
     "All electrical lights are in working condition",
     "क्या सभी विद्युत लाइटें कार्यशील स्थिति में हैं?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-049","Onsite ATM",
     "ATM is provided with external CCTV camera",
     "क्या ATM में बाहरी CCTV कैमरा लगाया गया है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
   mkQ("Q-050","Onsite ATM",
     "CCTV is in working condition",
     "क्या CCTV कार्यशील स्थिति में है?",
-    "ठीक है","Safety"),
+    "ठीक है"),
 ];
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SECTIONS   = ["All Sections","General","Electrical Safety","Fire Prevention Measures","Server and UPS Room","Fire Protection","DG Set / Generator","Onsite ATM"];
-const CATEGORIES = ["General","Safety","Compliance","Maintenance"];
 const Q_TYPES    = ["YES_NO_NA","YES_NO","OK_NOT_OK","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
 const RISK_LEVELS= ["HIGH","MEDIUM","LOW"] as const;
 const STATUS_LIST= ["All Status","Active","Inactive"];
@@ -384,10 +383,8 @@ export default function QuestionLibraryPage() {
   const [questions, setQuestions] = useState<Question[]>(SEED);
   const [form,      setForm]      = useState<FormData>({ ...EMPTY });
 
-  // Panel state — open by default for Add
-  const [addPanel, setAddPanel] = useState(true);
+  // Form is always visible — no open/close toggle
   const [editRow,  setEditRow]  = useState<Question | null>(null);
-  const panelOpen  = addPanel || !!editRow;
   const isEditMode = !!editRow;
 
   // Translation
@@ -459,17 +456,16 @@ export default function QuestionLibraryPage() {
   };
 
   // ── Panel actions ─────────────────────────────────────────────────────────────
-  const openAdd = () => { setForm({ ...EMPTY }); setEditRow(null); setAddPanel(true); };
+  const resetToAdd = () => { setForm({ ...EMPTY }); setEditRow(null); };
   const openEdit = (q: Question) => {
-    setEditRow(q); setAddPanel(false);
-    setForm({ textEn:q.textEn, textHi:q.textHi, type:q.type, category:q.category,
+    setEditRow(q);
+    setForm({ textEn:q.textEn, textHi:q.textHi, type:q.type,
       section:q.section, riskLevel:q.riskLevel, weightage:q.weightage,
       helpEn:q.helpEn, helpHi:q.helpHi, recommendEn:q.recommendEn, recommendHi:q.recommendHi,
       mandatory:q.mandatory, allowRemarks:q.allowRemarks, allowPhoto:q.allowPhoto,
       multiPhoto:q.multiPhoto, numericValue:q.numericValue, allowNA:q.allowNA,
-      status:q.status });
+      status:q.status, category:q.category });
   };
-  const closePanel = () => { setAddPanel(false); setEditRow(null); };
 
   const handleSave = () => {
     if (!form.textEn.trim()) return;
@@ -480,12 +476,27 @@ export default function QuestionLibraryPage() {
       const newCode = `Q-${String(maxNum + 1).padStart(3,"0")}`;
       setQuestions(qs => [...qs, { id:uuid(), questionCode:newCode, ...form, usedIn:0, createdOn:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) }]);
     }
-    closePanel();
+    resetToAdd();  // always return to Add mode — form stays visible
+  };
+
+  // ── CSV Export ────────────────────────────────────────────────────────────────
+  const downloadCSV = () => {
+    const headers = ["Code","Question (English)","Question (Hindi)","Type","Section","Category","Risk","Weightage","Mandatory","Status","Created On"];
+    const rows = questions.map(q => [
+      q.questionCode, `"${q.textEn.replace(/"/g,'""')}"`, `"${q.textHi.replace(/"/g,'""')}"`,
+      q.type, q.section, q.category, q.riskLevel, q.weightage,
+      q.mandatory?"Yes":"No", q.status, q.createdOn
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    a.download = `questions-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
   };
 
   const confirmDelete = () => {
     if (!deleteTarget || deleteInput !== "DELETE") return;
-    if (editRow?.id === deleteTarget.id) closePanel();
+    if (editRow?.id === deleteTarget.id) resetToAdd();
     setQuestions(qs => qs.filter(q => q.id !== deleteTarget.id));
     setDeleteTarget(null);
     setDeleteInput("");
@@ -520,7 +531,7 @@ export default function QuestionLibraryPage() {
             Dashboard / Audit Questions / <span style={{ color:"#16a34a", fontWeight:600 }}>Question Library</span>
           </div>
         </div>
-        <button onClick={openAdd} style={PB}><i className="ri-add-line"/> Add Question</button>
+        <button onClick={resetToAdd} style={PB}><i className="ri-add-line"/> New Question</button>
       </div>
 
       {/* Stats */}
@@ -546,8 +557,7 @@ export default function QuestionLibraryPage() {
       {/* ── MAIN SPLIT ─────────────────────────────────────────────────────────── */}
       <div style={{ display:"flex", alignItems:"flex-start", gap:18 }}>
 
-        {/* ── LEFT PANEL — Add / Edit ───────────────────────────────────────────── */}
-        {panelOpen && (
+        {/* ── LEFT PANEL — Add / Edit (always visible) ─────────────────────────── */}
           <div style={{ width:380, flexShrink:0, display:"flex", flexDirection:"column", gap:14, position:"sticky", top:80 }}>
           <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden" }}>
 
@@ -600,20 +610,12 @@ export default function QuestionLibraryPage() {
                   style={{ ...INP, resize:"none", lineHeight:1.5, background:translating.textHi?"#f9fafb":"#fff", color:translating.textHi?"#9ca3af":"#374151", fontStyle:translating.textHi?"italic":"normal" }}/>
               </div>
 
-              {/* Section + Category */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                <div>
-                  <label style={LBL}>Section <span style={{ color:"#dc2626" }}>*</span></label>
-                  <select value={form.section} onChange={e=>fp("section",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
-                    {SECTIONS.slice(1).map(s=><option key={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={LBL}>Category <span style={{ color:"#dc2626" }}>*</span></label>
-                  <select value={form.category} onChange={e=>fp("category",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
-                    {CATEGORIES.map(c=><option key={c}>{c}</option>)}
-                  </select>
-                </div>
+              {/* Section */}
+              <div>
+                <label style={LBL}>Section <span style={{ color:"#dc2626" }}>*</span></label>
+                <select value={form.section} onChange={e=>fp("section",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
+                  {SECTIONS.slice(1).map(s=><option key={s}>{s}</option>)}
+                </select>
               </div>
 
               {/* Type + Weightage — read-only */}
@@ -647,24 +649,6 @@ export default function QuestionLibraryPage() {
                 </div>
               </div>
 
-              {/* Status */}
-              <div>
-                <label style={LBL}>Question Status</label>
-                <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
-                  {(["Active","Inactive"] as QStatus[]).map((s, i) => {
-                    const active = form.status === s;
-                    const col = s==="Active" ? "#16a34a" : "#dc2626";
-                    return (
-                      <button key={s} onClick={() => fp("status", s)}
-                        style={{ flex:1, padding:"8px 4px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:active ? col : "#fff", color:active?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
-                        <i className={s==="Active"?"ri-checkbox-circle-line":"ri-close-circle-line"} style={{ fontSize:13 }}/>
-                        {s}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Recommendation English */}
               <div>
                 <label style={LBL}>Default Recommendation (English)</label>
@@ -694,9 +678,27 @@ export default function QuestionLibraryPage() {
 
             </div>
 
+            {/* Status */}
+            <div style={{ padding:"12px 16px", borderTop:"1px solid #e5e7eb", background:"#fff" }}>
+              <label style={LBL}>Question Status</label>
+              <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+                {(["Active","Inactive"] as QStatus[]).map((s, i) => {
+                  const active = form.status === s;
+                  const col = s==="Active" ? "#16a34a" : "#dc2626";
+                  return (
+                    <button key={s} onClick={() => fp("status", s)}
+                      style={{ flex:1, padding:"8px 4px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:active ? col : "#fff", color:active?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                      <i className={s==="Active"?"ri-checkbox-circle-line":"ri-close-circle-line"} style={{ fontSize:13 }}/>
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Footer */}
             <div style={{ padding:"12px 16px", borderTop:"1px solid #e5e7eb", display:"flex", gap:8, background:"#fff" }}>
-              <button onClick={()=>{ setForm({ ...EMPTY }); setEditRow(null); setAddPanel(true); }} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
+              <button onClick={resetToAdd} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
                 Clear
               </button>
               <button onClick={handleSave} disabled={!form.textEn.trim()}
@@ -727,7 +729,6 @@ export default function QuestionLibraryPage() {
                     textHi:       form.textHi       || "(empty)",
                     type:         form.type,
                     section:      form.section,
-                    category:     form.category,
                     weightage:    form.weightage,
                     mandatory:    form.mandatory,
                     allowRemarks: form.allowRemarks,
@@ -756,7 +757,6 @@ export default function QuestionLibraryPage() {
   textHi:       form.textHi       || "(empty)",
   type:         form.type,
   section:      form.section,
-  category:     form.category,
   weightage:    form.weightage,
   mandatory:    form.mandatory,
   allowRemarks: form.allowRemarks,
@@ -769,7 +769,6 @@ export default function QuestionLibraryPage() {
           </div>
 
           </div>
-        )}
 
         {/* ── RIGHT — TABLE ─────────────────────────────────────────────────────── */}
         <div style={{ flex:1, minWidth:0 }}>
@@ -780,12 +779,16 @@ export default function QuestionLibraryPage() {
             @media print { .sr-no-col { display: table-cell !important; } }
           `}</style>
 
-          {/* Filters */}
+          {/* Filters + Download */}
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" }}>
             <div style={{ fontSize:12, color:"#6b7280" }}>
               Showing <strong style={{ color:"#111827" }}>{filtered.length}</strong> questions — Page <strong style={{ color:"#111827" }}>{p}</strong> of {totalPages}
             </div>
             <div style={{ flex:1 }}/>
+            <button onClick={downloadCSV}
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 13px", borderRadius:7, border:"1px solid #d1fae5", background:"#f0fdf4", color:"#16a34a", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+              <i className="ri-download-2-line" style={{ fontSize:13 }}/>Export CSV
+            </button>
             <select value={sectionF} onChange={e=>{setSectionF(e.target.value);setPage(1);}} style={SEL}>
               {SECTIONS.map(s=><option key={s}>{s}</option>)}
             </select>
