@@ -33,16 +33,17 @@ interface Row {
   city: string; state: string; district: string; address: string;
   micr: string; contact: string; lat: string; lng: string;
   htlt: string; sld: string; status: string;
+  openingYear: string; floors: string;
 }
 
 const SEED: Row[] = [
-  { id:"BR-001", name:"SBI Maninagar",    bank:"State Bank of India",  ifsc:"SBIN0001234", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Active"   },
-  { id:"BR-002", name:"SBI CG Road",      bank:"State Bank of India",  ifsc:"SBIN0001235", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Active"   },
-  { id:"BR-003", name:"SBI Navrangpura",  bank:"State Bank of India",  ifsc:"SBIN0001236", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"HT", sld:"Yes", status:"Active" },
-  { id:"BR-004", name:"SBI Vastrapur",    bank:"State Bank of India",  ifsc:"SBIN0001237", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Inactive" },
-  { id:"BR-005", name:"BOB Ahmedabad",    bank:"Bank of Baroda",       ifsc:"BARB0AHMCIT", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Active"   },
-  { id:"BR-006", name:"PNB Delhi Main",   bank:"Punjab National Bank", ifsc:"PUNB0000100", city:"New Delhi", state:"Delhi",       district:"Central",   address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"HT", sld:"No",  status:"Active"  },
-  { id:"BR-007", name:"Canara Bengaluru", bank:"Canara Bank",          ifsc:"CNRB0001234", city:"Bengaluru", state:"Karnataka",   district:"Bengaluru", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Active"   },
+  { id:"BR-001", name:"SBI Maninagar",    bank:"State Bank of India",  ifsc:"SBIN0001234", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Active",   openingYear:"", floors:"" },
+  { id:"BR-002", name:"SBI CG Road",      bank:"State Bank of India",  ifsc:"SBIN0001235", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Active",   openingYear:"", floors:"" },
+  { id:"BR-003", name:"SBI Navrangpura",  bank:"State Bank of India",  ifsc:"SBIN0001236", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"HT", sld:"Yes", status:"Active", openingYear:"", floors:"" },
+  { id:"BR-004", name:"SBI Vastrapur",    bank:"State Bank of India",  ifsc:"SBIN0001237", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Inactive", openingYear:"", floors:"" },
+  { id:"BR-005", name:"BOB Ahmedabad",    bank:"Bank of Baroda",       ifsc:"BARB0AHMCIT", city:"Ahmedabad", state:"Gujarat",     district:"Ahmedabad", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Active",   openingYear:"", floors:"" },
+  { id:"BR-006", name:"PNB Delhi Main",   bank:"Punjab National Bank", ifsc:"PUNB0000100", city:"New Delhi", state:"Delhi",       district:"Central",   address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"HT", sld:"No",  status:"Active",  openingYear:"", floors:"" },
+  { id:"BR-007", name:"Canara Bengaluru", bank:"Canara Bank",          ifsc:"CNRB0001234", city:"Bengaluru", state:"Karnataka",   district:"Bengaluru", address:"",  micr:"",  contact:"", lat:"",  lng:"",  htlt:"LT", sld:"",  status:"Active",   openingYear:"", floors:"" },
 ];
 
 const FILTER_BANKS    = ["All Banks",   ...Array.from(new Set(SEED.map(r => r.bank)))];
@@ -96,6 +97,8 @@ export default function BranchesPage() {
   const [rbo, setRbo]                   = useState("");
   const [branchType, setBranchType]     = useState("Urban");
   const [branchStatus, setBranchStatus] = useState("Active");
+  const [openingYear, setOpeningYear]   = useState("");
+  const [floors, setFloors]             = useState("");
   const [success, setSuccess]           = useState(false);
   const [submitting, setSubmitting]     = useState(false);
   const [viewRow, setViewRow]           = useState<Row | null>(null);
@@ -172,14 +175,16 @@ export default function BranchesPage() {
       lat:      String(gps.lat),
       lng:      String(gps.lng),
       htlt,
-      sld:      htlt === "HT" ? sld : "",
-      status:   branchStatus,
+      sld:         htlt === "HT" ? sld : "",
+      status:      branchStatus,
+      openingYear, floors,
     };
     setRows(rs => [newRow, ...rs]);
     // Reset form
     setSelectedBank(BANK_LIST[0]); setIfscSuffix(""); setIfscData(null); setIfscError("");
     setGps(null); setGpsError(""); setHtlt(""); setSld("");
     setCircle(""); setRbo(""); setBranchType("Urban"); setBranchStatus("Active");
+    setOpeningYear(""); setFloors("");
     setSuccess(true); setSubmitting(false);
     setTimeout(() => setSuccess(false), 4000);
   };
@@ -203,6 +208,8 @@ export default function BranchesPage() {
     setSld(row.sld);
     setCircle(""); setRbo(""); setBranchType("Urban");
     setBranchStatus(row.status);
+    setOpeningYear(row.openingYear || "");
+    setFloors(row.floors || "");
     setSuccess(false);
   };
 
@@ -221,8 +228,9 @@ export default function BranchesPage() {
       lat:      String(gps.lat),
       lng:      String(gps.lng),
       htlt,
-      sld:      htlt === "HT" ? sld : "Yes",
-      status:   branchStatus,
+      sld:         htlt === "HT" ? sld : "Yes",
+      status:      branchStatus,
+      openingYear, floors,
     };
     setRows(rs => rs.map(r => r.id === editRow.id ? updated : r));
     setEditRow(null);
@@ -237,6 +245,7 @@ export default function BranchesPage() {
     setSelectedBank(BANK_LIST[0]); setIfscSuffix(""); setIfscData(null); setIfscError("");
     setGps(null); setGpsError(""); setGpsDenied(false); setHtlt(""); setSld("");
     setCircle(""); setRbo(""); setBranchType("Urban"); setBranchStatus("Active");
+    setOpeningYear(""); setFloors("");
     setSuccess(false);
   };
 
@@ -670,6 +679,31 @@ export default function BranchesPage() {
                     style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
                     <option>Active</option><option>Inactive</option>
                   </select>
+                </div>
+              </div>
+
+              {/* ── Added: 22-Aug-2026 — remove this comment line once reviewed ── */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                <div>
+                  <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                    Branch Opening Year
+                    <span style={{ fontSize:9, color:"#ef4444", fontWeight:600, textTransform:"none", letterSpacing:0 }}>added 22-Aug-2026</span>
+                  </label>
+                  <select value={openingYear} onChange={e => setOpeningYear(e.target.value)}
+                    style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color: openingYear?"#111827":"#9ca3af", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
+                    <option value="">— Select Year —</option>
+                    {Array.from({ length: 2035 - 1950 + 1 }, (_, i) => 2035 - i).map(y => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                    No. of Floors
+                    <span style={{ fontSize:9, color:"#ef4444", fontWeight:600, textTransform:"none", letterSpacing:0 }}>added 22-Aug-2026</span>
+                  </label>
+                  <input type="number" min="1" max="99" value={floors} onChange={e => setFloors(e.target.value)} placeholder="e.g. 3"
+                    style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
                 </div>
               </div>
             </div>
