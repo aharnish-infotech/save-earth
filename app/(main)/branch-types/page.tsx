@@ -164,8 +164,8 @@ export default function BranchTypesPage() {
                     const col = s === "Active" ? "#16a34a" : "#dc2626";
                     return (
                       <button key={s} onClick={() => setForm(f=>({...f, status:s}))}
-                        style={{ flex:1, padding:"10px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none",
-                          cursor:"pointer", fontSize:13, fontWeight:700,
+                        style={{ flex:1, padding:"7px 10px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none",
+                          cursor:"pointer", fontSize:12, fontWeight:700,
                           background: sel ? col : "#fff", color: sel ? "#fff" : col,
                           transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
                         <i className={s==="Active" ? "ri-checkbox-circle-line" : "ri-close-circle-line"} style={{ fontSize:14 }}/>
