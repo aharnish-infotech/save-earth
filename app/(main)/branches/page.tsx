@@ -726,25 +726,43 @@ export default function BranchesPage() {
           {/* 6. Status Toggle */}
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 16px", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
             <div style={{ fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>STATUS</div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              <button onClick={() => setBranchStatus("Active")}
-                style={{ padding:"12px 16px", borderRadius:10, border: branchStatus==="Active"?"2px solid #16a34a":"2px solid #e5e7eb",
-                  background: branchStatus==="Active"?"#16a34a":"#fff",
-                  color: branchStatus==="Active"?"#fff":"#6b7280",
-                  cursor:"pointer", fontWeight:800, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", gap:8, transition:"all 0.15s" }}>
-                <i className="ri-checkbox-circle-fill" style={{ fontSize:16 }}/>Active
-              </button>
-              <button onClick={() => setBranchStatus("Inactive")}
-                style={{ padding:"12px 16px", borderRadius:10, border: branchStatus==="Inactive"?"2px solid #dc2626":"2px solid #e5e7eb",
-                  background: branchStatus==="Inactive"?"#fef2f2":"#fff",
-                  color: branchStatus==="Inactive"?"#dc2626":"#6b7280",
-                  cursor:"pointer", fontWeight:800, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", gap:8, transition:"all 0.15s" }}>
-                <i className="ri-close-circle-fill" style={{ fontSize:16 }}/>Inactive
-              </button>
+            <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+              {(["Active","Inactive"] as const).map((s, i) => {
+                const sel = branchStatus === s;
+                const col = s === "Active" ? "#16a34a" : "#dc2626";
+                return (
+                  <button key={s} onClick={() => setBranchStatus(s)}
+                    style={{ flex:1, padding:"10px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:13, fontWeight:700,
+                      background: sel ? col : "#fff", color: sel ? "#fff" : col,
+                      transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                    <i className={s==="Active" ? "ri-checkbox-circle-line" : "ri-close-circle-line"} style={{ fontSize:14 }}/>
+                    {s}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* 7. API Payload */}
+          {/* CAPTURE BANK / UPDATE BRANCH */}
+          <button
+            onClick={isEditMode ? handleUpdate : handleCapture}
+            disabled={!canSubmit || submitting}
+            style={{
+              width:"100%", padding:"14px",
+              borderRadius:12, border:"none",
+              background: canSubmit ? (isEditMode ? "#0284c7" : "#16a34a") : "#d1d5db",
+              color:"#fff", cursor: canSubmit ? "pointer" : "not-allowed",
+              fontWeight:900, fontSize:13, letterSpacing:"0.08em",
+              boxShadow: canSubmit ? `0 4px 14px ${isEditMode?"rgba(2,132,199,0.35)":"rgba(22,163,74,0.35)"}` : "none",
+              transition:"all 0.2s",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+            }}
+          >
+            <i className={isEditMode ? "ri-save-line" : "ri-map-pin-add-line"}/>
+            {isEditMode ? "UPDATE BRANCH" : "CAPTURE BANK"}
+          </button>
+
+          {/* API Payload + SQL Query */}
           {(() => {
             const payload = {
               bank: selectedBank.name,
@@ -840,25 +858,6 @@ export default function BranchesPage() {
               </div>
             </>);
           })()}
-
-          {/* CAPTURE BANK / UPDATE BRANCH */}
-          <button
-            onClick={isEditMode ? handleUpdate : handleCapture}
-            disabled={!canSubmit || submitting}
-            style={{
-              width:"100%", padding:"14px",
-              borderRadius:12, border:"none",
-              background: canSubmit ? (isEditMode ? "#0284c7" : "#16a34a") : "#d1d5db",
-              color:"#fff", cursor: canSubmit ? "pointer" : "not-allowed",
-              fontWeight:900, fontSize:13, letterSpacing:"0.08em",
-              boxShadow: canSubmit ? `0 4px 14px ${isEditMode?"rgba(2,132,199,0.35)":"rgba(22,163,74,0.35)"}` : "none",
-              transition:"all 0.2s",
-              display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-            }}
-          >
-            <i className={isEditMode ? "ri-save-line" : "ri-map-pin-add-line"}/>
-            {isEditMode ? "UPDATE BRANCH" : "CAPTURE BANK"}
-          </button>
 
           {/* Checklist */}
           <div style={{ background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", padding:"12px 14px" }}>
