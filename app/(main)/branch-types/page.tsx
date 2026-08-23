@@ -43,7 +43,9 @@ export default function BranchTypesPage() {
   const [search, setSearch]   = useState("");
   const [statusF, setStatusF] = useState("All Status");
   const [page, setPage]       = useState(1);
-  const [saved, setSaved]     = useState(false);
+  const [saved, setSaved]         = useState(false);
+  const [schemaOpen, setSchemaOpen] = useState(false);
+  const [copiedSchema, setCopiedSchema] = useState(false);
 
   const filtered = rows.filter(r => {
     const q = search.toLowerCase();
@@ -153,24 +155,24 @@ export default function BranchTypesPage() {
                 <div style={{ fontSize:10, color:"#9ca3af", marginTop:4 }}>Short identifier — max 6 characters, auto-uppercased</div>
               </div>
 
-              {/* Status toggle */}
+              {/* Status toggle — Banks pill style */}
               <div>
                 <label style={LBL}>Status</label>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                  <button onClick={() => setForm(f=>({...f, status:"Active"}))}
-                    style={{ padding:"11px", borderRadius:10, border: form.status==="Active"?"2px solid #16a34a":"2px solid #e5e7eb",
-                      background: form.status==="Active"?"#16a34a":"#fff",
-                      color: form.status==="Active"?"#fff":"#6b7280",
-                      cursor:"pointer", fontWeight:800, fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", gap:7, transition:"all 0.15s" }}>
-                    <i className="ri-checkbox-circle-fill" style={{ fontSize:15 }}/>Active
-                  </button>
-                  <button onClick={() => setForm(f=>({...f, status:"Inactive"}))}
-                    style={{ padding:"11px", borderRadius:10, border: form.status==="Inactive"?"2px solid #dc2626":"2px solid #e5e7eb",
-                      background: form.status==="Inactive"?"#fef2f2":"#fff",
-                      color: form.status==="Inactive"?"#dc2626":"#6b7280",
-                      cursor:"pointer", fontWeight:800, fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", gap:7, transition:"all 0.15s" }}>
-                    <i className="ri-close-circle-fill" style={{ fontSize:15 }}/>Inactive
-                  </button>
+                <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+                  {(["Active","Inactive"] as const).map((s, i) => {
+                    const sel = form.status === s;
+                    const col = s === "Active" ? "#16a34a" : "#dc2626";
+                    return (
+                      <button key={s} onClick={() => setForm(f=>({...f, status:s}))}
+                        style={{ flex:1, padding:"10px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none",
+                          cursor:"pointer", fontSize:13, fontWeight:700,
+                          background: sel ? col : "#fff", color: sel ? "#fff" : col,
+                          transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                        <i className={s==="Active" ? "ri-checkbox-circle-line" : "ri-close-circle-line"} style={{ fontSize:14 }}/>
+                        {s}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -183,10 +185,81 @@ export default function BranchTypesPage() {
                   boxShadow: canSave ? `0 4px 14px ${editing?"rgba(2,132,199,0.3)":"rgba(22,163,74,0.3)"}` : "none",
                   transition:"all 0.2s" }}>
                 <i className={editing ? "ri-save-line" : "ri-add-line"}/>
-                {editing ? "Update Type" : "Save Type"}
+                {editing ? "Update Branch Type" : "Save Branch Type"}
               </button>
             </div>
           </div>
+          {/* Database Schema card */}
+          {(() => {
+            const schema = `CREATE TABLE branch_types (
+  id      UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  name    VARCHAR(80)  NOT NULL UNIQUE,
+  code    VARCHAR(6)   NOT NULL UNIQUE,
+  status  VARCHAR(10)  NOT NULL DEFAULT 'Active',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT chk_bt_status
+    CHECK (status IN ('Active','Inactive')),
+  CONSTRAINT chk_bt_code_upper
+    CHECK (code = upper(code))
+);
+
+-- Indexes
+CREATE UNIQUE INDEX idx_bt_code   ON branch_types (code);
+CREATE UNIQUE INDEX idx_bt_name   ON branch_types (name);
+CREATE        INDEX idx_bt_status ON branch_types (status);`;
+
+            const tokenize = (s: string): React.ReactNode[] => {
+              const KW   = /\b(CREATE|TABLE|PRIMARY|KEY|DEFAULT|NOT|NULL|UNIQUE|CHECK|IN|OR|IS|INDEX|ON|CONSTRAINT|upper)\b/g;
+              const TYPE = /\b(UUID|VARCHAR|TIMESTAMPTZ|SMALLINT|TEXT|INT|BOOLEAN)\b/g;
+              const FN   = /\b(gen_random_uuid|now)\b/g;
+              const parts = s.split(/(--[^\n]*|\b(?:CREATE|TABLE|PRIMARY|KEY|DEFAULT|NOT|NULL|UNIQUE|CHECK|IN|OR|IS|INDEX|ON|CONSTRAINT|upper|UUID|VARCHAR|TIMESTAMPTZ|SMALLINT|TEXT|INT|BOOLEAN|gen_random_uuid|now)\b|'[^']*'|\d+)/g);
+              return parts.map((t, i) => {
+                if (!t) return null;
+                if (t.startsWith("--"))           return <span key={i} style={{ color:"#6a9955" }}>{t}</span>;
+                if (KW.test(t))   { KW.lastIndex=0;   return <span key={i} style={{ color:"#569cd6", fontWeight:700 }}>{t}</span>; }
+                if (TYPE.test(t)) { TYPE.lastIndex=0;  return <span key={i} style={{ color:"#4ec9b0" }}>{t}</span>; }
+                if (FN.test(t))   { FN.lastIndex=0;    return <span key={i} style={{ color:"#dcdcaa" }}>{t}</span>; }
+                if (/^\d+$/.test(t))              return <span key={i} style={{ color:"#b5cea8" }}>{t}</span>;
+                if (t.startsWith("'"))            return <span key={i} style={{ color:"#ce9178" }}>{t}</span>;
+                return <span key={i} style={{ color:"#d4d4d4" }}>{t}</span>;
+              });
+            };
+
+            return (
+              <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+                <div onClick={() => setSchemaOpen(o=>!o)}
+                  style={{ padding:"13px 18px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", borderBottom: schemaOpen?"1px solid #e5e7eb":"none" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:32, height:32, borderRadius:9, background:"#fdf4ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <i className="ri-database-2-line" style={{ fontSize:16, color:"#9333ea" }}/>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:800, color:"#111827" }}>Database Schema</div>
+                      <div style={{ fontSize:10, color:"#9ca3af" }}>branch_types table definition</div>
+                    </div>
+                    <span style={{ fontSize:10, color:"#9333ea", background:"#fdf4ff", borderRadius:20, padding:"1px 8px", fontWeight:700, border:"1px solid #e9d5ff" }}>CREATE TABLE</span>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    {schemaOpen && (
+                      <button onClick={e=>{e.stopPropagation();navigator.clipboard.writeText(schema);setCopiedSchema(true);setTimeout(()=>setCopiedSchema(false),2000);}}
+                        style={{ fontSize:11, fontWeight:700, color:copiedSchema?"#16a34a":"#6b7280", background:copiedSchema?"#dcfce7":"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                        <i className={copiedSchema?"ri-check-line":"ri-file-copy-line"}/>{copiedSchema?"Copied!":"Copy"}
+                      </button>
+                    )}
+                    <i className={`ri-arrow-${schemaOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
+                  </div>
+                </div>
+                {schemaOpen && (
+                  <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:360, overflowY:"auto" }}>
+                    <pre style={{ margin:0, fontSize:12, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.7, whiteSpace:"pre" }}>
+                      {tokenize(schema)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── TABLE ────────────────────────────────────────────── */}
