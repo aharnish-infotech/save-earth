@@ -322,7 +322,7 @@ CREATE        INDEX idx_bt_status ON branch_types (status);`;
                         </td>
 
                         <td style={TD}>
-                          <span style={{ fontSize:12, fontWeight:800, color:cc.text, background:cc.bg, borderRadius:8, padding:"4px 12px", fontFamily:"monospace", letterSpacing:"0.06em", display:"inline-block" }}>
+                          <span style={{ fontSize:12, fontWeight:800, color:cc.text, background:cc.bg, borderRadius:8, padding:"2px 8px", fontFamily:"monospace", letterSpacing:"0.06em", display:"inline-block" }}>
                             {r.code}
                           </span>
                         </td>
