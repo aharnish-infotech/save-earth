@@ -51,6 +51,19 @@ const FILTER_STATUSES = ["All Status",  "Active", "Inactive"];
 const FILTER_HTLT     = ["All Types",   "HT", "LT"];
 const PAGE_SIZE = 10;
 
+// ── JSON / SQL colorizer ─────────────────────────────────────────────────────
+function colorizeJson(json: string): React.ReactNode[] {
+  const tokens = json.split(/("(?:[^"\\]|\\.)*"(?:\s*:)?|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g);
+  return tokens.map((t, i) => {
+    if (!t) return null;
+    if (/^"[^"]*"\s*:/.test(t)) return <span key={i} style={{ color:"#9cdcfe" }}>{t}</span>;
+    if (/^"/.test(t)) return <span key={i} style={{ color:"#ce9178" }}>{t}</span>;
+    if (t === "true" || t === "false" || t === "null") return <span key={i} style={{ color:"#569cd6" }}>{t}</span>;
+    if (/^-?\d/.test(t)) return <span key={i} style={{ color:"#b5cea8" }}>{t}</span>;
+    return <span key={i} style={{ color:"#d4d4d4" }}>{t}</span>;
+  });
+}
+
 const TH: React.CSSProperties = { padding:"11px 14px", fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", background:"#f9fafb", borderBottom:"1px solid #e5e7eb", whiteSpace:"nowrap", textAlign:"left" };
 const TD: React.CSSProperties = { padding:"11px 14px", verticalAlign:"middle", fontSize:13, color:"#374151", borderBottom:"1px solid #f3f4f6" };
 const SEL: React.CSSProperties = { border:"1px solid #e5e7eb", borderRadius:7, padding:"6px 10px", fontSize:12, color:"#374151", background:"#fff", outline:"none", cursor:"pointer" };
@@ -100,6 +113,10 @@ export default function BranchesPage() {
   const [openingYear, setOpeningYear]   = useState("");
   const [floors, setFloors]             = useState("");
   const [success, setSuccess]           = useState(false);
+  const [payloadOpen, setPayloadOpen]   = useState(false);
+  const [sqlOpen, setSqlOpen]           = useState(false);
+  const [copiedPayload, setCopiedPayload] = useState(false);
+  const [copiedSQL, setCopiedSQL]         = useState(false);
   const [submitting, setSubmitting]     = useState(false);
   const [viewRow, setViewRow]           = useState<Row | null>(null);
   const [editRow, setEditRow]           = useState<Row | null>(null);
@@ -604,7 +621,7 @@ export default function BranchesPage() {
 
           {/* 4. HT / LT */}
           <SectionCard icon="ri-flashlight-line" iconBg="#fee2e2" iconColor="#dc2626" title="Is this branch HT or LT?">
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom: htlt === "HT" ? 12 : 0 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom: htlt !== "" ? 12 : 0 }}>
               {(["HT","LT"] as const).map(type => (
                 <button
                   key={type}
@@ -615,11 +632,7 @@ export default function BranchesPage() {
                     border: htlt === type ? `2px solid ${type==="HT"?"#dc2626":"#16a34a"}` : "2px solid #e5e7eb",
                     background: htlt === type ? (type==="HT"?"#fef2f2":"#f0fdf4") : "#fff",
                     color: htlt === type ? (type==="HT"?"#dc2626":"#16a34a") : "#6b7280",
-                    cursor:"pointer",
-                    fontWeight:800,
-                    fontSize:15,
-                    letterSpacing:"0.05em",
-                    transition:"all 0.15s",
+                    cursor:"pointer", fontWeight:800, fontSize:15, letterSpacing:"0.05em", transition:"all 0.15s",
                   }}
                 >
                   {type}
@@ -627,19 +640,29 @@ export default function BranchesPage() {
               ))}
             </div>
 
-            {/* SLD — only shown if HT */}
-            {htlt === "HT" && (
+            {/* SLD — shown for both HT (selectable) and LT (locked Yes) */}
+            {htlt !== "" && (
               <div style={{ marginTop:4 }}>
-                <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Do you want SLD? <span style={{ color:"#dc2626" }}>*</span></label>
-                <select
-                  value={sld}
-                  onChange={e => setSld(e.target.value)}
-                  style={{ width:"100%", border:`1.5px solid ${sld?"#16a34a":"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:13, color: sld?"#111827":"#9ca3af", background:"#fff", outline:"none", cursor:"pointer", fontWeight:600 }}
-                >
-                  <option value="">Select…</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
+                <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                  Do you want SLD?{htlt==="HT" && <span style={{ color:"#dc2626" }}> *</span>}
+                </label>
+                {htlt === "LT" ? (
+                  <div style={{ display:"flex", alignItems:"center", gap:8, border:"1.5px solid #86efac", borderRadius:9, padding:"10px 12px", background:"#f0fdf4" }}>
+                    <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:16 }}/>
+                    <span style={{ fontSize:13, fontWeight:700, color:"#15803d" }}>Yes</span>
+                    <span style={{ fontSize:11, color:"#6b7280", marginLeft:4 }}>(Default for LT — always required)</span>
+                  </div>
+                ) : (
+                  <select
+                    value={sld}
+                    onChange={e => setSld(e.target.value)}
+                    style={{ width:"100%", border:`1.5px solid ${sld?"#16a34a":"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:13, color: sld?"#111827":"#9ca3af", background:"#fff", outline:"none", cursor:"pointer", fontWeight:600 }}
+                  >
+                    <option value="">Select…</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                )}
               </div>
             )}
           </SectionCard>
@@ -665,21 +688,12 @@ export default function BranchesPage() {
                   style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}
                 />
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                <div>
-                  <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Type</label>
-                  <select value={branchType} onChange={e => setBranchType(e.target.value)}
-                    style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
-                    {["Metro","Urban","Semi-Urban","Rural"].map(t => <option key={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Status</label>
-                  <select value={branchStatus} onChange={e => setBranchStatus(e.target.value)}
-                    style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
-                    <option>Active</option><option>Inactive</option>
-                  </select>
-                </div>
+              <div>
+                <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Type</label>
+                <select value={branchType} onChange={e => setBranchType(e.target.value)}
+                  style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
+                  {["Metro","Urban","Semi-Urban","Rural"].map(t => <option key={t}>{t}</option>)}
+                </select>
               </div>
 
               {/* ── Added: 22-Aug-2026 — remove this comment line once reviewed ── */}
@@ -708,6 +722,124 @@ export default function BranchesPage() {
               </div>
             </div>
           </SectionCard>
+
+          {/* 6. Status Toggle */}
+          <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 16px", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+            <div style={{ fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>STATUS</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              <button onClick={() => setBranchStatus("Active")}
+                style={{ padding:"12px 16px", borderRadius:10, border: branchStatus==="Active"?"2px solid #16a34a":"2px solid #e5e7eb",
+                  background: branchStatus==="Active"?"#16a34a":"#fff",
+                  color: branchStatus==="Active"?"#fff":"#6b7280",
+                  cursor:"pointer", fontWeight:800, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", gap:8, transition:"all 0.15s" }}>
+                <i className="ri-checkbox-circle-fill" style={{ fontSize:16 }}/>Active
+              </button>
+              <button onClick={() => setBranchStatus("Inactive")}
+                style={{ padding:"12px 16px", borderRadius:10, border: branchStatus==="Inactive"?"2px solid #dc2626":"2px solid #e5e7eb",
+                  background: branchStatus==="Inactive"?"#fef2f2":"#fff",
+                  color: branchStatus==="Inactive"?"#dc2626":"#6b7280",
+                  cursor:"pointer", fontWeight:800, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", gap:8, transition:"all 0.15s" }}>
+                <i className="ri-close-circle-fill" style={{ fontSize:16 }}/>Inactive
+              </button>
+            </div>
+          </div>
+
+          {/* 7. API Payload */}
+          {(() => {
+            const payload = {
+              bank: selectedBank.name,
+              bankCode: selectedBank.code,
+              ifsc: ifscData?.IFSC || `${selectedBank.code}${ifscSuffix}`,
+              branchName: ifscData?.BRANCH || "",
+              address: ifscData?.ADDRESS || "",
+              city: ifscData?.CITY || "",
+              district: ifscData?.DISTRICT || "",
+              state: ifscData?.STATE || "",
+              micr: ifscData?.MICR || "",
+              contact: ifscData?.CONTACT || "",
+              latitude: gps?.lat ?? null,
+              longitude: gps?.lng ?? null,
+              htlt: htlt || null,
+              sld: sld || null,
+              circle: circle || null,
+              rbo: rbo || null,
+              branchType,
+              openingYear: openingYear || null,
+              floors: floors ? parseInt(floors) : null,
+              status: branchStatus,
+            };
+            const payloadStr = JSON.stringify(payload, null, 2);
+            const sqlVal = (v: unknown) => v === null ? "NULL" : typeof v === "number" ? String(v) : `'${String(v).replace(/'/g,"''")}'`;
+            const sqlStr = isEditMode
+              ? `UPDATE branches SET\n  bank         = ${sqlVal(payload.bank)},\n  htlt         = ${sqlVal(payload.htlt)},\n  sld          = ${sqlVal(payload.sld)},\n  circle       = ${sqlVal(payload.circle)},\n  rbo          = ${sqlVal(payload.rbo)},\n  branch_type  = ${sqlVal(payload.branchType)},\n  opening_year = ${sqlVal(payload.openingYear)},\n  floors       = ${sqlVal(payload.floors)},\n  latitude     = ${sqlVal(payload.latitude)},\n  longitude    = ${sqlVal(payload.longitude)},\n  status       = ${sqlVal(payload.status)},\n  updated_at   = NOW()\nWHERE ifsc = ${sqlVal(payload.ifsc)};`
+              : `INSERT INTO branches (\n  bank, bank_code, ifsc, branch_name, address, city,\n  district, state, micr, contact, latitude, longitude,\n  htlt, sld, circle, rbo, branch_type,\n  opening_year, floors, status, created_at\n) VALUES (\n  ${sqlVal(payload.bank)}, ${sqlVal(payload.bankCode)}, ${sqlVal(payload.ifsc)},\n  ${sqlVal(payload.branchName)}, ${sqlVal(payload.address)}, ${sqlVal(payload.city)},\n  ${sqlVal(payload.district)}, ${sqlVal(payload.state)}, ${sqlVal(payload.micr)},\n  ${sqlVal(payload.contact)}, ${sqlVal(payload.latitude)}, ${sqlVal(payload.longitude)},\n  ${sqlVal(payload.htlt)}, ${sqlVal(payload.sld)}, ${sqlVal(payload.circle)},\n  ${sqlVal(payload.rbo)}, ${sqlVal(payload.branchType)},\n  ${sqlVal(payload.openingYear)}, ${sqlVal(payload.floors)},\n  ${sqlVal(payload.status)}, NOW()\n);`;
+
+            return (<>
+              {/* API Payload card */}
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+                <div onClick={() => setPayloadOpen(o=>!o)}
+                  style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", borderBottom: payloadOpen?"1px solid #e5e7eb":"none" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:32, height:32, borderRadius:9, background:"#f0f9ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <i className="ri-braces-line" style={{ fontSize:16, color:"#0284c7" }}/>
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>API Payload</span>
+                    <span style={{ fontSize:10, color:"#0284c7", background:"#e0f2fe", borderRadius:20, padding:"1px 8px", fontWeight:700 }}>POST /api/branches</span>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    {payloadOpen && (
+                      <button onClick={e=>{e.stopPropagation();navigator.clipboard.writeText(payloadStr);setCopiedPayload(true);setTimeout(()=>setCopiedPayload(false),2000);}}
+                        style={{ fontSize:11, fontWeight:700, color:copiedPayload?"#16a34a":"#6b7280", background:copiedPayload?"#dcfce7":"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                        <i className={copiedPayload?"ri-check-line":"ri-file-copy-line"}/>{copiedPayload?"Copied!":"Copy"}
+                      </button>
+                    )}
+                    <i className={`ri-arrow-${payloadOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
+                  </div>
+                </div>
+                {payloadOpen && (
+                  <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:300, overflowY:"auto" }}>
+                    <pre style={{ margin:0, fontSize:12, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.6, whiteSpace:"pre" }}>
+                      {colorizeJson(payloadStr)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+
+              {/* SQL Query card */}
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+                <div onClick={() => setSqlOpen(o=>!o)}
+                  style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", borderBottom: sqlOpen?"1px solid #e5e7eb":"none" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:32, height:32, borderRadius:9, background:"#fdf4ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <i className="ri-database-2-line" style={{ fontSize:16, color:"#9333ea" }}/>
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>SQL Query</span>
+                    <span style={{ fontSize:10, color:"#9333ea", background:"#fdf4ff", borderRadius:20, padding:"1px 8px", fontWeight:700, border:"1px solid #e9d5ff" }}>{isEditMode?"UPDATE":"INSERT"}</span>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    {sqlOpen && (
+                      <button onClick={e=>{e.stopPropagation();navigator.clipboard.writeText(sqlStr);setCopiedSQL(true);setTimeout(()=>setCopiedSQL(false),2000);}}
+                        style={{ fontSize:11, fontWeight:700, color:copiedSQL?"#16a34a":"#6b7280", background:copiedSQL?"#dcfce7":"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                        <i className={copiedSQL?"ri-check-line":"ri-file-copy-line"}/>{copiedSQL?"Copied!":"Copy"}
+                      </button>
+                    )}
+                    <i className={`ri-arrow-${sqlOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
+                  </div>
+                </div>
+                {sqlOpen && (
+                  <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:300, overflowY:"auto" }}>
+                    <pre style={{ margin:0, fontSize:12, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.6, whiteSpace:"pre", color:"#d4d4d4" }}>
+                      {sqlStr.split(/\b(INSERT|INTO|VALUES|UPDATE|SET|WHERE|SELECT|FROM|NULL|NOW)\b/g).map((t,i) =>
+                        /^(INSERT|INTO|VALUES|UPDATE|SET|WHERE|SELECT|FROM|NULL|NOW)$/.test(t)
+                          ? <span key={i} style={{ color:"#569cd6", fontWeight:700 }}>{t}</span>
+                          : <span key={i}>{t}</span>
+                      )}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </>);
+          })()}
 
           {/* CAPTURE BANK / UPDATE BRANCH */}
           <button
