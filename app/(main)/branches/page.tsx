@@ -823,39 +823,100 @@ export default function BranchesPage() {
                 )}
               </div>
 
-              {/* SQL Query card */}
-              <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
-                <div onClick={() => setSqlOpen(o=>!o)}
-                  style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", borderBottom: sqlOpen?"1px solid #e5e7eb":"none" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    <div style={{ width:32, height:32, borderRadius:9, background:"#fdf4ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                      <i className="ri-database-2-line" style={{ fontSize:16, color:"#9333ea" }}/>
+              {/* Database Schema card */}
+              {(() => {
+                const schema = `CREATE TABLE branches (
+  id            UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  bank          VARCHAR(100)  NOT NULL,
+  bank_code     VARCHAR(10)   NOT NULL,
+  ifsc          VARCHAR(11)   NOT NULL UNIQUE,
+  branch_name   VARCHAR(200)  NOT NULL,
+  address       TEXT,
+  city          VARCHAR(100),
+  district      VARCHAR(100),
+  state         VARCHAR(100),
+  micr          VARCHAR(20),
+  contact       VARCHAR(20),
+  latitude      NUMERIC(10,7),
+  longitude     NUMERIC(10,7),
+  htlt          VARCHAR(5)    NOT NULL,
+  sld           VARCHAR(5),
+  circle        VARCHAR(100),
+  rbo           VARCHAR(100),
+  branch_type   VARCHAR(20)   NOT NULL DEFAULT 'Urban',
+  opening_year  SMALLINT,
+  floors        SMALLINT,
+  status        VARCHAR(10)   NOT NULL DEFAULT 'Active',
+  created_at    TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  CONSTRAINT chk_branch_status
+    CHECK (status IN ('Active','Inactive')),
+  CONSTRAINT chk_branch_htlt
+    CHECK (htlt IN ('HT','LT')),
+  CONSTRAINT chk_branch_sld
+    CHECK (sld IN ('Yes','No') OR sld IS NULL),
+  CONSTRAINT chk_opening_year
+    CHECK (opening_year BETWEEN 1950 AND 2035),
+  CONSTRAINT chk_floors
+    CHECK (floors > 0)
+);
+
+-- Indexes
+CREATE INDEX idx_branches_bank_code  ON branches (bank_code);
+CREATE INDEX idx_branches_ifsc       ON branches (ifsc);
+CREATE INDEX idx_branches_state      ON branches (state);
+CREATE INDEX idx_branches_status     ON branches (status);
+CREATE INDEX idx_branches_htlt       ON branches (htlt);`;
+
+                const SQL_KW = /\b(CREATE|TABLE|PRIMARY|KEY|DEFAULT|NOT|NULL|UNIQUE|CHECK|IN|OR|IS|INDEX|ON|BETWEEN|AND|REFERENCES|CONSTRAINT)\b/g;
+                const SQL_TYPE = /\b(UUID|VARCHAR|TEXT|NUMERIC|SMALLINT|TIMESTAMPTZ|JSONB|BOOLEAN|INT|BIGINT|SERIAL)\b/g;
+                const SQL_FN  = /\b(gen_random_uuid|now)\b/g;
+
+                const tokenize = (s: string): React.ReactNode[] => {
+                  const parts = s.split(/(--[^\n]*|\b(?:CREATE|TABLE|PRIMARY|KEY|DEFAULT|NOT|NULL|UNIQUE|CHECK|IN|OR|IS|INDEX|ON|BETWEEN|AND|REFERENCES|CONSTRAINT|UUID|VARCHAR|TEXT|NUMERIC|SMALLINT|TIMESTAMPTZ|JSONB|BOOLEAN|INT|BIGINT|SERIAL|gen_random_uuid|now)\b|'[^']*'|\d+)/g);
+                  return parts.map((t, i) => {
+                    if (!t) return null;
+                    if (t.startsWith("--"))            return <span key={i} style={{ color:"#6a9955" }}>{t}</span>;
+                    if (SQL_KW.test(t))  { SQL_KW.lastIndex=0;  return <span key={i} style={{ color:"#569cd6", fontWeight:700 }}>{t}</span>; }
+                    if (SQL_TYPE.test(t)){ SQL_TYPE.lastIndex=0; return <span key={i} style={{ color:"#4ec9b0" }}>{t}</span>; }
+                    if (SQL_FN.test(t))  { SQL_FN.lastIndex=0;   return <span key={i} style={{ color:"#dcdcaa" }}>{t}</span>; }
+                    if (/^'\d+'$/.test(t)||/^\d+$/.test(t))      return <span key={i} style={{ color:"#b5cea8" }}>{t}</span>;
+                    if (t.startsWith("'"))             return <span key={i} style={{ color:"#ce9178" }}>{t}</span>;
+                    return <span key={i} style={{ color:"#d4d4d4" }}>{t}</span>;
+                  });
+                };
+
+                return (
+                  <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+                    <div onClick={() => setSqlOpen(o=>!o)}
+                      style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", borderBottom: sqlOpen?"1px solid #e5e7eb":"none" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                        <div style={{ width:32, height:32, borderRadius:9, background:"#fdf4ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                          <i className="ri-database-2-line" style={{ fontSize:16, color:"#9333ea" }}/>
+                        </div>
+                        <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>Database Schema</span>
+                        <span style={{ fontSize:10, color:"#9333ea", background:"#fdf4ff", borderRadius:20, padding:"1px 8px", fontWeight:700, border:"1px solid #e9d5ff" }}>CREATE TABLE</span>
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        {sqlOpen && (
+                          <button onClick={e=>{e.stopPropagation();navigator.clipboard.writeText(schema);setCopiedSQL(true);setTimeout(()=>setCopiedSQL(false),2000);}}
+                            style={{ fontSize:11, fontWeight:700, color:copiedSQL?"#16a34a":"#6b7280", background:copiedSQL?"#dcfce7":"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                            <i className={copiedSQL?"ri-check-line":"ri-file-copy-line"}/>{copiedSQL?"Copied!":"Copy"}
+                          </button>
+                        )}
+                        <i className={`ri-arrow-${sqlOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
+                      </div>
                     </div>
-                    <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>SQL Query</span>
-                    <span style={{ fontSize:10, color:"#9333ea", background:"#fdf4ff", borderRadius:20, padding:"1px 8px", fontWeight:700, border:"1px solid #e9d5ff" }}>{isEditMode?"UPDATE":"INSERT"}</span>
-                  </div>
-                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     {sqlOpen && (
-                      <button onClick={e=>{e.stopPropagation();navigator.clipboard.writeText(sqlStr);setCopiedSQL(true);setTimeout(()=>setCopiedSQL(false),2000);}}
-                        style={{ fontSize:11, fontWeight:700, color:copiedSQL?"#16a34a":"#6b7280", background:copiedSQL?"#dcfce7":"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
-                        <i className={copiedSQL?"ri-check-line":"ri-file-copy-line"}/>{copiedSQL?"Copied!":"Copy"}
-                      </button>
+                      <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:360, overflowY:"auto" }}>
+                        <pre style={{ margin:0, fontSize:12, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.7, whiteSpace:"pre" }}>
+                          {tokenize(schema)}
+                        </pre>
+                      </div>
                     )}
-                    <i className={`ri-arrow-${sqlOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
                   </div>
-                </div>
-                {sqlOpen && (
-                  <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:300, overflowY:"auto" }}>
-                    <pre style={{ margin:0, fontSize:12, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.6, whiteSpace:"pre", color:"#d4d4d4" }}>
-                      {sqlStr.split(/\b(INSERT|INTO|VALUES|UPDATE|SET|WHERE|SELECT|FROM|NULL|NOW)\b/g).map((t,i) =>
-                        /^(INSERT|INTO|VALUES|UPDATE|SET|WHERE|SELECT|FROM|NULL|NOW)$/.test(t)
-                          ? <span key={i} style={{ color:"#569cd6", fontWeight:700 }}>{t}</span>
-                          : <span key={i}>{t}</span>
-                      )}
-                    </pre>
-                  </div>
-                )}
-              </div>
+                );
+              })()}
             </>);
           })()}
 
