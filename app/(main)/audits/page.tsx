@@ -249,14 +249,12 @@ export default function AllAuditsPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             title={`Open in Google Maps (${a.gps.lat}, ${a.gps.lng})`}
-                            style={{ display:"inline-flex", alignItems:"center", gap:4, textDecoration:"none", color:"#16a34a", fontSize:12, fontWeight:600 }}>
-                            <span style={{ width:8, height:8, borderRadius:"50%", background:"#16a34a", display:"inline-block", boxShadow:"0 0 0 2px #bbf7d0" }} />
-                            <i className="ri-map-pin-line" style={{ fontSize:13 }}/>
+                            style={{ display:"inline-flex", alignItems:"center", textDecoration:"none", color:"#16a34a" }}>
+                            <i className="ri-map-pin-line" style={{ fontSize:16 }}/>
                           </a>
                         ) : (
-                          <span title="GPS not captured" style={{ display:"inline-flex", alignItems:"center", gap:4, color:"#d1d5db", fontSize:12 }}>
-                            <span style={{ width:8, height:8, borderRadius:"50%", background:"#d1d5db", display:"inline-block" }} />
-                            <i className="ri-map-pin-line" style={{ fontSize:13 }}/>
+                          <span title="GPS not captured" style={{ display:"inline-flex", alignItems:"center", color:"#dc2626" }}>
+                            <i className="ri-map-pin-line" style={{ fontSize:16 }}/>
                           </span>
                         )}
                       </td>
