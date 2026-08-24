@@ -45,6 +45,9 @@ interface IFSCData {
   CONTACT: string; BANK: string; BANKCODE: string; IFSC: string;
 }
 
+// ─── SHARED UTILITIES ─────────────────────────────────────────────────────────
+const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
+
 // ─── BRANCH LOAD SHEET TYPES ──────────────────────────────────────────────────
 interface LoadRow { id: string; type: string; nos: string; watt: string; tons?: string; }
 interface LoadGroup {
@@ -62,12 +65,43 @@ const LOAD_GROUPS_DEF: Omit<LoadGroup, "rows">[] = [
     defaultWatts: { "Flush Lights 2×2":"36","Down Lights":"12","LED Tube Light (4ft)":"18","LED Tube Light (2ft)":"9","LED Bulbs":"9","CFL / PL Lights":"23","LED Panel Lights":"18","Spotlights":"7","Emergency Lights":"8","T5 / T8 Batten":"28","Ceiling Light":"40" },
   },
   { id: "fans", label: "Fans", icon: "ri-windy-line", color: "#06b6d4",
-    typeOptions: ["Ceiling Fan","Wall Fan","Table Fan","Pedestal Fan","Exhaust Fan","Air Circulator","Blower","Other Fan"],
-    defaultWatts: { "Ceiling Fan":"75","Wall Fan":"50","Table Fan":"50","Pedestal Fan":"60","Exhaust Fan":"30","Air Circulator":"55","Blower":"100" },
+    typeOptions: [
+      "Ceiling Fan","BLDC Ceiling Fan",
+      "Wall Fan","BLDC Wall Fan",
+      "Table Fan","BLDC Table Fan",
+      "Pedestal Fan","BLDC Pedestal Fan",
+      "Exhaust Fan","BLDC Exhaust Fan",
+      "Air Circulator","Blower","Other Fan",
+    ],
+    defaultWatts: {
+      "Ceiling Fan":"75","BLDC Ceiling Fan":"28",
+      "Wall Fan":"50","BLDC Wall Fan":"25",
+      "Table Fan":"50","BLDC Table Fan":"25",
+      "Pedestal Fan":"60","BLDC Pedestal Fan":"35",
+      "Exhaust Fan":"30","BLDC Exhaust Fan":"18",
+      "Air Circulator":"55","Blower":"100",
+    },
   },
   { id: "ac", label: "AC / Air Conditioning", icon: "ri-temp-cold-line", color: "#0284c7", hasAC: true,
-    typeOptions: ["Split AC","Cassette AC","Window AC","VRF / VRV AC","Floor Standing AC","Precision AC (PAC)","Tower AC","Other AC"],
-    defaultWatts: { "Split AC":"1500","Cassette AC":"2000","Window AC":"1200","VRF / VRV AC":"1800","Floor Standing AC":"3000","Precision AC (PAC)":"2200","Tower AC":"2500" },
+    typeOptions: [
+      "Split AC — Inverter","Split AC — Non-Inverter",
+      "Cassette AC — Inverter","Cassette AC — Non-Inverter",
+      "Window AC — Inverter","Window AC — Non-Inverter",
+      "VRF / VRV AC (Inverter)",
+      "Floor Standing AC — Inverter","Floor Standing AC — Non-Inverter",
+      "Precision AC (PAC)",
+      "Tower AC — Inverter","Tower AC — Non-Inverter",
+      "Other AC",
+    ],
+    defaultWatts: {
+      "Split AC — Inverter":"900","Split AC — Non-Inverter":"1500",
+      "Cassette AC — Inverter":"1200","Cassette AC — Non-Inverter":"2000",
+      "Window AC — Inverter":"800","Window AC — Non-Inverter":"1100",
+      "VRF / VRV AC (Inverter)":"1800",
+      "Floor Standing AC — Inverter":"2000","Floor Standing AC — Non-Inverter":"3000",
+      "Precision AC (PAC)":"2200",
+      "Tower AC — Inverter":"1400","Tower AC — Non-Inverter":"2200",
+    },
   },
   { id: "computers", label: "Computer / IT Equipment", icon: "ri-computer-line", color: "#6366f1",
     typeOptions: ["Desktop Computer","Laptop","Monitor","Printer / Scanner","Server / NAS","Network Switch / Router","Firewall / UTM","Cash Counting Machine","POS Terminal","Biometric Device","DVR / NVR","CCTV Camera","Other IT Equipment"],
@@ -86,7 +120,6 @@ interface Meter {
   id: string; provider: string; type: string;
   sanctionedLoad: string; meterNo: string; consumption: string; avgBill: string;
 }
-const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
 const newMeter = (): Meter => ({ id: uid(), provider:"", type:"", sanctionedLoad:"", meterNo:"", consumption:"", avgBill:"" });
 
 // ─── DG TYPES & DATA ──────────────────────────────────────────────────────────

@@ -24,10 +24,10 @@ const ALL_STATUS: AuditStatus[] = ["In Progress", "Draft", "Pending Approval", "
 const PAGE_SIZE = 15;
 
 function exportCSV(data: typeof AUDITS) {
-  const headers = ["Audit ID","Bank","Branch","Branch Code","Auditor","Auditor ID","Audit Date","Due Date","HT/LT","Photos","GPS Lat","GPS Lng","Status"];
+  const headers = ["Audit ID","Bank","Branch","IFSC","Auditor","Auditor ID","Audit Date","HT/LT","Photos","GPS Lat","GPS Lng","Status"];
   const rows = data.map(a => [
     a.id, a.bank, a.branch, a.branchCode, a.auditor, a.auditorId,
-    a.startDate, a.dueDate, a.htLt, a.photos,
+    a.startDate, a.htLt, a.photos,
     a.gps?.lat ?? "", a.gps?.lng ?? "", a.status,
   ]);
   const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(",")).join("\n");
@@ -38,10 +38,10 @@ function exportCSV(data: typeof AUDITS) {
 }
 
 function exportXLS(data: typeof AUDITS) {
-  const headers = ["Audit ID","Bank","Branch","Branch Code","Auditor","Auditor ID","Audit Date","Due Date","HT/LT","Photos","GPS Lat","GPS Lng","Status"];
+  const headers = ["Audit ID","Bank","Branch","IFSC","Auditor","Auditor ID","Audit Date","HT/LT","Photos","GPS Lat","GPS Lng","Status"];
   const rows = data.map(a => [
     a.id, a.bank, a.branch, a.branchCode, a.auditor, a.auditorId,
-    a.startDate, a.dueDate, a.htLt, a.photos,
+    a.startDate, a.htLt, a.photos,
     a.gps?.lat ?? "", a.gps?.lng ?? "", a.status,
   ]);
   const table = `<table><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</table>`;
@@ -270,7 +270,6 @@ export default function AllAuditsPage() {
                       {/* Audit Date */}
                       <td style={{ ...TD, textAlign:"center" }}>
                         <div style={{ fontSize:12, fontWeight:600, color:"#374151" }}>{a.startDate}</div>
-                        <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>Due: {a.dueDate}</div>
                       </td>
 
                       {/* HT / LT */}
