@@ -1894,7 +1894,7 @@ export default function AuditFormPage() {
               <button
                 onClick={() => canClick && goToStep(step.id)}
                 style={{
-                  flex:1, background:"#fff", border:"1px solid #e5e7eb",
+                  flex:1, border:"1px solid #e5e7eb",
                   borderRadius: idx===0 ? "12px 0 0 12px" : idx===STEPS.length-1 ? "0 12px 12px 0" : "0",
                   borderRight: idx<STEPS.length-1 ? "none" : "1px solid #e5e7eb",
                   padding:"12px 10px", cursor: canClick ? "pointer" : "not-allowed",
