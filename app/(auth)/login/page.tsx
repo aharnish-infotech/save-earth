@@ -96,16 +96,6 @@ export default function LoginPage() {
           position: "relative", zIndex: 1,
         }}>
 
-          {/* Logo */}
-          <div style={{ textAlign: "center", marginBottom: 28 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/media/orbit-compliance-full.png"
-              alt="ORBIT Compliance"
-              style={{ height: 44, maxWidth: 220, objectFit: "contain" }}
-            />
-          </div>
-
           {/* Form card */}
           <div style={{
             background: "#fff",
@@ -117,6 +107,15 @@ export default function LoginPage() {
 
             {/* Header */}
             <div style={{ marginBottom: "1.5rem" }}>
+              {/* Save Earth logo inside card */}
+              <div style={{ marginBottom: 16 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/media/savearth_logo.png"
+                  alt="Save Earth Energy"
+                  style={{ height: 48, maxWidth: 180, objectFit: "contain" }}
+                />
+              </div>
               <h4 style={{ fontWeight: 800, fontSize: 22, color: "#111827", margin: "0 0 4px" }}>
                 Welcome back 👋
               </h4>
@@ -225,8 +224,18 @@ export default function LoginPage() {
             </form>
           </div>
 
+          {/* ORBIT logo below card */}
+          <div style={{ textAlign: "center", marginTop: "1.5rem", marginBottom: "0.5rem" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/media/orbit-compliance-full.png"
+              alt="ORBIT Compliance ERP"
+              style={{ height: 32, maxWidth: 180, objectFit: "contain", opacity: 0.7 }}
+            />
+          </div>
+
           {/* Footer */}
-          <p style={{ textAlign: "center", fontSize: 11, color: "#9ca3af", marginTop: "1.25rem" }}>
+          <p style={{ textAlign: "center", fontSize: 11, color: "#9ca3af", marginTop: "0.5rem" }}>
             © {new Date().getFullYear()} ORBIT Compliance ERP · Save Earth Energy · All rights reserved
           </p>
 
