@@ -972,83 +972,299 @@ function BranchPhotoSection({ branchName, onContinue }: { branchName: string; on
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STEP 5 — UPS Parameters
+// STEP 3 — UPS Parameters  (multi-UPS, phase-conditional readings)
 // ═══════════════════════════════════════════════════════════════════════════════
-interface UPSRow {
-  id: string;
-  testPoint: string;
-  reading: string;
-  normalRange: string;
-  remarks: string;
+interface UPSUnit {
+  id: string; name: string;
+  type: "Branch" | "ATM" | "";
+  isInverter: "UPS" | "Inverter" | "";
+  // Spec table
+  make: string; kva: string; phase: "1-Phase" | "3-Phase" | "";
+  batteryMake: string; batteryAh: string; batteryCount: string;
+  specPhoto: string | null;
+  // Readings — shared keys; 1-phase uses subset
+  r_inputPN: string;       // 1-ph: Input P-N
+  r_inputRN: string;       // 3-ph: Input R-N
+  r_inputYN: string;       // 3-ph: Input Y-N
+  r_inputBN: string;       // 3-ph: Input B-N
+  r_inputNE: string;       // both: Input N-E Earthing (source for auto-fill)
+  r_outputPN: string;      // both: Output P-N
+  // Output N-E Earthing is auto-filled from r_inputNE
+  r_outputNEPhoto: string | null;
+  r_current: string;       // 1-ph: current
+  r_currentR: string;      // 3-ph
+  r_currentY: string;
+  r_currentB: string;
+  r_frequency: string;
 }
 
-interface UPSGroup {
-  id: string;
-  label: string;
-  rows: UPSRow[];
-}
+const newUPS = (idx: number): UPSUnit => ({
+  id: uid(), name: `UPS ${idx + 1}`,
+  type: idx === 0 ? "Branch" : "",
+  isInverter: "",
+  make: "", kva: "", phase: "", batteryMake: "", batteryAh: "", batteryCount: "",
+  specPhoto: null,
+  r_inputPN: "", r_inputRN: "", r_inputYN: "", r_inputBN: "", r_inputNE: "",
+  r_outputPN: "", r_outputNEPhoto: null,
+  r_current: "", r_currentR: "", r_currentY: "", r_currentB: "", r_frequency: "",
+});
 
-const INITIAL_UPS_GROUPS: UPSGroup[] = [
-  {
-    id: "input-voltage",
-    label: "INPUT VOLTAGE (V)",
-    rows: [
-      { id: "iv-pp",  testPoint: "Phase to Phase",   reading: "", normalRange: "380–420V",  remarks: "" },
-      { id: "iv-pn",  testPoint: "Phase to Neutral",  reading: "", normalRange: "210–250V",  remarks: "" },
-    ],
-  },
-  {
-    id: "output-voltage",
-    label: "OUTPUT VOLTAGE (V)",
-    rows: [
-      { id: "ov-pp",  testPoint: "Phase to Phase",   reading: "", normalRange: "390–410V",  remarks: "" },
-      { id: "ov-pn",  testPoint: "Phase to Neutral",  reading: "", normalRange: "210–230V",  remarks: "" },
-    ],
-  },
-  {
-    id: "current",
-    label: "CURRENT READING (A)",
-    rows: [
-      { id: "cr-r",   testPoint: "R Phase",          reading: "", normalRange: "—",          remarks: "" },
-      { id: "cr-y",   testPoint: "Y Phase",          reading: "", normalRange: "—",          remarks: "" },
-      { id: "cr-b",   testPoint: "B Phase",          reading: "", normalRange: "—",          remarks: "" },
-      { id: "cr-avg", testPoint: "Avg. Current",     reading: "", normalRange: "—",          remarks: "" },
-    ],
-  },
-  {
-    id: "ne-voltage",
-    label: "N-E VOLTAGE (V)",
-    rows: [
-      { id: "ne",     testPoint: "N-E",              reading: "", normalRange: "0–3V Ok",    remarks: "" },
-    ],
-  },
-  {
-    id: "earthing",
-    label: "EARTHING RESISTANCE",
-    rows: [
-      { id: "ep",     testPoint: "Earthing Pit",     reading: "", normalRange: "< 1 Ohm",   remarks: "" },
-    ],
-  },
-];
+// ── Single UPS card ───────────────────────────────────────────────────────────
+function UPSCard({
+  ups, idx, isFirst, onChange, onRemove,
+}: {
+  ups: UPSUnit; idx: number; isFirst: boolean;
+  onChange: (id: string, field: keyof UPSUnit, val: string | null) => void;
+  onRemove: (id: string) => void;
+}) {
+  const violet = "#6d28d9"; const violetBg = "#f5f3ff"; const violetDark = "#4c1d95";
+  const specRef = useRef<HTMLInputElement>(null);
+  const nePhotoRef = useRef<HTMLInputElement>(null);
+
+  const upd = (field: keyof UPSUnit, val: string | null) => onChange(ups.id, field, val);
+
+  const readFile = (file: File, field: keyof UPSUnit) => {
+    const reader = new FileReader();
+    reader.onload = e => upd(field, e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const ROW_STYLE: React.CSSProperties = {
+    display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr",
+    borderTop:"1px solid #f3f4f6",
+  };
+  const TH: React.CSSProperties = {
+    padding:"9px 12px", fontSize:10, fontWeight:800, color:violet,
+    textTransform:"uppercase", letterSpacing:"0.06em",
+    background: violetBg, borderBottom:`2px solid #ddd6fe`,
+  };
+  const PARAM: React.CSSProperties = {
+    padding:"10px 12px", fontSize:12, fontWeight:800, color:"#374151",
+    background:"#faf9ff", display:"flex", alignItems:"center",
+  };
+  const TP: React.CSSProperties = {
+    padding:"10px 12px", fontSize:12, color:"#6b7280", display:"flex", alignItems:"center",
+  };
+
+  const ReadingCell = ({ field, unit, autoVal }: { field: keyof UPSUnit; unit: string; autoVal?: string }) => {
+    const isAuto = autoVal !== undefined;
+    const val = isAuto ? autoVal : (ups[field] as string);
+    return (
+      <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:6 }}>
+        {isAuto ? (
+          <div style={{ flex:1, padding:"7px 10px", borderRadius:8, background:"#f0fdf4", border:"1.5px solid #bbf7d0", fontSize:13, fontWeight:700, color:"#16a34a" }}>
+            {val || <span style={{ color:"#9ca3af", fontWeight:400 }}>auto</span>}
+          </div>
+        ) : (
+          <input type="number" value={ups[field] as string}
+            onChange={e => upd(field, e.target.value)}
+            placeholder="—"
+            style={{ flex:1, border:`1.5px solid ${ups[field] ? violet : "#e5e7eb"}`, borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background: ups[field] ? violetBg : "#fff", boxSizing:"border-box" }}/>
+        )}
+        <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af", flexShrink:0 }}>{unit}</span>
+      </div>
+    );
+  };
+
+  const PhotoPrompt = ({ field, label }: { field: keyof UPSUnit; label: string }) => {
+    const ref = field === "specPhoto" ? specRef : nePhotoRef;
+    const val = ups[field] as string | null;
+    return (
+      <div style={{ margin:"10px 12px" }}>
+        {val ? (
+          <div style={{ position:"relative", borderRadius:9, overflow:"hidden", border:"1.5px solid #ddd6fe" }}>
+            <img src={val} alt={label} style={{ width:"100%", maxHeight:140, objectFit:"cover", display:"block" }}/>
+            <button onClick={() => upd(field, null)}
+              style={{ position:"absolute", top:6, right:6, background:"rgba(0,0,0,0.6)", border:"none", borderRadius:6, padding:"3px 8px", color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+              ✕
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => ref.current?.click()}
+            style={{ width:"100%", padding:"10px", borderRadius:9, border:"2px dashed #c4b5fd", background:"#faf9ff", color:violet, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+            <i className="ri-camera-line" style={{ fontSize:16 }}/>{label}
+          </button>
+        )}
+        <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display:"none" }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) readFile(f, field); }}/>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ background:"#fff", borderRadius:14, border:`1.5px solid ${violetBg}`, overflow:"hidden", boxShadow:"0 2px 8px rgba(109,40,217,0.08)", marginBottom:16 }}>
+
+      {/* UPS Card Header */}
+      <div style={{ padding:"12px 16px", background:`linear-gradient(135deg,${violet},${violetDark})`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:32, height:32, borderRadius:9, background:"rgba(255,255,255,0.18)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-battery-charge-line" style={{ color:"#fff", fontSize:16 }}/>
+          </div>
+          <input
+            value={ups.name}
+            onChange={e => upd("name", e.target.value)}
+            style={{ fontSize:15, fontWeight:900, color:"#fff", background:"transparent", border:"none", outline:"none", width:120 }}
+          />
+        </div>
+        {!isFirst && (
+          <button onClick={() => onRemove(ups.id)}
+            style={{ background:"rgba(255,255,255,0.15)", border:"none", borderRadius:8, padding:"5px 12px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+            <i className="ri-delete-bin-line"/>Remove
+          </button>
+        )}
+      </div>
+
+      <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:12 }}>
+
+        {/* TYPE + IS IT UPS/INVERTER */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div>
+            <label style={LBL}>TYPE</label>
+            {isFirst ? (
+              <div style={{ ...INP, background:"#f3f4f6", color:"#6b7280", fontWeight:700 }}>Branch (Bank Only)</div>
+            ) : (
+              <select value={ups.type} onChange={e => upd("type", e.target.value)} style={INP}>
+                <option value="">— Select —</option>
+                <option>Branch</option>
+                <option>ATM</option>
+              </select>
+            )}
+            {isFirst && <p style={{ fontSize:10, color:"#9ca3af", margin:"4px 0 0", lineHeight:1.4 }}>1st UPS is Bank Only. ATM UPS can be added from UPS 2 onwards.</p>}
+          </div>
+          <div>
+            <label style={LBL}>Is it UPS / Inverter?</label>
+            <select value={ups.isInverter} onChange={e => upd("isInverter", e.target.value)} style={INP}>
+              <option value="">— Select —</option>
+              <option>UPS</option>
+              <option>Inverter</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Spec Table */}
+        <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr", background:violetBg, borderBottom:"2px solid #ddd6fe" }}>
+            {["UPS/Inverter Make","Capacity (KVA)","1-Ph or 3-Ph","Battery Make","Battery (Ah)","No. of Batteries"].map(h => (
+              <div key={h} style={{ padding:"8px 10px", fontSize:9, fontWeight:800, color:violet, textTransform:"uppercase", letterSpacing:"0.05em" }}>{h}</div>
+            ))}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr" }}>
+            {[
+              { field:"make" as keyof UPSUnit, placeholder:"e.g. APC", type:"text" },
+              { field:"kva"  as keyof UPSUnit, placeholder:"e.g. 10", type:"number" },
+            ].map(({ field, placeholder, type }) => (
+              <input key={field} type={type} value={ups[field] as string} onChange={e => upd(field, e.target.value)}
+                placeholder={placeholder}
+                style={{ margin:8, border:"1px solid #e5e7eb", borderRadius:7, padding:"7px 9px", fontSize:12, color:"#111827", outline:"none", background:"#fff", boxSizing:"border-box" }}/>
+            ))}
+            <select value={ups.phase} onChange={e => upd("phase", e.target.value)}
+              style={{ margin:8, border:"1px solid #e5e7eb", borderRadius:7, padding:"7px 9px", fontSize:12, color:"#111827", outline:"none", background:"#fff", boxSizing:"border-box" }}>
+              <option value="">—</option>
+              <option>1-Phase</option>
+              <option>3-Phase</option>
+            </select>
+            {[
+              { field:"batteryMake"  as keyof UPSUnit, placeholder:"e.g. Exide", type:"text" },
+              { field:"batteryAh"    as keyof UPSUnit, placeholder:"e.g. 42", type:"number" },
+              { field:"batteryCount" as keyof UPSUnit, placeholder:"e.g. 8", type:"number" },
+            ].map(({ field, placeholder, type }) => (
+              <input key={field} type={type} value={ups[field] as string} onChange={e => upd(field, e.target.value)}
+                placeholder={placeholder}
+                style={{ margin:8, border:"1px solid #e5e7eb", borderRadius:7, padding:"7px 9px", fontSize:12, color:"#111827", outline:"none", background:"#fff", boxSizing:"border-box" }}/>
+            ))}
+          </div>
+        </div>
+
+        {/* UPS Photo */}
+        <PhotoPrompt field="specPhoto" label="Capture UPS Photo" />
+
+        {/* Reading table — conditional on phase */}
+        {ups.phase && (
+          <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+            {/* Column headers */}
+            <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr" }}>
+              {["Parameters","Test Point","Actual Reading"].map(h => (
+                <div key={h} style={TH}>{h}</div>
+              ))}
+            </div>
+
+            {ups.phase === "1-Phase" && (<>
+              {/* Input Voltage */}
+              <div style={ROW_STYLE}><div style={PARAM}>INPUT VOLTAGE (V)</div><div style={TP}>P-N</div><ReadingCell field="r_inputPN" unit="V"/></div>
+              <div style={ROW_STYLE}><div style={{ ...PARAM, background:"#fff" }}></div><div style={TP}>Input N-E Earthing</div><ReadingCell field="r_inputNE" unit="V"/></div>
+              {/* Output Voltage */}
+              <div style={{ ...ROW_STYLE, borderTop:"2px solid #f3f4f6" }}><div style={PARAM}>OUTPUT VOLTAGE (V)</div><div style={TP}>P-N</div><ReadingCell field="r_outputPN" unit="V"/></div>
+              <div style={ROW_STYLE}>
+                <div style={{ ...PARAM, background:"#fff" }}></div>
+                <div style={{ ...TP, flexDirection:"column", alignItems:"flex-start", gap:4 }}>
+                  <span>Output N-E Earthing</span>
+                  <span style={{ fontSize:9, color:"#9ca3af" }}>auto from Input N-E</span>
+                </div>
+                <ReadingCell field="r_inputNE" unit="V" autoVal={ups.r_inputNE}/>
+              </div>
+              {/* N-E photo */}
+              <div style={{ ...ROW_STYLE, display:"block" }}>
+                <PhotoPrompt field="r_outputNEPhoto" label="Capture Output N-E Earthing Photo" />
+              </div>
+              {/* Current & Frequency */}
+              <div style={{ ...ROW_STYLE, borderTop:"2px solid #f3f4f6" }}><div style={PARAM}>CURRENT READING (A)</div><div style={TP}></div><ReadingCell field="r_current" unit="A"/></div>
+              <div style={{ ...ROW_STYLE, borderTop:"1px solid #f3f4f6" }}><div style={PARAM}>Frequency (Hz)</div><div style={TP}></div><ReadingCell field="r_frequency" unit="Hz"/></div>
+            </>)}
+
+            {ups.phase === "3-Phase" && (<>
+              {/* Input Voltage */}
+              <div style={ROW_STYLE}><div style={PARAM}>INPUT VOLTAGE (V)</div><div style={TP}>R-N</div><ReadingCell field="r_inputRN" unit="V"/></div>
+              <div style={ROW_STYLE}><div style={{ ...PARAM, background:"#fff" }}></div><div style={TP}>Y-N</div><ReadingCell field="r_inputYN" unit="V"/></div>
+              <div style={ROW_STYLE}><div style={{ ...PARAM, background:"#fff" }}></div><div style={TP}>B-N</div><ReadingCell field="r_inputBN" unit="V"/></div>
+              <div style={ROW_STYLE}><div style={{ ...PARAM, background:"#fff" }}></div><div style={TP}>Input N-E Earthing</div><ReadingCell field="r_inputNE" unit="V"/></div>
+              {/* Output Voltage */}
+              <div style={{ ...ROW_STYLE, borderTop:"2px solid #f3f4f6" }}><div style={PARAM}>OUTPUT VOLTAGE (V)</div><div style={TP}>P-N</div><ReadingCell field="r_outputPN" unit="V"/></div>
+              <div style={ROW_STYLE}>
+                <div style={{ ...PARAM, background:"#fff" }}></div>
+                <div style={{ ...TP, flexDirection:"column", alignItems:"flex-start", gap:4 }}>
+                  <span>Output N-E Earthing</span>
+                  <span style={{ fontSize:9, color:"#9ca3af" }}>auto from Input N-E</span>
+                </div>
+                <ReadingCell field="r_inputNE" unit="V" autoVal={ups.r_inputNE}/>
+              </div>
+              {/* N-E photo */}
+              <div style={{ ...ROW_STYLE, display:"block" }}>
+                <PhotoPrompt field="r_outputNEPhoto" label="Capture Output N-E Earthing Photo" />
+              </div>
+              {/* Current */}
+              <div style={{ ...ROW_STYLE, borderTop:"2px solid #f3f4f6" }}><div style={PARAM}>CURRENT READING (A)</div><div style={TP}>R Phase</div><ReadingCell field="r_currentR" unit="A"/></div>
+              <div style={ROW_STYLE}><div style={{ ...PARAM, background:"#fff" }}></div><div style={TP}>Y Phase</div><ReadingCell field="r_currentY" unit="A"/></div>
+              <div style={ROW_STYLE}><div style={{ ...PARAM, background:"#fff" }}></div><div style={TP}>B Phase</div><ReadingCell field="r_currentB" unit="A"/></div>
+              {/* Frequency */}
+              <div style={{ ...ROW_STYLE, borderTop:"2px solid #f3f4f6" }}><div style={PARAM}>Frequency (Hz)</div><div style={TP}>Output current freq</div><ReadingCell field="r_frequency" unit="Hz"/></div>
+            </>)}
+          </div>
+        )}
+
+        {!ups.phase && (
+          <div style={{ padding:"16px", textAlign:"center", background:"#faf9ff", borderRadius:10, border:"1px dashed #ddd6fe", color:"#9ca3af", fontSize:13 }}>
+            Select 1-Phase or 3-Phase in the spec table above to see reading fields
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
 
 function UPSParametersSection({ branchName }: { branchName: string }) {
-  const [groups, setGroups] = useState<UPSGroup[]>(INITIAL_UPS_GROUPS);
-  const [saved, setSaved]   = useState(false);
+  const [units, setUnits] = useState<UPSUnit[]>([newUPS(0)]);
+  const [saved, setSaved] = useState(false);
 
-  const violet = "#6d28d9";
-  const violetBg = "#ede9fe";
-  const violetDark = "#4c1d95";
+  const violet = "#6d28d9"; const violetDark = "#4c1d95";
 
-  const updRow = (gid: string, rid: string, field: "reading" | "remarks", val: string) =>
-    setGroups(gs => gs.map(g => g.id !== gid ? g : {
-      ...g,
-      rows: g.rows.map(r => r.id !== rid ? r : { ...r, [field]: val }),
-    }));
+  const onChange = (id: string, field: keyof UPSUnit, val: string | null) =>
+    setUnits(us => us.map(u => u.id !== id ? u : { ...u, [field]: val }));
+
+  const addUPS   = () => setUnits(us => [...us, newUPS(us.length)]);
+  const removeUPS = (id: string) => setUnits(us => us.filter(u => u.id !== id));
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
-
-  const filledCt = groups.reduce((s, g) => s + g.rows.filter(r => r.reading.trim()).length, 0);
-  const totalCt  = groups.reduce((s, g) => s + g.rows.length, 0);
 
   return (
     <div>
@@ -1059,107 +1275,36 @@ function UPSParametersSection({ branchName }: { branchName: string }) {
         </div>
       )}
 
-      {/* Header card */}
-      <div style={{ ...card, overflow:"hidden", marginBottom:16 }}>
-        <div style={{ padding:"14px 18px", background:`linear-gradient(135deg,${violet},${violetDark})`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ width:36, height:36, borderRadius:10, background:"rgba(255,255,255,0.18)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <i className="ri-battery-charge-line" style={{ color:"#fff", fontSize:18 }}/>
-            </div>
-            <div>
-              <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>{branchName}</div>
-              <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>Record actual readings at each UPS test point</div>
-            </div>
+      {/* Section header */}
+      <div style={{ padding:"14px 18px", background:`linear-gradient(135deg,${violet},${violetDark})`, borderRadius:14, marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 4px 12px rgba(109,40,217,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-battery-charge-line" style={{ color:"#fff", fontSize:20 }}/>
           </div>
-          <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>
-            {filledCt} / {totalCt} filled
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>UPS Room — {units.length} UPS unit{units.length > 1 ? "s" : ""}</div>
           </div>
         </div>
-        {/* Progress bar */}
-        <div style={{ height:4, background:"#e5e7eb" }}>
-          <div style={{ height:"100%", width:`${(filledCt/totalCt)*100}%`, background:`linear-gradient(90deg,${violet},#a78bfa)`, transition:"width 0.3s ease" }}/>
+        <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>
+          Step 3
         </div>
       </div>
 
-      {/* Table */}
-      <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:16 }}>
-        {/* Column headers */}
-        <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1.1fr 1fr 1.2fr", background:"#f5f3ff", borderBottom:"2px solid #ddd6fe" }}>
-          {["TEST POINT", "ACTUAL READING", "NORMAL RANGE", "REMARKS"].map(h => (
-            <div key={h} style={{ padding:"10px 14px", fontSize:10, fontWeight:800, color:violet, letterSpacing:"0.07em", textTransform:"uppercase" }}>{h}</div>
-          ))}
-        </div>
+      {units.map((u, idx) => (
+        <UPSCard key={u.id} ups={u} idx={idx} isFirst={idx === 0} onChange={onChange} onRemove={removeUPS}/>
+      ))}
 
-        {groups.map((group, gi) => (
-          <div key={group.id}>
-            {/* Group header */}
-            <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1.1fr 1fr 1.2fr", background:"#f8f7ff", borderTop: gi > 0 ? "2px solid #ede9fe" : "none" }}>
-              <div style={{ padding:"9px 14px", gridColumn:"1 / -1", display:"flex", alignItems:"center", gap:8 }}>
-                <div style={{ width:3, height:16, borderRadius:99, background:violet, flexShrink:0 }}/>
-                <span style={{ fontSize:12, fontWeight:900, color:"#1f2937", letterSpacing:"0.03em" }}>{group.label}</span>
-              </div>
-            </div>
+      {/* Add UPS */}
+      <button onClick={addUPS}
+        style={{ width:"100%", padding:"14px", borderRadius:12, border:`2px dashed ${violet}`, background:"#faf9ff", color:violet, fontSize:13, fontWeight:800, cursor:"pointer", marginBottom:14, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+        <i className="ri-add-circle-line" style={{ fontSize:18 }}/>+ Add New UPS
+      </button>
 
-            {/* Rows */}
-            {group.rows.map((row, ri) => (
-              <div
-                key={row.id}
-                style={{ display:"grid", gridTemplateColumns:"1.4fr 1.1fr 1fr 1.2fr", borderTop:"1px solid #f3f4f6", transition:"background 0.1s" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#faf9ff")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                {/* Test Point */}
-                <div style={{ padding:"11px 14px", fontSize:13, color:"#6b7280", fontWeight:500, display:"flex", alignItems:"center" }}>
-                  {row.testPoint}
-                </div>
-
-                {/* Actual Reading */}
-                <div style={{ padding:"7px 10px", display:"flex", alignItems:"center" }}>
-                  <input
-                    type="text"
-                    value={row.reading}
-                    onChange={e => updRow(group.id, row.id, "reading", e.target.value)}
-                    placeholder="Enter"
-                    style={{
-                      width:"100%", border:`1.5px solid ${row.reading ? violet : "#e5e7eb"}`,
-                      borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700,
-                      color:"#111827", outline:"none", background: row.reading ? "#f5f3ff" : "#fff",
-                      boxSizing:"border-box", transition:"all 0.15s",
-                    }}
-                  />
-                </div>
-
-                {/* Normal Range */}
-                <div style={{ padding:"11px 14px", fontSize:12, color: row.normalRange === "—" ? "#d1d5db" : "#6b7280", display:"flex", alignItems:"center", fontFamily:"monospace" }}>
-                  {row.normalRange}
-                </div>
-
-                {/* Remarks */}
-                <div style={{ padding:"7px 10px", display:"flex", alignItems:"center" }}>
-                  <input
-                    type="text"
-                    value={row.remarks}
-                    onChange={e => updRow(group.id, row.id, "remarks", e.target.value)}
-                    placeholder="—"
-                    style={{
-                      width:"100%", border:"1.5px solid #e5e7eb", borderRadius:8,
-                      padding:"7px 10px", fontSize:12, color:"#6b7280", outline:"none",
-                      background:"#fff", boxSizing:"border-box",
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* Save button */}
+      {/* Save */}
       <div style={{ display:"flex", justifyContent:"flex-end" }}>
-        <button
-          onClick={save}
-          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${violet},${violetDark})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(109,40,217,0.35)" }}
-        >
+        <button onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${violet},${violetDark})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(109,40,217,0.35)" }}>
           <i className="ri-save-line"/>Save UPS Parameters
         </button>
       </div>

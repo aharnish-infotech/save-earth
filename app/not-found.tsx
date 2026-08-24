@@ -4,9 +4,11 @@ import Link from "next/link";
 
 export default function NotFound() {
   const [tick, setTick] = useState(0);
+  const [pathname, setPathname] = useState("/...");
 
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 100);
+    setPathname(window.location.pathname);
     return () => clearInterval(id);
   }, []);
 
@@ -260,7 +262,7 @@ export default function NotFound() {
           }}>
             <span style={{ color: "#ef4444" }}>✕</span>
             <span style={{ color: "#4b5563" }}>GET</span>
-            <span style={{ color: "#9ca3af" }}>{typeof window !== "undefined" ? window.location.pathname : "/..."}</span>
+            <span style={{ color: "#9ca3af" }}>{pathname}</span>
             <span style={{ color: "#ef4444", fontWeight: 700 }}>404 Not Found</span>
           </div>
 
