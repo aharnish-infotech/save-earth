@@ -298,13 +298,31 @@ export default function NotFound() {
 
           {/* ORBIT brand watermark */}
           <div style={{
-            marginTop: 52, display: "flex", alignItems: "center", gap: 8,
+            marginTop: 52, display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
             animation: "fadeUp 0.6s 0.9s both",
           }}>
-            <img src="/media/orbit-compliance-app.png" alt="ORBIT" style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover" }}/>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#f9fafb", letterSpacing: "0.08em", fontFamily: "monospace" }}>ORBIT</span>
-            <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.15)", display: "inline-block" }}/>
-            <span style={{ fontSize: 11, color: "#6b7280", fontFamily: "monospace", letterSpacing: "0.04em" }}>InspectFlow ERP</span>
+            {/* Frosted pill container */}
+            <div style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 14, padding: "10px 22px",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 24px rgba(22,163,74,0.08), inset 0 1px 0 rgba(255,255,255,0.06)",
+            }}>
+              <img
+                src="/media/orbit-compliance-full.png"
+                alt="ORBIT InspectFlow"
+                style={{
+                  height: 28,
+                  objectFit: "contain",
+                  filter: "brightness(0) invert(1) drop-shadow(0 0 8px rgba(22,163,74,0.7))",
+                  opacity: 0.9,
+                }}
+              />
+            </div>
+            <span style={{ fontSize: 10, color: "#374151", fontFamily: "monospace", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              Compliance ERP · v1.0
+            </span>
           </div>
 
         </div>
