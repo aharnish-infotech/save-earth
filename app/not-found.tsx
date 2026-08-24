@@ -301,13 +301,7 @@ export default function NotFound() {
             marginTop: 52, display: "flex", alignItems: "center", gap: 8,
             animation: "fadeUp 0.6s 0.9s both",
           }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 8,
-              background: "linear-gradient(135deg, #16a34a, #15803d)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <i className="ri-focus-3-line" style={{ fontSize: 14, color: "#fff" }}/>
-            </div>
+            <img src="/media/orbit-compliance-app.png" alt="ORBIT" style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover" }}/>
             <span style={{ fontSize: 13, fontWeight: 800, color: "#f9fafb", letterSpacing: "0.08em", fontFamily: "monospace" }}>ORBIT</span>
             <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.15)", display: "inline-block" }}/>
             <span style={{ fontSize: 11, color: "#6b7280", fontFamily: "monospace", letterSpacing: "0.04em" }}>InspectFlow ERP</span>
