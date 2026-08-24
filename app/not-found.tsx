@@ -269,7 +269,7 @@ export default function NotFound() {
             display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center",
             animation: "fadeUp 0.6s 0.75s both",
           }}>
-            <Link href="/dashboard" style={{ textDecoration: "none" }}>
+            <Link href="/login" style={{ textDecoration: "none" }}>
               <button className="not-found-btn" style={{
                 display: "flex", alignItems: "center", gap: 8,
                 background: "#16a34a", color: "#fff",
@@ -278,8 +278,8 @@ export default function NotFound() {
                 cursor: "pointer", transition: "all 0.2s",
                 boxShadow: "0 4px 14px rgba(22,163,74,0.25)",
               }}>
-                <i className="ri-dashboard-line" style={{ fontSize: 15 }}/>
-                Back to Dashboard
+                <i className="ri-login-circle-line" style={{ fontSize: 15 }}/>
+                Go to Login
               </button>
             </Link>
             <button className="not-found-ghost" onClick={() => history.back()} style={{
