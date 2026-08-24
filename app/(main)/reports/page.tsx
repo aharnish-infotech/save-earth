@@ -10,7 +10,7 @@ const TD:  React.CSSProperties = { padding:"11px 14px", verticalAlign:"middle" a
 const PAGE_SIZE = 10;
 
 // Reports are generated for Approved + Delivered audits
-const REPORT_AUDITS = AUDITS.filter(a => a.status === "Approved" || a.status === "Delivered");
+const REPORT_AUDITS = AUDITS.filter(a => a.status === "Pending Approval" || a.status === "Delivered");
 
 export default function ReportsPage() {
   const [search, setSearch]  = useState("");
@@ -22,7 +22,7 @@ export default function ReportsPage() {
     const q=search.toLowerCase();
     const mQ=!q||a.id.toLowerCase().includes(q)||a.branch.toLowerCase().includes(q)||a.bank.toLowerCase().includes(q);
     const mB=bankF==="All Banks"||a.bank===bankF;
-    const mT=typeF==="All Types"||(typeF==="Delivered"&&a.status==="Delivered")||(typeF==="Approved"&&a.status==="Approved");
+    const mT=typeF==="All Types"||(typeF==="Delivered"&&a.status==="Delivered")||(typeF==="Pending Approval"&&a.status==="Pending Approval");
     return mQ&&mB&&mT;
   });
 
@@ -81,7 +81,7 @@ export default function ReportsPage() {
           {AUDIT_BANKS.map(b=><option key={b}>{b}</option>)}
         </select>
         <select value={typeF} onChange={e=>{setTypeF(e.target.value);setPage(1);}} style={{ ...INP, padding:"7px 12px", minWidth:150 }}>
-          {["All Types","Approved","Delivered"].map(t=><option key={t}>{t}</option>)}
+          {["All Types","Pending Approval","Delivered"].map(t=><option key={t}>{t}</option>)}
         </select>
         {hasFilter&&<button onClick={clearF} style={{ ...OB, fontSize:12, color:"#dc2626", borderColor:"#fecaca" }}><i className="ri-refresh-line"/> Clear</button>}
         <span style={{ marginLeft:"auto", fontSize:12, color:"var(--text-muted)" }}>{filtered.length} reports</span>

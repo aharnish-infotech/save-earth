@@ -8,7 +8,7 @@ const SEL: React.CSSProperties = { border:"1px solid #e5e7eb", borderRadius:7, p
 const PAGE_SIZE = 15;
 
 export default function ApprovedPage() {
-  const base = AUDITS.filter(a => a.status === "Approved");
+  const base = AUDITS.filter(a => a.status === "Pending Approval");
   const [search, setSearch]     = useState("");
   const [bankF,  setBankF]      = useState("All Banks");
   const [auditorF, setAuditorF] = useState("All Auditors");

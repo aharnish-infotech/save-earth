@@ -148,7 +148,7 @@ export default function AuditTable({
                 const today = new Date("2024-07-27");
                 const due   = new Date(a.dueDate.split(" ").reverse().map((x,j) => j===2?x:j===1?["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].indexOf(x)+1:x).join("-"));
                 const daysLeft = Math.ceil((due.getTime() - today.getTime()) / 86400000);
-                const isOverdue = daysLeft < 0 && (a.status === "In Progress" || a.status === "Completed");
+                const isOverdue = daysLeft < 0 && (a.status === "In Progress" || a.status === "Draft");
 
                 return (
                   <tr key={a.id} style={{ borderTop:i>0?"1px solid var(--default-border)":undefined, background:isOverdue?"#fff7f7":"transparent" }}>

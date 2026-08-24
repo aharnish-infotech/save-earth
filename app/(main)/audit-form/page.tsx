@@ -12,8 +12,8 @@ const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color:
   { id: "ups-questionnaire",     label: "UPS Questionnaire",     shortLabel: "UPS Q",     icon: "ri-questionnaire-line",  color: "#0e7490", desc: "UPS room safety & compliance checklist" },
   { id: "electrical-parameters", label: "Electrical Parameters", shortLabel: "Electrical",icon: "ri-plug-line",           color: "#166534", desc: "Panel-wise voltage, current, PF & earthing" },
   { id: "elec-sld",              label: "Electrical SLD Data",   shortLabel: "Elec SLD",  icon: "ri-node-tree",           color: "#14532d", desc: "MDB busbar, cables, MCCBs, ACDB, LDB & earthing" },
-  { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
   { id: "questionnaire",  label: "Questionnaire",   shortLabel: "Questions",     icon: "ri-questionnaire-line",    color: "#0891b2", desc: "All active audit questions" },
+  { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
   { id: "load-sheet",     label: "Load Sheet",       shortLabel: "Load Sheet",    icon: "ri-lightbulb-line",        color: "#16a34a", desc: "Equipment & power load details" },
   { id: "onsite-atm",    label: "Onsite ATM",       shortLabel: "ATM",           icon: "ri-bank-card-line",        color: "#7c3aed", desc: "ATM safety & compliance checklist" },
   { id: "dg-set",                label: "Diesel Generator",      shortLabel: "DG Set",    icon: "ri-settings-3-line",    color: "#b91c1c", desc: "DG specs, batteries & risk" },
@@ -2313,13 +2313,19 @@ const UPS_Q_INITIAL: Omit<UPSQItem, "answer" | "photo" | "remarks">[] = [
 const makeUPSQItems = (): UPSQItem[] =>
   UPS_Q_INITIAL.map(q => ({ ...q, answer: "", photo: null, remarks: "" }));
 
-function UPSQuestionnaireSection({ branchName }: { branchName: string }) {
+function UPSQuestionnaireSection({ branchName, onAnswerChange }: {
+  branchName: string;
+  onAnswerChange?: (no: number, answer: string) => void;
+}) {
   const [items, setItems] = useState<UPSQItem[]>(makeUPSQItems());
   const [saved, setSaved] = useState(false);
   const teal = "#0e7490"; const tealLight = "#0891b2"; const tealBg = "#ecfeff";
 
-  const upd = (no: number, field: keyof UPSQItem, val: string | null) =>
+  const upd = (no: number, field: keyof UPSQItem, val: string | null) => {
     setItems(prev => prev.map(i => i.no !== no ? i : { ...i, [field]: val }));
+    // lift answer changes so Questionnaire step can show pre-fills
+    if (field === "answer") onAnswerChange?.(no, val as string ?? "");
+  };
 
   const answered = items.filter(i => i.answer !== "").length;
   const pct = Math.round((answered / items.length) * 100);
@@ -3291,12 +3297,15 @@ const AUDIT_QUESTIONS: AuditQuestion[] = [
   { id:"q008", code:"Q-008", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether penalty is being imposed in electricity bills on account of higher load/poor power factor etc." },
   { id:"q009", code:"Q-009", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Additional electrical load required if any (from Power Distribution Company)" },
   { id:"q010", code:"Q-010", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether load is distributed in all 3 phases to avoid unbalancing and no loose electrical connection/haphazard wiring observed in the branch/office premises" },
+  { id:"q051", code:"Q-051", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Loose connection, untight lugs found" },
+  { id:"q052", code:"Q-052", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Any phase cutout or MCCB bypassed" },
   { id:"q011", code:"Q-011", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether isolating switches are provided for switching off non-essential loads during night and main switch to switch off power in case of Fire/Emergency" },
   { id:"q012", code:"Q-012", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether electrical equipments of Pantry etc. are properly connected to Iron socket box with MCBs and protect them from overload" },
   { id:"q013", code:"Q-013", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether proper preventive maintenance after opening of Panel boards and Distribution Boards are carried out by licensed Electricians or skilled technicians" },
   { id:"q014", code:"Q-014", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether appropriate timers used for Server Room ACs and Signage Boards for auto ON/OFF. Thermostat of ACs at server rooms should be set to 30°C" },
   { id:"q015", code:"Q-015", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether preventive maintenance of electric installation and equipment is carried out by skilled license holder electricians/skilled technician" },
   { id:"q016", code:"Q-016", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"General condition of electrical control panels, Main switch, electric meter board, ACs, Water coolers, wiring cables etc. is good and all DBs, Panels, Switch boards are properly covered" },
+  { id:"q053", code:"Q-053", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"All DBs covered in Electrical Panel" },
   { id:"q017", code:"Q-017", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether contact numbers of electricians, power distribution company, Generator service provider, UPS vendor, ACs etc. are available with staff and displayed in Electric Room/UPS room" },
   { id:"q018", code:"Q-018", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether the Power Factor (PF) panel of appropriate rating is installed" },
   // Fire Prevention
@@ -3314,7 +3323,8 @@ const AUDIT_QUESTIONS: AuditQuestion[] = [
   { id:"q028", code:"Q-028", section:"Electrical Safety", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether LED lights have been installed. If not, specify number required: Down lights (12/15W) — NOS: ___ | 2×2 Flush lights (36W) — NOS: ___" },
   { id:"q029", code:"Q-029", section:"Electrical Safety", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether motion sensors/occupancy sensors have been installed. If not, record the number of sensors required in observations" },
   // Fire Protection
-  { id:"q030", code:"Q-030", section:"Fire Protection", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Are fire extinguishers available in: A. Systems/UPS Room: CO2 (3Kg/4.5Kg) × 2  |  B. Banking Hall: Water/CO2 type × 1  |  C. Stationery Room: Water/CO2 type × 1" },
+  { id:"q030", code:"Q-030", section:"Fire Protection", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Are fire extinguishers available in Banking Hall — Water/CO2 type and clearly marked and accessible" },
+  { id:"q054", code:"Q-054", section:"Fire Protection", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Fire extinguisher at Stationery Room — Water/CO2 type, available and clearly marked and accessible" },
   // DG Set
   { id:"q031", code:"Q-031", section:"DG Set / Generator", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"DG Set / Generator is installed at the branch/office" },
   { id:"q032", code:"Q-032", section:"DG Set / Generator", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"At least two 6 Kg. ABC capacity fire extinguishers are placed near the diesel generator" },
@@ -3372,12 +3382,25 @@ const ANSWER_OPTIONS: Record<AuditQType, { label:string; color:string; bg:string
   TEXT:       [],
 };
 
+// UPS Questionnaire (Step 5) answer no. → Audit question id cross-reference
+const UPS_Q_TO_AUDIT_ID: Record<number, string> = {
+  5:  "q002",   // light & emergency light
+  7:  "q003",   // maintained dry
+  8:  "q004",   // water seepage
+  10: "q016",   // general condition OK
+  11: "q017",   // contact numbers displayed
+};
+const AUDIT_ID_TO_UPS_Q: Record<string, number> = Object.fromEntries(
+  Object.entries(UPS_Q_TO_AUDIT_ID).map(([k, v]) => [v, Number(k)])
+);
+
 function QuestionCard({
-  q, ans, onAnswer,
+  q, ans, onAnswer, upsPreFill,
 }: {
   q: AuditQuestion;
   ans: AuditAnswer;
   onAnswer: (id: string, field: keyof AuditAnswer, val: string | null) => void;
+  upsPreFill?: { upsQNo: number; answer: string };
 }) {
   const sc = SECTION_COLORS[q.section] || { color:"#374151", bg:"#f9fafb", border:"#e5e7eb" };
   const opts = ANSWER_OPTIONS[q.type];
@@ -3390,13 +3413,26 @@ function QuestionCard({
   };
 
   const answered = !!ans.answer;
+  const hasUPS = !!upsPreFill;
 
   return (
     <div style={{
-      background:"#fff", borderRadius:12, border:`1px solid ${answered ? sc.border : "#e5e7eb"}`,
-      overflow:"hidden", boxShadow: answered ? `0 2px 8px ${sc.color}18` : "0 1px 3px rgba(0,0,0,0.05)",
+      background: hasUPS ? "#f0fdf4" : "#fff",
+      borderRadius:12,
+      border:`1.5px solid ${hasUPS ? "#86efac" : answered ? sc.border : "#e5e7eb"}`,
+      overflow:"hidden",
+      boxShadow: hasUPS ? "0 2px 8px rgba(22,163,74,0.12)" : answered ? `0 2px 8px ${sc.color}18` : "0 1px 3px rgba(0,0,0,0.05)",
       marginBottom:10, transition:"all 0.15s",
     }}>
+      {/* UPS pre-fill banner */}
+      {hasUPS && (
+        <div style={{ background:"#dcfce7", borderBottom:"1px solid #86efac", padding:"5px 14px", display:"flex", alignItems:"center", gap:6 }}>
+          <i className="ri-links-line" style={{ color:"#16a34a", fontSize:12 }}/>
+          <span style={{ fontSize:10, fontWeight:800, color:"#15803d" }}>
+            Answered in UPS Questionnaire (Q{upsPreFill!.upsQNo}): <strong>{upsPreFill!.answer || "—"}</strong> — pre-filled below, edit if different
+          </span>
+        </div>
+      )}
       {/* Question header */}
       <div style={{ padding:"12px 14px", display:"flex", alignItems:"flex-start", gap:10, borderBottom:"1px solid #f3f4f6" }}>
         {/* Status dot + code */}
@@ -3410,6 +3446,7 @@ function QuestionCard({
           <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:6 }}>
             {q.mandatory && <span style={{ fontSize:9, fontWeight:700, color:"#dc2626", background:"#fee2e2", borderRadius:4, padding:"1px 6px" }}>MANDATORY</span>}
             <span style={{ fontSize:9, fontWeight:700, color: RISK_DOT[q.riskLevel], background:`${RISK_DOT[q.riskLevel]}18`, borderRadius:4, padding:"1px 6px" }}>{q.riskLevel} RISK</span>
+            {hasUPS && <span style={{ fontSize:9, fontWeight:800, color:"#16a34a", background:"#dcfce7", borderRadius:4, padding:"1px 6px" }}>↩ UPS STEP</span>}
           </div>
         </div>
       </div>
@@ -3513,9 +3550,16 @@ function QuestionCard({
   );
 }
 
-function QuestionnaireSection({ branchName }: { branchName: string }) {
-  const initAnswers = () => Object.fromEntries(AUDIT_QUESTIONS.map(q => [q.id, { answer:"", remarks:"", photo:null }]));
-  const [answers, setAnswers]         = useState<Record<string, AuditAnswer>>(initAnswers);
+function QuestionnaireSection({ branchName, upsQAnswers }: {
+  branchName: string;
+  upsQAnswers: Record<number, string>;
+}) {
+  const initAnswers = () => Object.fromEntries(AUDIT_QUESTIONS.map(q => {
+    const upsNo = AUDIT_ID_TO_UPS_Q[q.id];
+    const upsAns = upsNo !== undefined ? (upsQAnswers[upsNo] || "") : "";
+    return [q.id, { answer: upsAns, remarks: "", photo: null as string | null }];
+  }));
+  const [answers, setAnswers] = useState<Record<string, AuditAnswer>>(initAnswers);
   const [openSections, setOpenSections] = useState<Record<string,boolean>>(Object.fromEntries(SECTION_ORDER.map(s => [s, true])));
   const [saved, setSaved]             = useState(false);
 
@@ -3598,9 +3642,18 @@ function QuestionnaireSection({ branchName }: { branchName: string }) {
             {/* Questions */}
             {isOpen && (
               <div style={{ border:`1px solid ${sc.border}`, borderTop:"none", borderRadius:"0 0 12px 12px", padding:"12px", background:"#fff" }}>
-                {questions.map(q => (
-                  <QuestionCard key={q.id} q={q} ans={answers[q.id]} onAnswer={onAnswer}/>
-                ))}
+                {questions.map(q => {
+                  const upsQNo = AUDIT_ID_TO_UPS_Q[q.id];
+                  return (
+                    <QuestionCard
+                      key={q.id}
+                      q={q}
+                      ans={answers[q.id]}
+                      onAnswer={onAnswer}
+                      upsPreFill={upsQNo !== undefined ? { upsQNo, answer: upsQAnswers[upsQNo] || "" } : undefined}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
@@ -3692,6 +3745,10 @@ export default function AuditFormPage() {
   const [currentStep, setCurrentStep] = useState<Step>("capture-branch");
   const [branchData, setBranchData]   = useState<BranchData | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Set<Step>>(new Set());
+  // UPS Q answers lifted here so Questionnaire step can show pre-fills
+  const [upsQAnswers, setUpsQAnswers] = useState<Record<number, string>>({});
+  const onUpsQAnswer = (no: number, answer: string) =>
+    setUpsQAnswers(prev => ({ ...prev, [no]: answer }));
 
   const currentIdx = STEPS.findIndex(s => s.id === currentStep);
 
@@ -3832,7 +3889,7 @@ export default function AuditFormPage() {
         <UPSSLDSection branchName={branchDisplayName} />
       )}
       {currentStep === "ups-questionnaire" && (
-        <UPSQuestionnaireSection branchName={branchDisplayName} />
+        <UPSQuestionnaireSection branchName={branchDisplayName} onAnswerChange={onUpsQAnswer} />
       )}
       {currentStep === "electrical-parameters" && (
         <ElectricalParametersSection branchName={branchDisplayName} />
@@ -3841,7 +3898,7 @@ export default function AuditFormPage() {
         <ElecSLDSection branchName={branchDisplayName} />
       )}
       {currentStep === "questionnaire" && (
-        <QuestionnaireSection branchName={branchDisplayName} />
+        <QuestionnaireSection branchName={branchDisplayName} upsQAnswers={upsQAnswers} />
       )}
       {currentStep === "onsite-atm" && (
         <OnsiteATMSection branchName={branchDisplayName} />

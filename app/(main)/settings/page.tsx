@@ -57,6 +57,14 @@ const SECTIONS = [
     ],
   },
   {
+    group: "Masters",
+    icon: "ri-list-settings-line",
+    color: "#0891b2",
+    items: [
+      { key:"status-master",  label:"Status Master",        icon:"ri-flag-line"            },
+    ],
+  },
+  {
     group: "Data & System",
     icon: "ri-database-2-line",
     color: "#374151",
@@ -598,6 +606,93 @@ function ComingSoonPanel({ label }: { label: string }) {
   );
 }
 
+// ── Status Master Panel ───────────────────────────────────────────────────────
+const STATUS_MASTER = [
+  { status:"In Progress",     color:"#2563eb", bg:"#dbeafe", icon:"ri-loader-4-line",    description:"Auditor has opened the branch form and audit is actively in progress." },
+  { status:"Draft",           color:"#ca8a04", bg:"#fef9c3", icon:"ri-draft-line",       description:"Auditor has completed all entries but has not yet sent the report to the Branch Manager." },
+  { status:"Pending Approval",color:"#7c3aed", bg:"#f3e8ff", icon:"ri-time-line",        description:"Report copy sent to Branch Manager. Admin is verifying and generating the final report for physical submission." },
+  { status:"Delivered",       color:"#16a34a", bg:"#dcfce7", icon:"ri-send-plane-line",  description:"Admin has physically submitted the final audit report. Audit is closed." },
+];
+
+function StatusMasterPanel() {
+  const TH2: React.CSSProperties = {
+    padding:"10px 16px", fontSize:11, fontWeight:700, color:"#6b7280",
+    textTransform:"uppercase", letterSpacing:"0.05em", background:"#f9fafb",
+    borderBottom:"1px solid #e5e7eb", whiteSpace:"nowrap", textAlign:"left",
+  };
+  const TD2: React.CSSProperties = {
+    padding:"14px 16px", verticalAlign:"middle", fontSize:13,
+    color:"#374151", borderBottom:"1px solid #f3f4f6",
+  };
+  return (
+    <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+      {/* Header */}
+      <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--default-border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div>
+          <div style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)" }}>Audit Status Definitions</div>
+          <div style={{ fontSize:12, color:"var(--text-muted)", marginTop:2 }}>These statuses define the lifecycle of every audit in the system.</div>
+        </div>
+        <span style={{ fontSize:11, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:6, padding:"4px 10px" }}>
+          {STATUS_MASTER.length} Statuses
+        </span>
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX:"auto" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <thead>
+            <tr>
+              <th style={{ ...TH2, width:40 }}>#</th>
+              <th style={TH2}>Status</th>
+              <th style={TH2}>Description</th>
+              <th style={{ ...TH2, textAlign:"center" }}>Stage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {STATUS_MASTER.map((s, i) => (
+              <tr key={s.status}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                style={{ transition:"background 0.1s" }}>
+                <td style={{ ...TD2, color:"#d1d5db", fontSize:12 }}>{i + 1}</td>
+                <td style={TD2}>
+                  <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:12, fontWeight:600, color:s.color, background:s.bg, borderRadius:20, padding:"4px 12px", whiteSpace:"nowrap" }}>
+                    <i className={s.icon} style={{ fontSize:12 }}/>{s.status}
+                  </span>
+                </td>
+                <td style={{ ...TD2, color:"#6b7280", fontSize:13, maxWidth:480 }}>{s.description}</td>
+                <td style={{ ...TD2, textAlign:"center" }}>
+                  <span style={{ fontSize:11, fontWeight:700, color:"#374151", background:"#f3f4f6", borderRadius:6, padding:"3px 10px" }}>
+                    Stage {i + 1} / {STATUS_MASTER.length}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Flow diagram */}
+      <div style={{ padding:"16px 20px", borderTop:"1px solid var(--default-border)", background:"#fafafa" }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>Audit Lifecycle Flow</div>
+        <div style={{ display:"flex", alignItems:"center", gap:0, flexWrap:"wrap" }}>
+          {STATUS_MASTER.map((s, i) => (
+            <React.Fragment key={s.status}>
+              <div style={{ display:"flex", alignItems:"center", gap:6, background:s.bg, border:`1.5px solid ${s.color}20`, borderRadius:8, padding:"7px 14px" }}>
+                <i className={s.icon} style={{ fontSize:13, color:s.color }}/>
+                <span style={{ fontSize:12, fontWeight:600, color:s.color, whiteSpace:"nowrap" }}>{s.status}</span>
+              </div>
+              {i < STATUS_MASTER.length - 1 && (
+                <i className="ri-arrow-right-line" style={{ fontSize:16, color:"#d1d5db", margin:"0 4px" }}/>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Panel router ──────────────────────────────────────────────────────────────
 function RenderPanel({ activeKey }: { activeKey: string }) {
   switch(activeKey) {
@@ -617,8 +712,9 @@ function RenderPanel({ activeKey }: { activeKey: string }) {
     case "ip-allowlist":  return <ComingSoonPanel label="IP Allowlist"/>;
     case "backup":        return <BackupPanel/>;
     case "retention":     return <ComingSoonPanel label="Data Retention"/>;
-    case "integrations":  return <IntegrationsPanel/>;
-    default:              return <CompanyPanel/>;
+    case "integrations":   return <IntegrationsPanel/>;
+    case "status-master":  return <StatusMasterPanel/>;
+    default:               return <CompanyPanel/>;
   }
 }
 
@@ -640,7 +736,8 @@ const META: Record<string, { title:string; description:string }> = {
   "ip-allowlist":{ title:"IP Allowlist",          description:"Restrict admin access to specific IP addresses or CIDR ranges" },
   backup:        { title:"Backup & Export",       description:"Automatic backup schedule, retention period, and manual export options" },
   retention:     { title:"Data Retention",        description:"Set how long audit records, logs, and photos are retained" },
-  integrations:  { title:"Integrations / API",    description:"Connect third-party services and manage API keys" },
+  integrations:     { title:"Integrations / API",    description:"Connect third-party services and manage API keys" },
+  "status-master":  { title:"Status Master",          description:"Manage audit lifecycle statuses, their descriptions, and flow order" },
 };
 
 // ── Main Page ──────────────────────────────────────────────────────────────────

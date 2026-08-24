@@ -20,7 +20,7 @@ const SEL: React.CSSProperties = {
   cursor: "pointer", height: 34,
 };
 
-const ALL_STATUS: AuditStatus[] = ["In Progress", "Completed", "Pending Review", "Approved", "Delivered"];
+const ALL_STATUS: AuditStatus[] = ["In Progress", "Draft", "Pending Approval", "Delivered"];
 const PAGE_SIZE = 15;
 
 export default function AllAuditsPage() {
