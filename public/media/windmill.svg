@@ -654,6 +654,8 @@
 					</g>
 				</g>
 				<g>
+					<animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 157 122" to="360 157 122" dur="4s" repeatCount="indefinite"/>
+				<g>
 					<g>
 						<polygon class="st25" points="183.1,151.5 253.6,220.7 258.4,212.1 192.5,146.2 						"/>
 						<path class="st26" d="M251.3,212.1c-2.8-2.7-5.6-5.5-8.4-8.2c-2.9-2.8-5.8-5.6-8.6-8.5c-5.7-5.7-11.5-11.3-17.3-17
@@ -783,8 +785,6 @@
 							L154.5,123.7z"/>
 					</g>
 				</g>
-				<g>
-					<animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 157 122" to="360 157 122" dur="4s" repeatCount="indefinite"/>
 				<g>
 					<g>
 						<polygon class="st25" points="184.7,97.1 253.9,26.6 245.3,21.8 179.4,87.7 						"/>

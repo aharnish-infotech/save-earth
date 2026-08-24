@@ -71,7 +71,7 @@ export default function LoginPage() {
         justifyContent: "center",
         padding: "2rem",
         position: "relative",
-        overflow: "hidden",
+        overflow: "visible",
       }}>
 
         {/* Background grid */}
@@ -92,14 +92,16 @@ export default function LoginPage() {
           alt=""
           aria-hidden="true"
           style={{
-            position: "absolute",
+            position: "fixed",
             bottom: 0,
-            left: 40,
-            height: 280,
+            left: 32,
+            height: 300,
             width: "auto",
             pointerEvents: "none",
             userSelect: "none",
-            opacity: 0.82,
+            opacity: 0.88,
+            zIndex: 10,
+            display: "block",
           }}
         />
 
