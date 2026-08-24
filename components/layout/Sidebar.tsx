@@ -74,25 +74,50 @@ function getActiveSectionId(pathname: string): string {
   return "dashboard";
 }
 
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return mobile;
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
   const [activeId, setActiveId] = useState<string>(() => getActiveSectionId(pathname));
   const [panelOpen, setPanelOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Keep sidebar width in sync
+  // Keep sidebar width in sync (desktop only)
   useEffect(() => {
-    document.documentElement.style.setProperty("--zf-sidebar-w", panelOpen ? "288px" : "64px");
-  }, [panelOpen]);
+    if (!isMobile) {
+      document.documentElement.style.setProperty("--zf-sidebar-w", panelOpen ? "288px" : "64px");
+    } else {
+      document.documentElement.style.setProperty("--zf-sidebar-w", "0px");
+    }
+  }, [panelOpen, isMobile]);
 
-  // Update active section on route change
+  // Update active section on route change; close mobile drawer on navigate
   useEffect(() => {
     setActiveId(getActiveSectionId(pathname));
     setPanelOpen(true);
+    setMobileOpen(false);
   }, [pathname]);
 
-  // Hamburger toggle
+  // Hamburger toggle — on mobile opens/closes drawer; on desktop toggles panel
   useEffect(() => {
-    const handleToggle = () => setPanelOpen(prev => !prev);
+    const handleToggle = () => {
+      if (window.matchMedia("(max-width: 767px)").matches) {
+        setMobileOpen(prev => !prev);
+      } else {
+        setPanelOpen(prev => !prev);
+      }
+    };
     window.addEventListener("zf:toggle-sidebar", handleToggle);
     return () => window.removeEventListener("zf:toggle-sidebar", handleToggle);
   }, []);
@@ -108,7 +133,15 @@ export default function Sidebar() {
   const activeSectionItems = activeRailItem.sections.flatMap(s => s.items);
 
   return (
-    <aside className="zf-sidebar" id="sidebar">
+    <>
+    {isMobile && mobileOpen && (
+      <div
+        className="zf-sidebar-backdrop"
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+      />
+    )}
+    <aside className={`zf-sidebar${isMobile && mobileOpen ? " mobile-open" : ""}`} id="sidebar">
 
       {/* Icon Rail */}
       <div className="zf-rail">
@@ -209,5 +242,6 @@ export default function Sidebar() {
       </div>
 
     </aside>
+    </>
   );
 }

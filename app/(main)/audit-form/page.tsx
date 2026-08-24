@@ -2,7 +2,7 @@
 import React, { useState, useRef, useCallback } from "react";
 
 // ─── STEP DEFINITIONS ─────────────────────────────────────────────────────────
-type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "ups-sld" | "ups-questionnaire" | "electrical-parameters" | "elec-sld" | "meter-details" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-set";
+type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "ups-sld" | "ups-questionnaire" | "electrical-parameters" | "elec-sld" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-solar" | "meter-details" | "final-submit" | "attendance-sheet";
 
 const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color: string; desc: string }[] = [
   { id: "capture-branch",  label: "Capture Branch",     shortLabel: "Branch",    icon: "ri-building-2-line",    color: "#2563eb", desc: "Bank, IFSC, GPS & Classification" },
@@ -14,9 +14,11 @@ const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color:
   { id: "elec-sld",              label: "Electrical SLD Data",   shortLabel: "Elec SLD",  icon: "ri-node-tree",           color: "#14532d", desc: "MDB busbar, cables, MCCBs, ACDB, LDB & earthing" },
   { id: "questionnaire",  label: "Questionnaire",   shortLabel: "Questions",     icon: "ri-questionnaire-line",    color: "#0891b2", desc: "All active audit questions" },
   { id: "load-sheet",     label: "Load Sheet",       shortLabel: "Load Sheet",    icon: "ri-lightbulb-line",        color: "#16a34a", desc: "Equipment & power load details" },
-  { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
   { id: "onsite-atm",    label: "Onsite ATM",       shortLabel: "ATM",           icon: "ri-bank-card-line",        color: "#7c3aed", desc: "ATM safety & compliance checklist" },
-  { id: "dg-set",                label: "Diesel Generator",      shortLabel: "DG Set",    icon: "ri-settings-3-line",    color: "#b91c1c", desc: "DG specs, batteries & risk" },
+  { id: "dg-solar",      label: "DG & Solar Details", shortLabel: "DG & Solar",  icon: "ri-sun-line",              color: "#b45309", desc: "DG set details & solar installation" },
+  { id: "meter-details", label: "Meter Details",      shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
+  { id: "final-submit",    label: "Submit & Email",        shortLabel: "Submit",     icon: "ri-send-plane-line",    color: "#0f172a", desc: "Additional photos & email draft report" },
+  { id: "attendance-sheet", label: "Attendance Sheet",     shortLabel: "Attendance", icon: "ri-file-list-3-line",   color: "#0369a1", desc: "Signed attendance sheet & branch layout" },
 ];
 
 // ─── BANK MASTER ──────────────────────────────────────────────────────────────
@@ -117,10 +119,26 @@ const INITIAL_LOAD_GROUPS: LoadGroup[] = LOAD_GROUPS_DEF.map(g => ({ ...g, rows:
 
 // ─── METER TYPES ──────────────────────────────────────────────────────────────
 interface Meter {
-  id: string; provider: string; type: string;
-  sanctionedLoad: string; meterNo: string; consumption: string; avgBill: string;
+  id: string;
+  provider: string;
+  meterRR: string;           // NOT MANDATORY
+  sanctionedLoad: string;
+  sanctionedUnit: "KW" | "KVA";
+  contractDemand: string;    // auto-fill from sanctionedLoad
+  billingDemand: string;     // non mandatory
+  maxDemand: string;         // non mandatory
+  avgBill: string;
+  avgConsumption: string;
+  penalty: "YES" | "NO" | "";
+  billPhotos: (string | null)[];  // up to 6, min 1
 }
-const newMeter = (): Meter => ({ id: uid(), provider:"", type:"", sanctionedLoad:"", meterNo:"", consumption:"", avgBill:"" });
+const newMeter = (): Meter => ({
+  id: uid(), provider:"", meterRR:"",
+  sanctionedLoad:"", sanctionedUnit:"KW",
+  contractDemand:"", billingDemand:"", maxDemand:"",
+  avgBill:"", avgConsumption:"", penalty:"",
+  billPhotos: [null],
+});
 
 // ─── DG TYPES & DATA ──────────────────────────────────────────────────────────
 type RiskLevel = "Low" | "Medium" | "High" | "Critical" | "";
@@ -758,79 +776,316 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STEP 3 — Meter Details
+// STEP 12 — Meter Details
 // ═══════════════════════════════════════════════════════════════════════════════
 function MeterDetailsSection({ branchName }: { branchName: string }) {
-  const [meters, setMeters] = useState<Meter[]>([newMeter()]);
-  const [saved, setSaved]   = useState(false);
+  const [branchArea,   setBranchArea]   = useState("");
+  const [meters,       setMeters]       = useState<Meter[]>([newMeter()]);
+  // Previous audit report
+  const [prevPhotos,   setPrevPhotos]   = useState<(string|null)[]>([null]);
+  const [prevDate,     setPrevDate]     = useState("");
+  const [prevAuditor,  setPrevAuditor]  = useState("");
+  // AMC
+  const [amcAvail,     setAmcAvail]     = useState<"YES"|"NO"|"">("");
+  const [amcPhotos,    setAmcPhotos]    = useState<(string|null)[]>([null]);
+  const [saved,        setSaved]        = useState(false);
 
-  const upd        = (id:string, field:keyof Meter, val:string) => setMeters(ms => ms.map(m => m.id!==id ? m : {...m,[field]:val}));
-  const addMeter   = () => setMeters(ms => [...ms, newMeter()]);
-  const removeMeter= (id:string) => setMeters(ms => ms.filter(m => m.id!==id));
-  const save       = () => { setSaved(true); setTimeout(()=>setSaved(false),3000); };
+  const amber = "#b45309"; const amberDark = "#92400e";
 
-  const amber = "#b45309"; const amberBg = "#fef3c7"; const amberDark = "#92400e";
+  // ── Meter helpers ──────────────────────────────────────────────────────────
+  const updMeter = (id: string, field: keyof Meter, val: string) =>
+    setMeters(ms => ms.map(m => {
+      if (m.id !== id) return m;
+      const upd: Meter = { ...m, [field]: val };
+      // Auto-fill contract demand from sanctioned load
+      if (field === "sanctionedLoad") upd.contractDemand = val;
+      return upd;
+    }));
+
+  const setMeterUnit = (id: string, unit: "KW" | "KVA") =>
+    setMeters(ms => ms.map(m => m.id !== id ? m : { ...m, sanctionedUnit: unit }));
+
+  const setPenalty = (id: string, val: "YES" | "NO") =>
+    setMeters(ms => ms.map(m => m.id !== id ? m : { ...m, penalty: val }));
+
+  // Bill photos per meter
+  const setBillPhoto = (mid: string, idx: number, val: string | null) =>
+    setMeters(ms => ms.map(m => {
+      if (m.id !== mid) return m;
+      const photos = [...m.billPhotos];
+      photos[idx] = val;
+      return { ...m, billPhotos: photos };
+    }));
+  const addBillPhoto = (mid: string) =>
+    setMeters(ms => ms.map(m => m.id !== mid ? m : { ...m, billPhotos: [...m.billPhotos, null] }));
+
+  // Generic photo helpers for prev audit & AMC
+  const setPhoto = (setter: React.Dispatch<React.SetStateAction<(string|null)[]>>, idx: number, val: string | null) =>
+    setter(ps => { const n = [...ps]; n[idx] = val; return n; });
+  const addPhoto = (setter: React.Dispatch<React.SetStateAction<(string|null)[]>>) =>
+    setter(ps => [...ps, null]);
+
+  const readFile = (file: File, cb: (b64: string) => void) => {
+    const r = new FileReader(); r.onload = e => cb(e.target?.result as string); r.readAsDataURL(file);
+  };
+
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const L: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" };
+  const I: React.CSSProperties = { border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 10px", fontSize:12, color:"#111827", outline:"none", width:"100%", boxSizing:"border-box", background:"#fff" };
+
+  // ── Photo strip (up to maxN) ───────────────────────────────────────────────
+  const PhotoStrip = ({ photos, maxN, onSet, onAdd, accentColor }: {
+    photos: (string|null)[]; maxN: number; accentColor: string;
+    onSet: (idx: number, val: string|null) => void;
+    onAdd: () => void;
+  }) => (
+    <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:8 }}>
+      {photos.map((p, i) => (
+        <div key={i} style={{ position:"relative", width:80, height:80, borderRadius:8, overflow:"hidden", border:`1.5px solid ${p ? accentColor : "#e5e7eb"}`, background:p?"transparent":"#f9fafb", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          {p ? (
+            <>
+              <img src={p} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+              <button onClick={() => onSet(i, null)}
+                style={{ position:"absolute", top:2, right:2, width:20, height:20, borderRadius:4, border:"none", background:"rgba(239,68,68,0.9)", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10 }}>
+                <i className="ri-close-line"/>
+              </button>
+            </>
+          ) : (
+            <label style={{ width:"100%", height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", gap:3 }}>
+              <i className="ri-camera-line" style={{ color:accentColor, fontSize:18 }}/>
+              <span style={{ fontSize:9, color:"#9ca3af" }}>Photo {i+1}</span>
+              <input type="file" accept="image/*" capture="environment" style={{ display:"none" }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) readFile(f, v => onSet(i, v)); }}/>
+            </label>
+          )}
+        </div>
+      ))}
+      {photos.length < maxN && (
+        <button onClick={onAdd}
+          style={{ width:80, height:80, borderRadius:8, border:`1.5px dashed ${accentColor}`, background:"transparent", color:accentColor, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:3, flexShrink:0 }}>
+          <i className="ri-add-line" style={{ fontSize:18 }}/>
+          <span style={{ fontSize:9, fontWeight:700 }}>Add</span>
+        </button>
+      )}
+      {photos.length >= maxN && (
+        <span style={{ fontSize:10, color:"#9ca3af", alignSelf:"center", marginLeft:4 }}>Max {maxN} photos</span>
+      )}
+    </div>
+  );
 
   return (
     <div>
-      {saved && <div style={{marginBottom:14,background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
-        <i className="ri-checkbox-circle-fill" style={{color:amber,fontSize:18}}/><span style={{fontSize:13,fontWeight:700,color:amberDark}}>Meter details saved successfully</span>
-      </div>}
-      <div style={{...card,overflow:"hidden"}}>
-        <div style={{padding:"12px 18px",background:"linear-gradient(135deg,#b45309,#92400e)",display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <i className="ri-flashlight-line" style={{color:"#fff",fontSize:16}}/>
+      {saved && (
+        <div style={{ marginBottom:14, background:"#fffbeb", border:"1px solid #fde68a", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:amber, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:amberDark }}>Meter details saved successfully</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#b45309,#92400e)", borderRadius:14, padding:"16px 18px", marginBottom:14, boxShadow:"0 4px 12px rgba(180,83,9,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-flashlight-line" style={{ color:"#fff", fontSize:20 }}/>
           </div>
-          <div>
-            <div style={{fontSize:14,fontWeight:800,color:"#fff"}}>{branchName}</div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.75)"}}>Electricity meter info, sanctioned load &amp; billing</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName} — Meter Details</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>Electricity bills, sanctioned load, audit report & AMC</div>
           </div>
-          <div style={{marginLeft:"auto",background:"rgba(255,255,255,0.2)",borderRadius:20,padding:"3px 12px",fontSize:12,fontWeight:700,color:"#fff"}}>{meters.length} Meter{meters.length>1?"s":""}</div>
         </div>
       </div>
+
+      {/* Approx area of branch */}
+      <div style={{ ...card, padding:"14px 16px", marginBottom:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"220px 1fr", gap:14, alignItems:"flex-end" }}>
+          <div>
+            <label style={L}>Approx Area of Branch (SqFt)</label>
+            <input type="number" min="0" value={branchArea} onChange={e => setBranchArea(e.target.value)} placeholder="e.g. 1200" style={I}/>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Electricity Bill meters ── */}
       {meters.map((m, idx) => (
-        <div key={m.id} style={card}>
-          <div style={{padding:"12px 18px",background:amberBg,borderBottom:"1px solid #fde68a",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{width:28,height:28,borderRadius:8,background:amber,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>{idx+1}</span>
+        <div key={m.id} style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+          {/* Meter header */}
+          <div style={{ padding:"10px 16px", background:"#fef3c7", borderBottom:"1px solid #fde68a", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <div style={{ width:28, height:28, borderRadius:7, background:amber, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <span style={{ fontSize:13, fontWeight:900, color:"#fff" }}>{idx+1}</span>
               </div>
-              <span style={{fontSize:14,fontWeight:800,color:amberDark}}>Meter {idx+1}</span>
+              <span style={{ fontSize:13, fontWeight:800, color:amberDark }}>Electricity Bill / Meter {idx+1}</span>
             </div>
             {meters.length > 1 && (
-              <button onClick={()=>removeMeter(m.id)} style={{border:"none",background:"transparent",cursor:"pointer",color:"#ef4444",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
+              <button onClick={() => setMeters(ms => ms.filter(x => x.id !== m.id))}
+                style={{ border:"none", background:"transparent", cursor:"pointer", color:"#ef4444", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:4 }}>
                 <i className="ri-delete-bin-line"/>Remove
               </button>
             )}
           </div>
-          <div style={{padding:18,display:"flex",flexDirection:"column",gap:14}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              <div><label style={LBL}>Services Provider</label><input placeholder="e.g. TORRENT" value={m.provider} onChange={e=>upd(m.id,"provider",e.target.value)} style={INP}/></div>
+
+          <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:12 }}>
+            {/* Bill photo prompt */}
+            <div style={{ background:"#fefce8", border:"2px solid #fbbf24", borderRadius:10, padding:"10px 14px" }}>
+              <div style={{ fontSize:12, fontWeight:800, color:"#92400e", marginBottom:4, display:"flex", alignItems:"center", gap:6 }}>
+                <i className="ri-camera-line" style={{ fontSize:14 }}/>
+                PROMPT — Bill / Payment Voucher Photos
+                <span style={{ fontSize:10, fontWeight:600, color:"#b45309" }}>(Min 1, Max 6)</span>
+              </div>
+              <PhotoStrip
+                photos={m.billPhotos} maxN={6} accentColor={amber}
+                onSet={(i, v) => setBillPhoto(m.id, i, v)}
+                onAdd={() => addBillPhoto(m.id)}/>
+            </div>
+
+            {/* Service Provider + Meter/RR No */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div><label style={L}>Service Provider</label><input value={m.provider} onChange={e => updMeter(m.id,"provider",e.target.value)} placeholder="e.g. TORRENT, MSEDCL" style={I}/></div>
               <div>
-                <label style={LBL}>Type</label>
-                <select value={m.type} onChange={e=>upd(m.id,"type",e.target.value)} style={INP}>
-                  <option value="">e.g. 3 PHASE</option>
-                  <option>1 PHASE</option><option>3 PHASE</option>
-                  <option>HT (High Tension)</option><option>LT (Low Tension)</option>
-                </select>
+                <label style={L}>Meter / RR No. <span style={{ color:"#9ca3af", fontWeight:400, textTransform:"none" }}>(not mandatory)</span></label>
+                <input value={m.meterRR} onChange={e => updMeter(m.id,"meterRR",e.target.value)} placeholder="e.g. 27001760" style={I}/>
               </div>
             </div>
-            <div><label style={LBL}>Qty. Sanctioned Load (KW)</label><input type="number" placeholder="e.g. 21.780" value={m.sanctionedLoad} onChange={e=>upd(m.id,"sanctionedLoad",e.target.value)} style={INP}/></div>
-            <div><label style={LBL}>Meter No.</label><input placeholder="e.g. 27001760" value={m.meterNo} onChange={e=>upd(m.id,"meterNo",e.target.value)} style={INP}/></div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              <div><label style={LBL}>Consumption (units/month)</label><input placeholder="e.g. 2000-3000" value={m.consumption} onChange={e=>upd(m.id,"consumption",e.target.value)} style={INP}/></div>
-              <div><label style={LBL}>Avg. Bill/month</label><input placeholder="e.g. 20-40K" value={m.avgBill} onChange={e=>upd(m.id,"avgBill",e.target.value)} style={INP}/></div>
+
+            {/* Sanctioned Load + unit */}
+            <div>
+              <label style={L}>Sanctioned Load</label>
+              <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                <input type="number" min="0" step="0.001" value={m.sanctionedLoad}
+                  onChange={e => updMeter(m.id,"sanctionedLoad",e.target.value)}
+                  placeholder="e.g. 21.780" style={{ ...I, flex:1 }}/>
+                <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden", flexShrink:0 }}>
+                  {(["KW","KVA"] as const).map((u, i) => (
+                    <button key={u} onClick={() => setMeterUnit(m.id, u)}
+                      style={{ padding:"8px 14px", border:"none", borderRight:i===0?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:m.sanctionedUnit===u?amber:"#fff", color:m.sanctionedUnit===u?"#fff":amber, transition:"all 0.15s" }}>
+                      {u}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Contract Demand (auto-fill, KVA) */}
+            <div>
+              <label style={L}>
+                Contract Demand (KVA)
+                <span style={{ color:"#9ca3af", fontWeight:400, textTransform:"none", marginLeft:6 }}>auto-filled from sanctioned load — edit if different</span>
+              </label>
+              <input type="number" min="0" step="0.001" value={m.contractDemand}
+                onChange={e => updMeter(m.id,"contractDemand",e.target.value)}
+                placeholder="e.g. 21.780" style={{ ...I, borderColor: m.contractDemand ? "#fbbf24" : "#e5e7eb" }}/>
+            </div>
+
+            {/* Billing Demand + Max Demand */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div>
+                <label style={L}>Billing Demand (KW) <span style={{ color:"#9ca3af", fontWeight:400 }}>(optional)</span></label>
+                <input type="number" min="0" value={m.billingDemand} onChange={e => updMeter(m.id,"billingDemand",e.target.value)} placeholder="e.g. 18" style={I}/>
+              </div>
+              <div>
+                <label style={L}>Maximum Demand (KW) <span style={{ color:"#9ca3af", fontWeight:400 }}>(optional)</span></label>
+                <input type="number" min="0" value={m.maxDemand} onChange={e => updMeter(m.id,"maxDemand",e.target.value)} placeholder="e.g. 20" style={I}/>
+              </div>
+            </div>
+
+            {/* Avg Bill + Avg Consumption */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div><label style={L}>Avg. Bill / Month (₹)</label><input type="number" min="0" value={m.avgBill} onChange={e => updMeter(m.id,"avgBill",e.target.value)} placeholder="e.g. 25000" style={I}/></div>
+              <div><label style={L}>Avg. Consumption (units/month)</label><input type="number" min="0" value={m.avgConsumption} onChange={e => updMeter(m.id,"avgConsumption",e.target.value)} placeholder="e.g. 2500" style={I}/></div>
+            </div>
+
+            {/* Penalty */}
+            <div>
+              <label style={L}>Any Penalty?</label>
+              <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden", width:"fit-content" }}>
+                {(["YES","NO"] as const).map((opt, i) => (
+                  <button key={opt} onClick={() => setPenalty(m.id, opt)}
+                    style={{ padding:"8px 24px", border:"none", borderRight:i===0?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:m.penalty===opt?(opt==="YES"?"#dc2626":"#16a34a"):"#fff", color:m.penalty===opt?"#fff":(opt==="YES"?"#dc2626":"#16a34a"), transition:"all 0.15s" }}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       ))}
-      <button onClick={addMeter}
-        style={{width:"100%",padding:"13px",borderRadius:12,border:`2px dashed ${amber}`,background:"transparent",color:amber,fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-        <i className="ri-add-line" style={{fontSize:16}}/>+ Add Another Meter
+
+      {/* Add Meter */}
+      <button onClick={() => setMeters(ms => [...ms, newMeter()])}
+        style={{ width:"100%", padding:"13px", borderRadius:12, border:`2px dashed ${amber}`, background:"transparent", color:amber, fontSize:13, fontWeight:700, cursor:"pointer", marginBottom:14, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+        <i className="ri-add-line" style={{ fontSize:16 }}/>+ Add Meter
       </button>
-      <div style={{display:"flex",justifyContent:"flex-end"}}>
+
+      {/* ── Previous Electrical Audit Report ── */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ padding:"11px 16px", background:"#eff6ff", borderBottom:"1px solid #bfdbfe", display:"flex", alignItems:"center", gap:8 }}>
+          <i className="ri-file-text-line" style={{ color:"#2563eb", fontSize:15 }}/>
+          <span style={{ fontSize:13, fontWeight:800, color:"#1e3a8a" }}>Previous Electrical Audit Report</span>
+        </div>
+        <div style={{ padding:"14px 16px" }}>
+          {/* Photo prompt */}
+          <div style={{ background:"#fefce8", border:"2px solid #fbbf24", borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+            <div style={{ fontSize:12, fontWeight:800, color:"#92400e", marginBottom:4, display:"flex", alignItems:"center", gap:6 }}>
+              <i className="ri-camera-line" style={{ fontSize:14 }}/>PROMPT — Audit Report Photos
+              <span style={{ fontSize:10, fontWeight:600, color:"#b45309" }}>(Max 3)</span>
+            </div>
+            <PhotoStrip photos={prevPhotos} maxN={3} accentColor="#2563eb"
+              onSet={(i,v) => setPhoto(setPrevPhotos, i, v)}
+              onAdd={() => addPhoto(setPrevPhotos)}/>
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div>
+              <label style={L}>Date of Previous Audit (DD/MM/YY)</label>
+              <input type="text" value={prevDate} onChange={e => setPrevDate(e.target.value)} placeholder="e.g. 15/03/24" style={I}/>
+            </div>
+            <div>
+              <label style={L}>Previous Auditor Name</label>
+              <input list="auditor-list" value={prevAuditor} onChange={e => setPrevAuditor(e.target.value)} placeholder="Type to search…" style={I}/>
+              <datalist id="auditor-list">
+                {["Rajesh Kumar","Sunil Sharma","Amit Patel","Deepak Verma","Vikram Singh","Priya Nair","Sanjay Gupta"].map(n => (
+                  <option key={n} value={n}/>
+                ))}
+              </datalist>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── AMC Available ── */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ padding:"11px 16px", background:"#f0fdf4", borderBottom:"1px solid #bbf7d0", display:"flex", alignItems:"center", gap:8 }}>
+          <i className="ri-shield-check-line" style={{ color:"#16a34a", fontSize:15 }}/>
+          <span style={{ fontSize:13, fontWeight:800, color:"#14532d" }}>AMC (Annual Maintenance Contract) Available?</span>
+        </div>
+        <div style={{ padding:"14px 16px" }}>
+          <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden", width:"fit-content", marginBottom:14 }}>
+            {(["YES","NO"] as const).map((opt, i) => (
+              <button key={opt} onClick={() => setAmcAvail(opt)}
+                style={{ padding:"9px 28px", border:"none", borderRight:i===0?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:13, fontWeight:700, background:amcAvail===opt?(opt==="YES"?"#16a34a":"#dc2626"):"#fff", color:amcAvail===opt?"#fff":(opt==="YES"?"#16a34a":"#dc2626"), transition:"all 0.15s" }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+          {amcAvail === "YES" && (
+            <div style={{ background:"#fefce8", border:"2px solid #fbbf24", borderRadius:10, padding:"10px 14px" }}>
+              <div style={{ fontSize:12, fontWeight:800, color:"#92400e", marginBottom:4, display:"flex", alignItems:"center", gap:6 }}>
+                <i className="ri-camera-line" style={{ fontSize:14 }}/>PROMPT — AMC Document Photos
+                <span style={{ fontSize:10, fontWeight:600, color:"#b45309" }}>(Max 3)</span>
+              </div>
+              <PhotoStrip photos={amcPhotos} maxN={3} accentColor="#16a34a"
+                onSet={(i,v) => setPhoto(setAmcPhotos, i, v)}
+                onAdd={() => addPhoto(setAmcPhotos)}/>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8 }}>
         <button onClick={save}
-          style={{padding:"12px 28px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#b45309,#92400e)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 14px rgba(180,83,9,0.35)"}}>
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#b45309,#92400e)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(180,83,9,0.35)" }}>
           <i className="ri-save-line"/>Save Meter Details
         </button>
       </div>
@@ -3801,17 +4056,17 @@ const newATMLoadRow = (): ATMLoadRow => ({ id: uid(), type:"", nos:"", watt:"" }
 
 interface ATMLoadGroupDef { id: string; label: string; typeOptions: string[]; defaultWatts: Record<string,string>; }
 const ATM_LOAD_DEFS: ATMLoadGroupDef[] = [
-  { id:"lighting", label:"Lighting & Fan Load",
-    typeOptions:["Ceiling Fan","BLDC Ceiling Fan","Exhaust Fan","BLDC Exhaust Fan","LED Tube Light (4ft)","Down Lights","Flush Lights 2×2","LED Panel Lights","Emergency Lights","Other Lighting / Fan"],
-    defaultWatts:{"Ceiling Fan":"75","BLDC Ceiling Fan":"28","Exhaust Fan":"30","BLDC Exhaust Fan":"18","LED Tube Light (4ft)":"18","Down Lights":"12","Flush Lights 2×2":"36","LED Panel Lights":"18","Emergency Lights":"8"},
+  { id:"lighting", label:"Lighting Load",
+    typeOptions:["LED Tube Light (4ft)","Down Lights","Flush Lights 2×2","LED Panel Lights","Emergency Lights","Other Lighting"],
+    defaultWatts:{"LED Tube Light (4ft)":"18","Down Lights":"12","Flush Lights 2×2":"36","LED Panel Lights":"18","Emergency Lights":"8"},
   },
   { id:"ac", label:"AC Load",
     typeOptions:["Split AC — Inverter","Split AC — Non-Inverter","Window AC — Inverter","Window AC — Non-Inverter","Cassette AC — Inverter","Cassette AC — Non-Inverter","Other AC"],
     defaultWatts:{"Split AC — Inverter":"900","Split AC — Non-Inverter":"1500","Window AC — Inverter":"800","Window AC — Non-Inverter":"1100","Cassette AC — Inverter":"1200","Cassette AC — Non-Inverter":"2000"},
   },
   { id:"machines", label:"ATM / CDM Machine Load",
-    typeOptions:["ATM Machine (Onsite)","CDM Machine (Cash Deposit)","Recycler Machine","Passbook Printer","Tab / Kiosk","UPS / Battery Charger","Other Machine"],
-    defaultWatts:{"ATM Machine (Onsite)":"300","CDM Machine (Cash Deposit)":"350","Recycler Machine":"400","Passbook Printer":"50","Tab / Kiosk":"30","UPS / Battery Charger":"200"},
+    typeOptions:["ATM Machine (Onsite)","CDM Machine (Cash Deposit)","Passbook Printer","Other Machine"],
+    defaultWatts:{"ATM Machine (Onsite)":"300","CDM Machine (Cash Deposit)":"350","Passbook Printer":"50"},
   },
 ];
 interface ATMLoadGroup extends ATMLoadGroupDef { rows: ATMLoadRow[]; }
@@ -4158,6 +4413,496 @@ function OnsiteATMSection({ branchName }: { branchName: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// STEP 11 — DG & Solar Details
+// ═══════════════════════════════════════════════════════════════════════════════
+interface DGSolarRow {
+  id: string; make: string; capacityKVA: string;
+  soundProof: "Yes" | "No" | ""; ownedHired: "Owned" | "Hired" | "";
+  chargesPerMonth: string;
+}
+const newDGSolarRow = (): DGSolarRow => ({ id: uid(), make:"", capacityKVA:"", soundProof:"", ownedHired:"", chargesPerMonth:"" });
+
+function DGSolarSection({ branchName }: { branchName: string }) {
+  const [rows,      setRows]      = useState<DGSolarRow[]>([newDGSolarRow()]);
+  const [solarKW,   setSolarKW]   = useState("");
+  const [saved,     setSaved]     = useState(false);
+
+  const updRow = (id: string, field: keyof DGSolarRow, val: string) =>
+    setRows(rs => rs.map(r => r.id !== id ? r : { ...r, [field]: val }));
+
+  const amber  = "#b45309"; const amberBg = "#fffbeb"; const amberBorder = "#fde68a";
+  const green  = "#16a34a"; const greenBg = "#f0fdf4"; const greenBorder = "#bbf7d0";
+  const save   = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const LBL_DG: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" };
+  const INP_DG: React.CSSProperties = { border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 10px", fontSize:12, color:"#111827", outline:"none", width:"100%", boxSizing:"border-box", background:"#fff" };
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:amberBg, border:`1px solid ${amberBorder}`, borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:amber, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:"#78350f" }}>DG & Solar details saved successfully</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#b45309,#92400e)", borderRadius:14, padding:"16px 18px", marginBottom:14, boxShadow:"0 4px 12px rgba(180,83,9,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-sun-line" style={{ color:"#fff", fontSize:20 }}/>
+          </div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName} — DG & Solar Details</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>Diesel Generator specs & Solar installation capacity</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DG Table ── */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ padding:"11px 16px", background:amberBg, borderBottom:`1px solid ${amberBorder}`, display:"flex", alignItems:"center", gap:8 }}>
+          <i className="ri-settings-3-line" style={{ color:amber, fontSize:15 }}/>
+          <span style={{ fontSize:13, fontWeight:800, color:"#78350f" }}>DG Set Details</span>
+        </div>
+        <div style={{ padding:"14px" }}>
+          {rows.map((r, idx) => (
+            <div key={r.id} style={{ marginBottom:14, padding:"12px 14px", border:"1px solid #fde68a", borderRadius:10, background:"#fffbeb" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ width:24, height:24, borderRadius:6, background:amber, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <span style={{ fontSize:12, fontWeight:900, color:"#fff" }}>{idx+1}</span>
+                  </div>
+                  <span style={{ fontSize:13, fontWeight:800, color:"#78350f" }}>DG Set {idx+1}</span>
+                </div>
+                {rows.length > 1 && (
+                  <button onClick={() => setRows(rs => rs.filter(x => x.id !== r.id))}
+                    style={{ border:"none", background:"transparent", cursor:"pointer", color:"#ef4444", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:4 }}>
+                    <i className="ri-delete-bin-line"/>Remove
+                  </button>
+                )}
+              </div>
+
+              {/* Row 1: Make + Capacity */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+                <div><label style={LBL_DG}>DG Set Make</label><input value={r.make} onChange={e => updRow(r.id,"make",e.target.value)} placeholder="e.g. Kirloskar, Cummins" style={INP_DG}/></div>
+                <div><label style={LBL_DG}>DG Set Capacity (KVA)</label><input type="number" value={r.capacityKVA} onChange={e => updRow(r.id,"capacityKVA",e.target.value)} placeholder="e.g. 62.5" style={INP_DG}/></div>
+              </div>
+
+              {/* Row 2: Sound Proof + Owned/Hired + Charges */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+                {/* Sound Proof */}
+                <div>
+                  <label style={LBL_DG}>Sound Proof</label>
+                  <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+                    {(["Yes","No"] as const).map((opt, i) => {
+                      const sel = r.soundProof === opt;
+                      return (
+                        <button key={opt} onClick={() => updRow(r.id,"soundProof",opt)}
+                          style={{ flex:1, padding:"8px", border:"none", borderRight:i===0?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:sel?(opt==="Yes"?"#16a34a":"#dc2626"):"#fff", color:sel?"#fff":(opt==="Yes"?"#16a34a":"#dc2626"), transition:"all 0.15s" }}>
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Owned / Hired */}
+                <div>
+                  <label style={LBL_DG}>Owned / Hired</label>
+                  <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+                    {(["Owned","Hired"] as const).map((opt, i) => {
+                      const sel = r.ownedHired === opt;
+                      return (
+                        <button key={opt} onClick={() => updRow(r.id,"ownedHired",opt)}
+                          style={{ flex:1, padding:"8px", border:"none", borderRight:i===0?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:sel?"#2563eb":"#fff", color:sel?"#fff":"#2563eb", transition:"all 0.15s" }}>
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Charges — only enabled if Hired */}
+                <div>
+                  <label style={LBL_DG}>
+                    If Hired — Charges/Month (₹)
+                    {r.ownedHired !== "Hired" && <span style={{ color:"#9ca3af", fontWeight:400, marginLeft:4 }}>(N/A)</span>}
+                  </label>
+                  <input type="number" value={r.chargesPerMonth}
+                    disabled={r.ownedHired !== "Hired"}
+                    onChange={e => updRow(r.id,"chargesPerMonth",e.target.value)}
+                    placeholder="e.g. 25000"
+                    style={{ ...INP_DG, background:r.ownedHired==="Hired"?"#fff":"#f9fafb", color:r.ownedHired==="Hired"?"#111827":"#9ca3af", cursor:r.ownedHired==="Hired"?"text":"not-allowed" }}/>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <button onClick={() => setRows(rs => [...rs, newDGSolarRow()])}
+            style={{ width:"100%", padding:"11px", borderRadius:9, border:`2px dashed ${amber}`, background:"transparent", color:amber, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+            <i className="ri-add-line" style={{ fontSize:16 }}/>+ Add DG Set
+          </button>
+        </div>
+      </div>
+
+      {/* ── Solar Installation ── */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ padding:"11px 16px", background:greenBg, borderBottom:`1px solid ${greenBorder}`, display:"flex", alignItems:"center", gap:8 }}>
+          <i className="ri-sun-line" style={{ color:green, fontSize:15 }}/>
+          <span style={{ fontSize:13, fontWeight:800, color:"#14532d" }}>Solar Installation</span>
+        </div>
+        <div style={{ padding:"14px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"200px 1fr", gap:14, alignItems:"flex-end" }}>
+            <div>
+              <label style={{ ...LBL_DG, color:"#14532d" }}>Capacity (KW)</label>
+              <input type="number" min="0" step="0.1" value={solarKW} onChange={e => setSolarKW(e.target.value)}
+                placeholder="e.g. 10"
+                style={{ ...INP_DG, border:`1px solid ${solarKW ? "#86efac" : "#e5e7eb"}`, background:solarKW?greenBg:"#fff", color:solarKW?"#16a34a":"#111827", fontWeight:solarKW?700:400 }}/>
+            </div>
+            <div style={{ padding:"10px 14px", background: solarKW ? greenBg : "#f9fafb", border:`1px solid ${solarKW?greenBorder:"#e5e7eb"}`, borderRadius:9 }}>
+              <span style={{ fontSize:12, color:solarKW?"#15803d":"#9ca3af", fontWeight:solarKW?700:400 }}>
+                {solarKW
+                  ? `✓ Solar installation: ${solarKW} KW`
+                  : "If not filled — assumed no solar installation at this branch"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8 }}>
+        <button onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${amber},#92400e)`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(180,83,9,0.35)" }}>
+          <i className="ri-save-line"/>Save DG & Solar Details
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 13 — Final Submit & Email
+// ═══════════════════════════════════════════════════════════════════════════════
+interface MiscPhoto { id: string; data: string; label: string; }
+
+function FinalSubmitSection({ branchName }: { branchName: string }) {
+  const [miscPhotos, setMiscPhotos] = useState<MiscPhoto[]>([]);
+  const [email,      setEmail]      = useState("");
+  const [sending,    setSending]    = useState(false);
+  const [sent,       setSent]       = useState(false);
+  const [emailError, setEmailError] = useState("");
+
+  const addMiscPhoto = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      setMiscPhotos(ps => [...ps, { id: uid(), data: e.target?.result as string, label: "" }]);
+    };
+    reader.readAsDataURL(file);
+  };
+  const removeMiscPhoto = (id: string) => setMiscPhotos(ps => ps.filter(p => p.id !== id));
+  const setLabel = (id: string, label: string) =>
+    setMiscPhotos(ps => ps.map(p => p.id !== id ? p : { ...p, label }));
+
+  const validateEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+  const handleSend = () => {
+    if (!email) { setEmailError("Please enter a branch email address."); return; }
+    if (!validateEmail(email)) { setEmailError("Invalid email format."); return; }
+    setEmailError(""); setSending(true);
+    setTimeout(() => { setSending(false); setSent(true); }, 1800);
+  };
+
+  const slate = "#0f172a"; const slateMid = "#334155"; const slateBg = "#f8fafc"; const slateBorder = "#e2e8f0";
+
+  const L: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" };
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#0f172a,#1e293b)", borderRadius:14, padding:"16px 18px", marginBottom:14, boxShadow:"0 4px 12px rgba(15,23,42,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.12)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-send-plane-line" style={{ color:"#fff", fontSize:20 }}/>
+          </div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName} — Final Step</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.65)", marginTop:2 }}>Optional additional photos · Email draft report to branch</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Misc Additional Photos ── */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ padding:"11px 16px", background:slateBg, borderBottom:`1px solid ${slateBorder}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <i className="ri-image-add-line" style={{ color:slateMid, fontSize:15 }}/>
+            <span style={{ fontSize:13, fontWeight:800, color:slate }}>Want to Add More Photos?</span>
+          </div>
+          <span style={{ fontSize:11, color:"#9ca3af", fontStyle:"italic" }}>Misc / Additional Photos — can skip if not applicable</span>
+        </div>
+
+        <div style={{ padding:"14px 16px" }}>
+          {/* Photo grid */}
+          {miscPhotos.length > 0 && (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(130px,1fr))", gap:10, marginBottom:14 }}>
+              {miscPhotos.map(p => (
+                <div key={p.id} style={{ borderRadius:10, overflow:"hidden", border:`1.5px solid ${slateBorder}`, background:"#fff" }}>
+                  <div style={{ position:"relative", height:110 }}>
+                    <img src={p.data} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                    <button onClick={() => removeMiscPhoto(p.id)}
+                      style={{ position:"absolute", top:4, right:4, width:22, height:22, borderRadius:5, border:"none", background:"rgba(239,68,68,0.9)", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11 }}>
+                      <i className="ri-close-line"/>
+                    </button>
+                  </div>
+                  <div style={{ padding:"6px 8px" }}>
+                    <input value={p.label} onChange={e => setLabel(p.id, e.target.value)}
+                      placeholder="Label (optional)"
+                      style={{ width:"100%", border:"none", borderBottom:"1px solid #e5e7eb", outline:"none", fontSize:11, color:"#374151", padding:"2px 0", background:"transparent", boxSizing:"border-box" }}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add photo button */}
+          <label style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px", borderRadius:9, border:`1.5px dashed ${slateMid}`, cursor:"pointer", background:slateBg, color:slateMid, fontSize:12, fontWeight:700 }}>
+            <i className="ri-camera-line" style={{ fontSize:16 }}/>
+            {miscPhotos.length === 0 ? "Capture / Add a Photo" : "Add Another Photo"}
+            <input type="file" accept="image/*" capture="environment" style={{ display:"none" }} multiple
+              onChange={e => { Array.from(e.target.files || []).forEach(addMiscPhoto); e.target.value=""; }}/>
+          </label>
+
+          {miscPhotos.length === 0 && (
+            <p style={{ fontSize:11, color:"#9ca3af", marginTop:10, fontStyle:"italic" }}>
+              No additional photos added — this section is optional and can be skipped.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ── Email Draft Report ── */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ padding:"11px 16px", background:"#eff6ff", borderBottom:"1px solid #bfdbfe", display:"flex", alignItems:"center", gap:8 }}>
+          <i className="ri-mail-send-line" style={{ color:"#2563eb", fontSize:15 }}/>
+          <span style={{ fontSize:13, fontWeight:800, color:"#1e3a8a" }}>Email Draft Report to Branch</span>
+        </div>
+
+        <div style={{ padding:"16px" }}>
+          {sent ? (
+            <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"16px 20px", display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{ width:40, height:40, borderRadius:10, background:"#16a34a", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <i className="ri-checkbox-circle-fill" style={{ color:"#fff", fontSize:20 }}/>
+              </div>
+              <div>
+                <div style={{ fontSize:14, fontWeight:800, color:"#14532d" }}>Draft report sent successfully!</div>
+                <div style={{ fontSize:12, color:"#15803d", marginTop:2 }}>Sent to <strong>{email}</strong></div>
+              </div>
+              <button onClick={() => { setSent(false); setEmail(""); }}
+                style={{ marginLeft:"auto", border:"1px solid #86efac", background:"#fff", borderRadius:8, padding:"6px 14px", fontSize:12, fontWeight:700, color:"#16a34a", cursor:"pointer" }}>
+                Send to Another
+              </button>
+            </div>
+          ) : (
+            <>
+              <label style={L}>Branch Email ID</label>
+              <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                <div style={{ flex:1 }}>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); if (emailError) setEmailError(""); }}
+                    placeholder="e.g. branch.code@sbi.co.in"
+                    style={{ border:`1px solid ${emailError ? "#ef4444" : "#e5e7eb"}`, borderRadius:9, padding:"11px 14px", fontSize:13, color:"#111827", outline:"none", width:"100%", boxSizing:"border-box", background:"#fff" }}/>
+                  {emailError && (
+                    <span style={{ fontSize:11, color:"#ef4444", marginTop:4, display:"block" }}>{emailError}</span>
+                  )}
+                </div>
+                <button onClick={handleSend} disabled={sending}
+                  style={{ padding:"11px 28px", borderRadius:9, border:"none", background: sending ? "#93c5fd" : "#2563eb", color:"#fff", fontSize:13, fontWeight:800, cursor: sending ? "not-allowed" : "pointer", display:"flex", alignItems:"center", gap:8, flexShrink:0, boxShadow:"0 4px 12px rgba(37,99,235,0.35)", transition:"all 0.2s" }}>
+                  {sending ? (
+                    <><i className="ri-loader-4-line" style={{ animation:"spin 1s linear infinite" }}/>Sending…</>
+                  ) : (
+                    <><i className="ri-send-plane-fill"/>SEND</>
+                  )}
+                </button>
+              </div>
+              <p style={{ fontSize:11, color:"#9ca3af", marginTop:10 }}>
+                A draft PDF report of this audit will be emailed to the branch for review before final submission.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 14 — Final Attendance Sheet Upload
+// ═══════════════════════════════════════════════════════════════════════════════
+interface AttendancePhoto { data: string | null; }
+
+function AttendanceSheetSection({ branchName }: { branchName: string }) {
+  const [signedSheet,  setSignedSheet]  = useState<string | null>(null);
+  const [branchLayout, setBranchLayout] = useState<string | null>(null);
+  const [submitted,    setSubmitted]    = useState(false);
+
+  const blue = "#0369a1"; const blueBg = "#eff6ff"; const blueBorder = "#bfdbfe";
+
+  const capturePhoto = (setter: (v: string | null) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setter(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const PhotoSlot = ({ label, icon, hint, value, onChange, index }: {
+    label: string; icon: string; hint: string;
+    value: string | null; onChange: (v: string | null) => void; index: number;
+  }) => (
+    <div style={{ flex:1, minWidth:0 }}>
+      {/* Slot header */}
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+        <div style={{ width:30, height:30, borderRadius:8, background: blue, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <i className={icon} style={{ color:"#fff", fontSize:14 }}/>
+        </div>
+        <div>
+          <div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>{index}. {label}</div>
+          <div style={{ fontSize:10, color:"#9ca3af" }}>{hint}</div>
+        </div>
+      </div>
+
+      {value ? (
+        <div style={{ borderRadius:12, overflow:"hidden", border:`2px solid ${blue}`, position:"relative" }}>
+          <img src={value} alt={label} style={{ width:"100%", height:220, objectFit:"cover", display:"block" }}/>
+          <div style={{ position:"absolute", top:8, right:8, display:"flex", gap:6 }}>
+            {/* Retake */}
+            <label style={{ width:30, height:30, borderRadius:8, background:"rgba(3,105,161,0.9)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+              <i className="ri-camera-line" style={{ color:"#fff", fontSize:14 }}/>
+              <input type="file" accept="image/*" capture="environment" style={{ display:"none" }} onChange={capturePhoto(onChange)}/>
+            </label>
+            {/* Remove */}
+            <button onClick={() => onChange(null)}
+              style={{ width:30, height:30, borderRadius:8, border:"none", background:"rgba(239,68,68,0.9)", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
+              <i className="ri-delete-bin-line"/>
+            </button>
+          </div>
+          <div style={{ background:"rgba(3,105,161,0.85)", padding:"6px 10px", display:"flex", alignItems:"center", gap:6 }}>
+            <i className="ri-checkbox-circle-fill" style={{ color:"#fff", fontSize:13 }}/>
+            <span style={{ color:"#fff", fontSize:11, fontWeight:700 }}>Photo captured</span>
+          </div>
+        </div>
+      ) : (
+        <label style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10, height:220, border:`2px dashed ${blueBorder}`, borderRadius:12, background:blueBg, cursor:"pointer" }}>
+          <div style={{ width:52, height:52, borderRadius:14, background:blue, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-camera-line" style={{ color:"#fff", fontSize:24 }}/>
+          </div>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:12, fontWeight:800, color:blue }}>Tap to Capture</div>
+            <div style={{ fontSize:10, color:"#94a3b8", marginTop:2 }}>{label}</div>
+          </div>
+          <input type="file" accept="image/*" capture="environment" style={{ display:"none" }} onChange={capturePhoto(onChange)}/>
+        </label>
+      )}
+    </div>
+  );
+
+  const bothDone = !!signedSheet && !!branchLayout;
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#0369a1,#0284c7)", borderRadius:14, padding:"16px 18px", marginBottom:14, boxShadow:"0 4px 12px rgba(3,105,161,0.35)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-file-list-3-line" style={{ color:"#fff", fontSize:20 }}/>
+          </div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName} — Final Attendance Sheet</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.7)", marginTop:2 }}>Upload signed attendance sheet & hand-drawn branch layout to complete the audit</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Photo capture card */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ padding:"11px 16px", background:blueBg, borderBottom:`1px solid ${blueBorder}`, display:"flex", alignItems:"center", gap:8 }}>
+          <i className="ri-camera-2-line" style={{ color:blue, fontSize:15 }}/>
+          <span style={{ fontSize:13, fontWeight:800, color:"#1e3a8a" }}>Photo Capture Required</span>
+          <span style={{ marginLeft:"auto", fontSize:11, color: bothDone ? "#16a34a" : "#f59e0b", fontWeight:700 }}>
+            {bothDone ? "✓ Both photos captured" : `${[signedSheet, branchLayout].filter(Boolean).length} / 2 captured`}
+          </span>
+        </div>
+
+        <div style={{ padding:"16px", display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
+            <PhotoSlot
+              index={1}
+              label="Signed & Sealed Attendance Sheet"
+              icon="ri-file-text-line"
+              hint="Physical sheet signed by branch staff & sealed"
+              value={signedSheet}
+              onChange={setSignedSheet}
+            />
+            <PhotoSlot
+              index={2}
+              label="Draft Hand-Drawn Branch Layout"
+              icon="ri-map-2-line"
+              hint="Hand-drawn floor plan / layout sketch of the branch"
+              value={branchLayout}
+              onChange={setBranchLayout}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Completion / Submit */}
+      <div style={{ ...card, overflow:"hidden" }}>
+        <div style={{ padding:"20px 18px", textAlign:"center" }}>
+          {submitted ? (
+            <div>
+              <div style={{ width:56, height:56, borderRadius:16, background:"#16a34a", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px" }}>
+                <i className="ri-checkbox-circle-fill" style={{ color:"#fff", fontSize:28 }}/>
+              </div>
+              <div style={{ fontSize:17, fontWeight:900, color:"#14532d", marginBottom:6 }}>Audit Complete!</div>
+              <div style={{ fontSize:12, color:"#15803d" }}>All steps recorded. Attendance sheet and branch layout uploaded successfully.</div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ width:56, height:56, borderRadius:16, background: bothDone ? "#0369a1" : "#e5e7eb", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", transition:"background 0.3s" }}>
+                <i className="ri-flag-2-fill" style={{ color: bothDone ? "#fff" : "#9ca3af", fontSize:26 }}/>
+              </div>
+              <div style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginBottom:6 }}>
+                {bothDone ? "Ready to Complete Audit" : "Capture Both Photos to Finish"}
+              </div>
+              <div style={{ fontSize:12, color:"#6b7280", marginBottom:16 }}>
+                {bothDone
+                  ? "Both required documents have been photographed. Tap below to finalize."
+                  : "Please capture the signed attendance sheet and hand-drawn branch layout to complete."}
+              </div>
+              <button onClick={() => { if (bothDone) setSubmitted(true); }}
+                disabled={!bothDone}
+                style={{ padding:"13px 36px", borderRadius:10, border:"none",
+                  background: bothDone ? "#0369a1" : "#e5e7eb",
+                  color: bothDone ? "#fff" : "#9ca3af",
+                  fontSize:14, fontWeight:800, cursor: bothDone ? "pointer" : "not-allowed",
+                  boxShadow: bothDone ? "0 4px 14px rgba(3,105,161,0.4)" : "none",
+                  transition:"all 0.2s", display:"inline-flex", alignItems:"center", gap:8 }}>
+                <i className="ri-flag-2-fill"/>
+                COMPLETE AUDIT
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // ROOT PAGE — Multi-Step Audit Form
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function AuditFormPage() {
@@ -4298,8 +5043,11 @@ export default function AuditFormPage() {
       {currentStep === "load-sheet" && (
         <LoadSheetSection branchName={branchDisplayName} />
       )}
-      {currentStep === "dg-set" && (
-        <DGSetSection branchName={branchDisplayName} />
+      {currentStep === "final-submit" && (
+        <FinalSubmitSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "attendance-sheet" && (
+        <AttendanceSheetSection branchName={branchDisplayName} />
       )}
       {currentStep === "ups-parameters" && (
         <UPSParametersSection branchName={branchDisplayName} />
@@ -4322,9 +5070,12 @@ export default function AuditFormPage() {
       {currentStep === "onsite-atm" && (
         <OnsiteATMSection branchName={branchDisplayName} />
       )}
+      {currentStep === "dg-solar" && (
+        <DGSolarSection branchName={branchDisplayName} />
+      )}
 
-      {/* ── Next Step Navigation (not capture-branch, branch-photo, or the final dg-set step) */}
-      {currentStep !== "capture-branch" && currentStep !== "branch-photo" && currentStep !== "dg-set" && (
+      {/* ── Next Step Navigation (not capture-branch, branch-photo, or the final attendance-sheet step) */}
+      {currentStep !== "capture-branch" && currentStep !== "branch-photo" && currentStep !== "attendance-sheet" && (
         <div style={{ display:"flex", justifyContent:"flex-end", marginTop:20 }}>
           <button
             onClick={() => { setCompletedSteps(prev => new Set([...prev, currentStep])); goNext(); }}

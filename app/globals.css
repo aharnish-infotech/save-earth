@@ -333,6 +333,71 @@ html, body { height: 100%; margin: 0; padding: 0; }
 }
 
 /* ──────────────────────────────────────────────────────────────
+   Responsive sidebar — Tablet & Mobile
+────────────────────────────────────────────────────────────── */
+
+/* ── Tablet (768px – 1024px): icon rail only, no panel ── */
+@media (max-width: 1024px) {
+  :root { --zf-sidebar-w: 64px; }
+
+  .app-header.sticky {
+    padding-inline-start: 64px !important;
+  }
+  .main-content.app-content {
+    margin-inline-start: 64px !important;
+  }
+  .zf-nav-panel,
+  .zf-nav-panel.open {
+    width: 0 !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ── Mobile (< 768px): sidebar hidden, opens as full-screen drawer ── */
+@media (max-width: 767px) {
+  :root { --zf-sidebar-w: 0px; }
+
+  .app-header.sticky {
+    padding-inline-start: 0 !important;
+  }
+  .main-content.app-content {
+    margin-inline-start: 0 !important;
+  }
+
+  /* Sidebar slides in from left as a drawer */
+  .zf-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .zf-sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.18);
+  }
+  /* On mobile the panel shows when open */
+  .zf-sidebar.mobile-open .zf-nav-panel {
+    width: var(--zf-panel-w) !important;
+  }
+
+  /* Backdrop overlay */
+  .zf-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    animation: fadeInBackdrop 0.2s ease;
+  }
+  @keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+/* Backdrop hidden by default on larger screens */
+.zf-sidebar-backdrop { display: none; }
+
+/* ──────────────────────────────────────────────────────────────
    KPI Cards
 ────────────────────────────────────────────────────────────── */
 .zf-kpi-grid {
