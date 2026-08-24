@@ -71,7 +71,7 @@ export default function LoginPage() {
         justifyContent: "center",
         padding: "2rem",
         position: "relative",
-        overflow: "visible",
+        overflow: "hidden",
       }}>
 
         {/* Background grid */}
