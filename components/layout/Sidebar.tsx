@@ -118,7 +118,16 @@ export default function Sidebar() {
         </div>
         <nav className="zf-rail-nav" aria-label="Main navigation">
           {RAIL_ITEMS.map(item => {
-            const isActive = activeId === item.id && panelOpen;
+            const isActive = item.href ? pathname === item.href : activeId === item.id && panelOpen;
+            if (item.href) {
+              return (
+                <Link key={item.id} href={item.href} className={`zf-rail-btn${isActive ? " active" : ""}`}
+                  title={item.label} aria-label={item.label} style={{ textDecoration: "none" }}>
+                  <span className="zf-rail-icon">{SECTION_ICONS[item.id]}</span>
+                  <span className="zf-rail-label">{item.label}</span>
+                </Link>
+              );
+            }
             return (
               <button key={item.id} className={`zf-rail-btn${isActive ? " active" : ""}`}
                 onClick={() => handleIconClick(item.id)} title={item.label} aria-label={item.label}>
@@ -141,6 +150,24 @@ export default function Sidebar() {
           {RAIL_ITEMS.map(item => {
             const isExpanded = activeId === item.id && panelOpen;
             const allItems = item.sections.flatMap(s => s.items);
+
+            // Direct-link item: no accordion, no arrow, no children
+            if (item.href) {
+              const isDirect = pathname === item.href;
+              return (
+                <div key={item.id} className={`zf-accord-section${isDirect ? " expanded" : ""}`}>
+                  <Link
+                    href={item.href}
+                    className={`zf-accord-header${isDirect ? " active" : ""}`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <span className="zf-accord-header-icon">{SECTION_ICONS[item.id]}</span>
+                    <span className="zf-accord-title">{item.label}</span>
+                  </Link>
+                </div>
+              );
+            }
+
             return (
               <div key={item.id} className={`zf-accord-section${isExpanded ? " expanded" : ""}`}>
                 {/* Section header — clicking toggles this section */}

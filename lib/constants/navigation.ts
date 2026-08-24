@@ -16,6 +16,7 @@ export interface RailItem {
   id: string;
   icon: string;
   label: string;
+  href?: string;          // if set, renders as a direct link with no children
   sections: NavSection[];
 }
 
@@ -24,12 +25,8 @@ export const RAIL_ITEMS: RailItem[] = [
     id: "dashboard",
     icon: "ri-dashboard-line",
     label: "Dashboard",
-    sections: [{
-      section: "DASHBOARD",
-      items: [
-        { label: "Dashboard", href: "/dashboard", icon: "ri-dashboard-line" },
-      ],
-    }],
+    href: "/dashboard",
+    sections: [],
   },
   {
     id: "audits",

@@ -2104,33 +2104,35 @@ CREATE TRIGGER trg_ups_ne_earthing_default
 // ═══════════════════════════════════════════════════════════════════════════════
 // STEP 4 — Electrical Parameters (multi-panel)
 // ═══════════════════════════════════════════════════════════════════════════════
-interface ElecRow  { id: string; testPt: string; reading: string; normRange: string; remarks: string; }
+interface ElecRow  { id: string; testPt: string; reading: string; readingAcdb: string; unit: string; bold?: boolean; remarks: string; }
 interface ElecGroup { id: string; label: string; rows: ElecRow[]; }
 interface ElecPanel { id: string; name: string; groups: ElecGroup[]; }
 
 const makeElecGroups = (): ElecGroup[] => [
-  { id: "voltage", label: "VOLTAGE READING", rows: [
-    { id:"ry",  testPt:"R-Y",         reading:"", normRange:"380–420V", remarks:"" },
-    { id:"yb",  testPt:"Y-B",         reading:"", normRange:"380–420V", remarks:"" },
-    { id:"br",  testPt:"B-R",         reading:"", normRange:"380–420V", remarks:"" },
-    { id:"rn",  testPt:"R-N",         reading:"", normRange:"210–240V", remarks:"" },
-    { id:"yn",  testPt:"Y-N",         reading:"", normRange:"210–240V", remarks:"" },
-    { id:"bn",  testPt:"B-N",         reading:"", normRange:"210–240V", remarks:"" },
+  { id: "voltage", label: "VOLTAGE (V)", rows: [
+    { id:"rn",  testPt:"R-N",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"yn",  testPt:"Y-N",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"bn",  testPt:"B-N",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"ry",  testPt:"R-Y",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"yb",  testPt:"Y-B",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"rb",  testPt:"R-B",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"ne",  testPt:"N-E",                     reading:"", readingAcdb:"", unit:"V",    remarks:"", bold:true },
   ]},
-  { id: "current", label: "CURRENT READING", rows: [
-    { id:"cr",  testPt:"R Phase",     reading:"", normRange:"—", remarks:"" },
-    { id:"cy",  testPt:"Y Phase",     reading:"", normRange:"—", remarks:"" },
-    { id:"cb",  testPt:"B Phase",     reading:"", normRange:"—", remarks:"" },
-    { id:"ca",  testPt:"Avg Current", reading:"", normRange:"—", remarks:"" },
+  { id: "current", label: "CURRENT (A)", rows: [
+    { id:"cr",  testPt:"R Phase",                 reading:"", readingAcdb:"", unit:"A",    remarks:"" },
+    { id:"cy",  testPt:"Y Phase",                 reading:"", readingAcdb:"", unit:"A",    remarks:"" },
+    { id:"cb",  testPt:"B Phase",                 reading:"", readingAcdb:"", unit:"A",    remarks:"" },
+    { id:"cn",  testPt:"Neutral",                 reading:"", readingAcdb:"", unit:"A",    remarks:"" },
   ]},
   { id: "frequency", label: "FREQUENCY", rows: [
-    { id:"hz",  testPt:"Hz",          reading:"", normRange:"49.5–50Hz", remarks:"" },
+    { id:"hz",  testPt:"Current Freq",            reading:"", readingAcdb:"", unit:"Hz",   remarks:"" },
   ]},
   { id: "pf", label: "POWER FACTOR", rows: [
-    { id:"pf",  testPt:"PF",          reading:"", normRange:"—", remarks:"" },
+    { id:"pf",  testPt:"PF",                      reading:"", readingAcdb:"", unit:"",     remarks:"" },
   ]},
-  { id: "ne", label: "N-E VOLTAGE", rows: [
-    { id:"ne",  testPt:"Earthing",    reading:"", normRange:"0–3V", remarks:"" },
+  { id: "earthing", label: "EARTHING RESISTANCE", rows: [
+    { id:"raw_earth", testPt:"RAW EARTHING RESISTANCE",  reading:"", readingAcdb:"", unit:"OHMS", remarks:"" },
+    { id:"ups_earth", testPt:"UPS EARTHING RESISTANCE",  reading:"", readingAcdb:"", unit:"OHMS", remarks:"" },
   ]},
 ];
 
@@ -2429,12 +2431,17 @@ function ElectricalParametersSection({ branchName }: { branchName: string }) {
   const onNameChange = (pid: string, name: string) =>
     setPanels(ps => ps.map(p => p.id !== pid ? p : { ...p, name }));
 
-  const onRowChange = (pid: string, gid: string, rid: string, field: "reading" | "remarks", val: string) =>
+  const onRowChange = (pid: string, gid: string, rid: string, field: "reading" | "readingAcdb" | "remarks", val: string) =>
     setPanels(ps => ps.map(p => p.id !== pid ? p : {
       ...p,
       groups: p.groups.map(g => g.id !== gid ? g : {
         ...g,
-        rows: g.rows.map(r => r.id !== rid ? r : { ...r, [field]: val }),
+        rows: g.rows.map(r => r.id !== rid ? r : {
+          ...r,
+          [field]: val,
+          // Auto-mirror ACDB from Panel reading; user can then override ACDB independently
+          ...(field === "reading" ? { readingAcdb: val } : {}),
+        }),
       }),
     }));
 
