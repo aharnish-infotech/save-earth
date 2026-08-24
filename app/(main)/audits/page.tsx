@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import { AUDITS, AUDIT_BANKS, AUDIT_AUDITORS, STATUS_STYLE, AuditStatus, scoreColor, scoreBg } from "@/lib/data/audits";
+import { AUDITS, AUDIT_BANKS, AUDIT_AUDITORS, STATUS_STYLE, AuditStatus } from "@/lib/data/audits";
 
 const TH: React.CSSProperties = {
   padding: "11px 16px", fontSize: 11, fontWeight: 700,
@@ -164,7 +164,6 @@ export default function AllAuditsPage() {
                   <th style={TH}>Bank / Branch / IFSC</th>
                   <th style={TH}>Audited By</th>
                   <th style={{ ...TH, textAlign:"center" }}>Audit Date</th>
-                  <th style={{ ...TH, textAlign:"center" }}>Score</th>
                   <th style={{ ...TH, textAlign:"center" }}>Status</th>
                   <th className="no-print" style={{ ...TH, textAlign:"center" }}>Actions</th>
                 </tr>
@@ -221,13 +220,6 @@ export default function AllAuditsPage() {
                       <td style={{ ...TD, textAlign:"center" }}>
                         <div style={{ fontSize:12, fontWeight:600, color:"#374151" }}>{a.startDate}</div>
                         <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>Due: {a.dueDate}</div>
-                      </td>
-
-                      {/* Score */}
-                      <td style={{ ...TD, textAlign:"center" }}>
-                        {a.score != null
-                          ? <span style={{ fontSize:12, fontWeight:700, color:scoreColor(a.score), background:scoreBg(a.score), borderRadius:6, padding:"3px 10px" }}>{a.score}%</span>
-                          : <span style={{ color:"#d1d5db", fontSize:12 }}>—</span>}
                       </td>
 
                       {/* Status */}

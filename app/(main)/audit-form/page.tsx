@@ -2,7 +2,7 @@
 import React, { useState, useRef, useCallback } from "react";
 
 // ─── STEP DEFINITIONS ─────────────────────────────────────────────────────────
-type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "ups-sld" | "ups-questionnaire" | "electrical-parameters" | "meter-details" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-set";
+type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "ups-sld" | "ups-questionnaire" | "electrical-parameters" | "elec-sld" | "meter-details" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-set";
 
 const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color: string; desc: string }[] = [
   { id: "capture-branch",  label: "Capture Branch",     shortLabel: "Branch",    icon: "ri-building-2-line",    color: "#2563eb", desc: "Bank, IFSC, GPS & Classification" },
@@ -11,6 +11,7 @@ const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color:
   { id: "ups-sld",               label: "UPS SLD Data",          shortLabel: "SLD",       icon: "ri-flow-chart",          color: "#4c1d95", desc: "MCBs, MCCB, RCCB & distribution boards" },
   { id: "ups-questionnaire",     label: "UPS Questionnaire",     shortLabel: "UPS Q",     icon: "ri-questionnaire-line",  color: "#0e7490", desc: "UPS room safety & compliance checklist" },
   { id: "electrical-parameters", label: "Electrical Parameters", shortLabel: "Electrical",icon: "ri-plug-line",           color: "#166534", desc: "Panel-wise voltage, current, PF & earthing" },
+  { id: "elec-sld",              label: "Electrical SLD Data",   shortLabel: "Elec SLD",  icon: "ri-node-tree",           color: "#14532d", desc: "MDB busbar, cables, MCCBs, ACDB, LDB & earthing" },
   { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
   { id: "questionnaire",  label: "Questionnaire",   shortLabel: "Questions",     icon: "ri-questionnaire-line",    color: "#0891b2", desc: "All active audit questions" },
   { id: "load-sheet",     label: "Load Sheet",       shortLabel: "Load Sheet",    icon: "ri-lightbulb-line",        color: "#16a34a", desc: "Equipment & power load details" },
