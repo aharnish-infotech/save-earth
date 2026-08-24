@@ -3783,66 +3783,374 @@ function QuestionnaireSection({ branchName, upsQAnswers }: {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STEP 8 — Onsite ATM  (questions sourced from Question Library — "Onsite ATM" section)
+// STEP 10 — Onsite ATM
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ── ATM-specific types ────────────────────────────────────────────────────────
+interface ATMUPSUnit {
+  id: string; make: string; capacityKVA: string;
+  batteryMake: string; batteryAh: string; batteryNos: string;
+}
+const newATMUPS = (): ATMUPSUnit => ({ id: uid(), make:"", capacityKVA:"", batteryMake:"", batteryAh:"", batteryNos:"" });
+
+interface ATMMCBRow { id: string; amp: string; pole: string; nos: string; }
+const newATMMCB = (): ATMMCBRow => ({ id: uid(), amp:"", pole:"1", nos:"" });
+
+interface ATMLoadRow { id: string; type: string; nos: string; watt: string; }
+const newATMLoadRow = (): ATMLoadRow => ({ id: uid(), type:"", nos:"", watt:"" });
+
+interface ATMLoadGroupDef { id: string; label: string; typeOptions: string[]; defaultWatts: Record<string,string>; }
+const ATM_LOAD_DEFS: ATMLoadGroupDef[] = [
+  { id:"lighting", label:"Lighting & Fan Load",
+    typeOptions:["Ceiling Fan","BLDC Ceiling Fan","Exhaust Fan","BLDC Exhaust Fan","LED Tube Light (4ft)","Down Lights","Flush Lights 2×2","LED Panel Lights","Emergency Lights","Other Lighting / Fan"],
+    defaultWatts:{"Ceiling Fan":"75","BLDC Ceiling Fan":"28","Exhaust Fan":"30","BLDC Exhaust Fan":"18","LED Tube Light (4ft)":"18","Down Lights":"12","Flush Lights 2×2":"36","LED Panel Lights":"18","Emergency Lights":"8"},
+  },
+  { id:"ac", label:"AC Load",
+    typeOptions:["Split AC — Inverter","Split AC — Non-Inverter","Window AC — Inverter","Window AC — Non-Inverter","Cassette AC — Inverter","Cassette AC — Non-Inverter","Other AC"],
+    defaultWatts:{"Split AC — Inverter":"900","Split AC — Non-Inverter":"1500","Window AC — Inverter":"800","Window AC — Non-Inverter":"1100","Cassette AC — Inverter":"1200","Cassette AC — Non-Inverter":"2000"},
+  },
+  { id:"machines", label:"ATM / CDM Machine Load",
+    typeOptions:["ATM Machine (Onsite)","CDM Machine (Cash Deposit)","Recycler Machine","Passbook Printer","Tab / Kiosk","UPS / Battery Charger","Other Machine"],
+    defaultWatts:{"ATM Machine (Onsite)":"300","CDM Machine (Cash Deposit)":"350","Recycler Machine":"400","Passbook Printer":"50","Tab / Kiosk":"30","UPS / Battery Charger":"200"},
+  },
+];
+interface ATMLoadGroup extends ATMLoadGroupDef { rows: ATMLoadRow[]; }
+
 const ATM_QUESTIONS = AUDIT_QUESTIONS.filter(q => q.section === "Onsite ATM");
+const ATM_PUR = "#7c3aed";
 
 function OnsiteATMSection({ branchName }: { branchName: string }) {
+  // ── State ─────────────────────────────────────────────────────────────────
+  const [upsUnits, setUpsUnits]       = useState<ATMUPSUnit[]>([newATMUPS()]);
+
+  // Electrical parameters — flat, avoids Record<string,string> TS indexing issues
+  const [crA,  setCrA]  = useState(""); const [cyA,  setCyA]  = useState("");
+  const [cbA,  setCbA]  = useState(""); const [cnA,  setCnA]  = useState("");
+  const [enV,  setEnV]  = useState(""); const [enRem,setEnRem]= useState("");
+
+  // SLD data
+  const [sldSqmm,     setSldSqmm]     = useState("");
+  const [sldCore,     setSldCore]     = useState("");
+  const [mainDbA,     setMainDbA]     = useState("");
+  const [mainDbPole,  setMainDbPole]  = useState("");
+  const [powerMcbs,   setPowerMcbs]   = useState<ATMMCBRow[]>([newATMMCB()]);
+  const [upsDbMcbs,   setUpsDbMcbs]   = useState<ATMMCBRow[]>([newATMMCB()]);
+  const [atmPhoto,    setAtmPhoto]    = useState<string | null>(null);
+
+  // Load sheet
+  const [loadGroups, setLoadGroups]   = useState<ATMLoadGroup[]>(
+    ATM_LOAD_DEFS.map(d => ({ ...d, rows: [newATMLoadRow()] }))
+  );
+
+  // Questions
   const initAnswers = () => Object.fromEntries(ATM_QUESTIONS.map(q => [q.id, { answer:"", remarks:"", photo:null } as AuditAnswer]));
-  const [answers, setAnswers] = useState<Record<string, AuditAnswer>>(initAnswers);
+  const [answers, setAnswers]         = useState<Record<string, AuditAnswer>>(initAnswers);
+
+  // Section open state
+  const [secOpen, setSecOpen] = useState({ ups:true, elec:true, sld:true, load:true, qs:true });
   const [saved, setSaved]     = useState(false);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const updUPS = (id: string, field: keyof ATMUPSUnit, val: string) =>
+    setUpsUnits(us => us.map(u => u.id !== id ? u : { ...u, [field]: val }));
+
+  const updMCB = (setter: React.Dispatch<React.SetStateAction<ATMMCBRow[]>>, id: string, field: keyof ATMMCBRow, val: string) =>
+    setter(rows => rows.map(r => r.id !== id ? r : { ...r, [field]: val }));
+  const delMCB = (setter: React.Dispatch<React.SetStateAction<ATMMCBRow[]>>, id: string) =>
+    setter(rows => rows.filter(r => r.id !== id));
+
+  const addLoadRow = (gid: string) =>
+    setLoadGroups(gs => gs.map(g => g.id !== gid ? g : { ...g, rows: [...g.rows, newATMLoadRow()] }));
+  const delLoadRow = (gid: string, rid: string) =>
+    setLoadGroups(gs => gs.map(g => g.id !== gid ? g : { ...g, rows: g.rows.filter(r => r.id !== rid) }));
+  const updLoadRow = useCallback((gid: string, rid: string, field: keyof ATMLoadRow, val: string) =>
+    setLoadGroups(gs => gs.map(g => {
+      if (g.id !== gid) return g;
+      return { ...g, rows: g.rows.map(r => {
+        if (r.id !== rid) return r;
+        const upd: ATMLoadRow = { ...r, [field]: val };
+        if (field === "type" && val && g.defaultWatts[val]) upd.watt = g.defaultWatts[val];
+        return upd;
+      })};
+    })), []);
 
   const onAnswer = (id: string, field: keyof AuditAnswer, val: string | null) =>
     setAnswers(prev => ({ ...prev, [id]: { ...prev[id], [field]: val } }));
 
-  const total    = ATM_QUESTIONS.length;
-  const answered = Object.values(answers).filter(a => a.answer).length;
-  const pct      = Math.round((answered / total) * 100);
-  const purple   = "#7c3aed";
+  const handlePhoto = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = e => setAtmPhoto(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
+  const tog = (k: keyof typeof secOpen) => setSecOpen(o => ({ ...o, [k]: !o[k] }));
+  const grand = loadGroups.reduce((s, g) => s + g.rows.reduce((a, r) => a + (parseFloat(r.nos)||0)*(parseFloat(r.watt)||0), 0), 0);
+  const qTotal = ATM_QUESTIONS.length;
+  const qAnswered = Object.values(answers).filter(a => a.answer).length;
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  // ── Shared styles ─────────────────────────────────────────────────────────
+  const INP_ATM: React.CSSProperties = { border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 10px", fontSize:12, color:"#111827", outline:"none", width:"100%", boxSizing:"border-box", background:"#fff" };
+  const LBL_ATM: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" };
+  const SEC_CARD: React.CSSProperties = { ...card, overflow:"hidden", marginBottom:12 };
+  const secHdr = (k: keyof typeof secOpen, title: string, icon: string, badge?: string): React.ReactNode => (
+    <button onClick={() => tog(k)}
+      style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"11px 16px", background:"#faf5ff", border:"none", borderBottom: secOpen[k] ? "1px solid #e9d5ff" : "none", cursor:"pointer", outline:"none" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+        <i className={icon} style={{ color:ATM_PUR, fontSize:15 }}/>
+        <span style={{ fontSize:13, fontWeight:800, color:"#3b0764" }}>{title}</span>
+        {badge && <span style={{ fontSize:10, fontWeight:700, color:ATM_PUR, background:"#ede9fe", borderRadius:20, padding:"2px 8px" }}>{badge}</span>}
+      </div>
+      <i className={`ri-arrow-${secOpen[k]?"up":"down"}-s-line`} style={{ color:ATM_PUR, fontSize:16 }}/>
+    </button>
+  );
+
+  // ── MCB row renderer ───────────────────────────────────────────────────────
+  const MCBRows = ({ rows, setter, label }: { rows: ATMMCBRow[]; setter: React.Dispatch<React.SetStateAction<ATMMCBRow[]>>; label: string }) => (
+    <div style={{ marginBottom:14 }}>
+      <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8 }}>{label}</div>
+      {rows.map(r => (
+        <div key={r.id} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 32px", gap:8, alignItems:"flex-end", marginBottom:8 }}>
+          <div>
+            <label style={LBL_ATM}>Amp (A)</label>
+            <input type="number" value={r.amp} onChange={e => updMCB(setter, r.id, "amp", e.target.value)} placeholder="e.g. 16" style={INP_ATM}/>
+          </div>
+          <div>
+            <label style={LBL_ATM}>Pole <span style={{ color:"#9ca3af", fontWeight:400 }}>(default 1)</span></label>
+            <input type="number" min="1" value={r.pole} onChange={e => updMCB(setter, r.id, "pole", e.target.value)} placeholder="1" style={INP_ATM}/>
+          </div>
+          <div>
+            <label style={LBL_ATM}>Nos.</label>
+            <input type="number" value={r.nos} onChange={e => updMCB(setter, r.id, "nos", e.target.value)} placeholder="e.g. 2" style={INP_ATM}/>
+          </div>
+          <button onClick={() => delMCB(setter, r.id)} disabled={rows.length === 1}
+            style={{ height:36, width:32, borderRadius:7, border:"1px solid #fecaca", background:rows.length===1?"#f9fafb":"#fff5f5", color:rows.length===1?"#d1d5db":"#ef4444", cursor:rows.length===1?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>
+            <i className="ri-delete-bin-line"/>
+          </button>
+        </div>
+      ))}
+      <button onClick={() => setter(r => [...r, newATMMCB()])}
+        style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:7, border:"1.5px dashed #9ca3af", background:"transparent", color:"#6b7280", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+        <i className="ri-add-line"/>Add {label} Row
+      </button>
+    </div>
+  );
 
   return (
     <div>
       {saved && (
         <div style={{ marginBottom:14, background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
-          <i className="ri-checkbox-circle-fill" style={{ color:purple, fontSize:18 }}/>
-          <span style={{ fontSize:13, fontWeight:700, color:"#4c1d95" }}>Onsite ATM checklist saved successfully</span>
+          <i className="ri-checkbox-circle-fill" style={{ color:ATM_PUR, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:"#4c1d95" }}>Onsite ATM data saved successfully</span>
         </div>
       )}
 
       {/* Header */}
-      <div style={{ background:"linear-gradient(135deg,#7c3aed,#6d28d9)", borderRadius:14, padding:"16px 18px", marginBottom:16, boxShadow:"0 4px 12px rgba(124,58,237,0.3)" }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <i className="ri-bank-card-line" style={{ color:"#fff", fontSize:20 }}/>
-            </div>
-            <div>
-              <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
-              <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>Onsite ATM — {total} questions from Question Library</div>
-            </div>
+      <div style={{ background:"linear-gradient(135deg,#7c3aed,#6d28d9)", borderRadius:14, padding:"16px 18px", marginBottom:14, boxShadow:"0 4px 12px rgba(124,58,237,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-bank-card-line" style={{ color:"#fff", fontSize:20 }}/>
           </div>
-          <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:24, fontWeight:900, color:"#fff", lineHeight:1 }}>{pct}%</div>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,0.7)", marginTop:2 }}>{answered}/{total} answered</div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName} — Onsite ATM</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>UPS · Electrical Parameters · SLD · Load Sheet · Checklist</div>
           </div>
-        </div>
-        <div style={{ marginTop:12, height:6, background:"rgba(255,255,255,0.2)", borderRadius:99, overflow:"hidden" }}>
-          <div style={{ height:"100%", width:`${pct}%`, background:"#fff", borderRadius:99, transition:"width 0.3s ease" }}/>
         </div>
       </div>
 
-      {/* Question cards — same layout as Questionnaire section */}
-      {ATM_QUESTIONS.map(q => (
-        <QuestionCard key={q.id} q={q} ans={answers[q.id]} onAnswer={onAnswer} />
-      ))}
+      {/* ── 1. UPS Details ── */}
+      <div style={SEC_CARD}>
+        {secHdr("ups","UPS Details","ri-battery-charge-line",`${upsUnits.length} UPS`)}
+        {secOpen.ups && (
+          <div style={{ padding:"14px" }}>
+            {upsUnits.map((u, idx) => (
+              <div key={u.id} style={{ marginBottom:12, border:"1px solid #e9d5ff", borderRadius:10, overflow:"hidden" }}>
+                <div style={{ background:"#f5f3ff", padding:"8px 14px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:"1px solid #e9d5ff" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ width:24, height:24, borderRadius:6, background:ATM_PUR, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <span style={{ fontSize:12, fontWeight:900, color:"#fff" }}>{idx+1}</span>
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:800, color:"#3b0764" }}>UPS {idx+1}</span>
+                  </div>
+                  {upsUnits.length > 1 && (
+                    <button onClick={() => setUpsUnits(us => us.filter(x => x.id !== u.id))}
+                      style={{ border:"none", background:"transparent", cursor:"pointer", color:"#ef4444", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:4 }}>
+                      <i className="ri-delete-bin-line"/>Remove
+                    </button>
+                  )}
+                </div>
+                <div style={{ padding:"12px 14px", display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
+                  <div><label style={LBL_ATM}>UPS Make</label><input value={u.make} onChange={e => updUPS(u.id,"make",e.target.value)} placeholder="e.g. APC" style={INP_ATM}/></div>
+                  <div><label style={LBL_ATM}>Capacity (KVA)</label><input type="number" value={u.capacityKVA} onChange={e => updUPS(u.id,"capacityKVA",e.target.value)} placeholder="e.g. 1.5" style={INP_ATM}/></div>
+                  <div><label style={LBL_ATM}>Battery Make</label><input value={u.batteryMake} onChange={e => updUPS(u.id,"batteryMake",e.target.value)} placeholder="e.g. Exide" style={INP_ATM}/></div>
+                  <div><label style={LBL_ATM}>Capacity (Ah)</label><input type="number" value={u.batteryAh} onChange={e => updUPS(u.id,"batteryAh",e.target.value)} placeholder="e.g. 100" style={INP_ATM}/></div>
+                  <div><label style={LBL_ATM}>No. of Batteries</label><input type="number" value={u.batteryNos} onChange={e => updUPS(u.id,"batteryNos",e.target.value)} placeholder="e.g. 2" style={INP_ATM}/></div>
+                </div>
+              </div>
+            ))}
+            <button onClick={() => setUpsUnits(us => [...us, newATMUPS()])}
+              style={{ width:"100%", padding:"11px", borderRadius:9, border:`2px dashed ${ATM_PUR}`, background:"transparent", color:ATM_PUR, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+              <i className="ri-add-line" style={{ fontSize:16 }}/>+ Add UPS
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── 2. Electrical Parameters at Panel (ATM) ── */}
+      <div style={SEC_CARD}>
+        {secHdr("elec","Electrical Parameters at Panel (ATM)","ri-plug-line")}
+        {secOpen.elec && (
+          <div style={{ padding:"14px" }}>
+            <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:10 }}>Current (A)</div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
+              <div><label style={LBL_ATM}>R Phase (A)</label><input type="number" value={crA} onChange={e => setCrA(e.target.value)} placeholder="0.0" style={{ ...INP_ATM, color:"#2563eb", fontWeight:600 }}/></div>
+              <div><label style={LBL_ATM}>Y Phase (A)</label><input type="number" value={cyA} onChange={e => setCyA(e.target.value)} placeholder="0.0" style={{ ...INP_ATM, color:"#2563eb", fontWeight:600 }}/></div>
+              <div><label style={LBL_ATM}>B Phase (A)</label><input type="number" value={cbA} onChange={e => setCbA(e.target.value)} placeholder="0.0" style={{ ...INP_ATM, color:"#2563eb", fontWeight:600 }}/></div>
+              <div><label style={LBL_ATM}>Neutral (A)</label><input type="number" value={cnA} onChange={e => setCnA(e.target.value)} placeholder="0.0" style={{ ...INP_ATM, color:"#2563eb", fontWeight:600 }}/></div>
+            </div>
+            <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:10 }}>Earthing Voltage</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10 }}>
+              <div><label style={LBL_ATM}>E-N Voltage (V)</label><input type="number" value={enV} onChange={e => setEnV(e.target.value)} placeholder="0.0" style={{ ...INP_ATM, color:"#dc2626", fontWeight:600 }}/></div>
+              <div><label style={LBL_ATM}>Observations / Remarks</label><input value={enRem} onChange={e => setEnRem(e.target.value)} placeholder="Any observations…" style={INP_ATM}/></div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── 3. Electrical Distribution Data for SLD (ATM) ── */}
+      <div style={SEC_CARD}>
+        {secHdr("sld","Electrical Distribution Data for SLD (ATM)","ri-node-tree")}
+        {secOpen.sld && (
+          <div style={{ padding:"14px" }}>
+            <div style={{ fontSize:11, color:"#92400e", fontStyle:"italic", marginBottom:14, padding:"8px 12px", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8 }}>
+              Anything not filled is considered not installed and will be left vacant in SLD.
+            </div>
+
+            {/* Incomer */}
+            <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8 }}>Incomer Cable Size</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+              <div><label style={LBL_ATM}>SqMM</label><input value={sldSqmm} onChange={e => setSldSqmm(e.target.value)} placeholder="e.g. 16" style={INP_ATM}/></div>
+              <div><label style={LBL_ATM}>Core</label><input value={sldCore} onChange={e => setSldCore(e.target.value)} placeholder="e.g. 4" style={INP_ATM}/></div>
+            </div>
+
+            {/* Main Power DB */}
+            <div style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8 }}>Main Power DB</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+              <div><label style={LBL_ATM}>Amp (A)</label><input type="number" value={mainDbA} onChange={e => setMainDbA(e.target.value)} placeholder="e.g. 100" style={INP_ATM}/></div>
+              <div><label style={LBL_ATM}>Pole</label><input type="number" value={mainDbPole} onChange={e => setMainDbPole(e.target.value)} placeholder="e.g. 4" style={INP_ATM}/></div>
+            </div>
+
+            <MCBRows rows={powerMcbs} setter={setPowerMcbs} label="Power MCB"/>
+            <MCBRows rows={upsDbMcbs} setter={setUpsDbMcbs} label="UPS DB"/>
+
+            {/* Photo prompt */}
+            <div style={{ background:"#fefce8", border:"2px solid #fbbf24", borderRadius:10, padding:"12px 14px", marginTop:4 }}>
+              <div style={{ fontSize:12, fontWeight:800, color:"#92400e", marginBottom:10, display:"flex", alignItems:"center", gap:6 }}>
+                <i className="ri-camera-line" style={{ fontSize:15 }}/>PROMPT — Backroom Photo 1
+              </div>
+              {atmPhoto ? (
+                <div style={{ position:"relative", display:"inline-block" }}>
+                  <img src={atmPhoto} alt="Backroom" style={{ width:"100%", maxWidth:280, borderRadius:8, border:"2px solid #fbbf24" }}/>
+                  <button onClick={() => setAtmPhoto(null)}
+                    style={{ position:"absolute", top:4, right:4, width:24, height:24, borderRadius:6, border:"none", background:"#ef4444", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 }}>
+                    <i className="ri-close-line"/>
+                  </button>
+                </div>
+              ) : (
+                <label style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 14px", borderRadius:8, border:"1.5px dashed #f59e0b", cursor:"pointer", background:"#fff", width:"fit-content" }}>
+                  <i className="ri-camera-line" style={{ color:"#d97706", fontSize:16 }}/>
+                  <span style={{ fontSize:12, fontWeight:700, color:"#92400e" }}>Capture Backroom Photo</span>
+                  <input type="file" accept="image/*" capture="environment" style={{ display:"none" }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}/>
+                </label>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── 4. ATM Load Sheet ── */}
+      <div style={SEC_CARD}>
+        {secHdr("load","ATM Load Sheet","ri-lightbulb-line", grand > 0 ? `${grand.toFixed(0)} W` : undefined)}
+        {secOpen.load && (
+          <div style={{ padding:"14px" }}>
+            {loadGroups.map(group => {
+              const gt = group.rows.reduce((a, r) => a + (parseFloat(r.nos)||0)*(parseFloat(r.watt)||0), 0);
+              return (
+                <div key={group.id} style={{ marginBottom:16 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:ATM_PUR, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
+                    <div style={{ width:3, height:14, borderRadius:99, background:ATM_PUR }}/>
+                    {group.label}
+                    {gt > 0 && <span style={{ fontSize:11, fontWeight:800, color:"#16a34a", marginLeft:"auto" }}>{gt.toFixed(0)} W</span>}
+                  </div>
+                  {/* Column labels */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 80px 90px 80px 32px", gap:8, marginBottom:4, padding:"0 4px" }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" }}>Equipment Type</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", textAlign:"center" }}>Nos.</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", textAlign:"center" }}>Watt (W)</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", textAlign:"right" }}>Total W</div>
+                    <div/>
+                  </div>
+                  {group.rows.map(row => {
+                    const tw = (parseFloat(row.nos)||0) * (parseFloat(row.watt)||0);
+                    return (
+                      <div key={row.id} style={{ display:"grid", gridTemplateColumns:"1fr 80px 90px 80px 32px", gap:8, alignItems:"center", marginBottom:7, padding:"8px 10px", background:tw>0?"#f0fdf4":"#fafafa", borderRadius:8, border:`1px solid ${tw>0?"#bbf7d0":"#f3f4f6"}` }}>
+                        <select value={row.type} onChange={e => updLoadRow(group.id,row.id,"type",e.target.value)}
+                          style={{ border:"1px solid #e5e7eb", borderRadius:7, padding:"7px 8px", fontSize:12, color:row.type?"#111827":"#9ca3af", outline:"none", background:"#fff", fontWeight:600, width:"100%" }}>
+                          <option value="">— Select type —</option>
+                          {group.typeOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                        <input type="number" min="0" value={row.nos} placeholder="0" onChange={e => updLoadRow(group.id,row.id,"nos",e.target.value)}
+                          style={{ border:`1px solid ${parseFloat(row.nos)>0?"#86efac":"#e5e7eb"}`, borderRadius:7, padding:"7px 6px", fontSize:12, color:parseFloat(row.nos)>0?"#16a34a":"#9ca3af", outline:"none", textAlign:"center", width:"100%", boxSizing:"border-box", background:parseFloat(row.nos)>0?"#f0fdf4":"#fff" }}/>
+                        <input type="number" min="0" value={row.watt} placeholder="W" onChange={e => updLoadRow(group.id,row.id,"watt",e.target.value)}
+                          style={{ border:"1px solid #e5e7eb", borderRadius:7, padding:"7px 6px", fontSize:12, color:"#2563eb", outline:"none", textAlign:"center", width:"100%", boxSizing:"border-box", fontWeight:600 }}/>
+                        <div style={{ fontSize:13, fontWeight:tw>0?800:400, color:tw>0?"#16a34a":"#d1d5db", textAlign:"right", paddingRight:4 }}>{tw>0?tw.toFixed(0):"—"}</div>
+                        <button onClick={() => delLoadRow(group.id,row.id)} disabled={group.rows.length===1}
+                          style={{ width:28, height:28, borderRadius:7, border:"1px solid #fecaca", background:group.rows.length===1?"#f9fafb":"#fff5f5", color:group.rows.length===1?"#d1d5db":"#ef4444", cursor:group.rows.length===1?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>
+                          <i className="ri-delete-bin-line"/>
+                        </button>
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => addLoadRow(group.id)}
+                    style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:8, border:`1.5px dashed ${ATM_PUR}`, background:"transparent", color:ATM_PUR, fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                    <i className="ri-add-line" style={{ fontSize:15 }}/>Add Row
+                  </button>
+                </div>
+              );
+            })}
+            {grand > 0 && (
+              <div style={{ background:"linear-gradient(135deg,#7c3aed,#6d28d9)", borderRadius:10, padding:"13px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <span style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:"0.05em" }}>ATM Grand Total</span>
+                <div style={{ textAlign:"right" }}>
+                  <div style={{ fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{grand.toFixed(0)} W</div>
+                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.7)", marginTop:2 }}>{(grand/1000).toFixed(2)} kW</div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── 5. ATM Checklist (questions) ── */}
+      {ATM_QUESTIONS.length > 0 && (
+        <div style={SEC_CARD}>
+          {secHdr("qs","ATM Checklist","ri-questionnaire-line",`${qAnswered}/${qTotal}`)}
+          {secOpen.qs && (
+            <div style={{ padding:"12px 14px" }}>
+              {ATM_QUESTIONS.map(q => (
+                <QuestionCard key={q.id} q={q} ans={answers[q.id]} onAnswer={onAnswer}/>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Save */}
       <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8 }}>
         <button onClick={save}
           style={{ padding:"13px 32px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#7c3aed,#6d28d9)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(124,58,237,0.35)" }}>
-          <i className="ri-save-line"/>Save ATM Checklist
+          <i className="ri-save-line"/>Save ATM Data
         </button>
       </div>
     </div>
