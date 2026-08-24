@@ -57,7 +57,7 @@ export const RAIL_ITEMS: RailItem[] = [
       items: [
         { label: "Branches",         href: "/branches",      icon: "ri-building-2-line"    },
         { label: "Banks",            href: "/banks",         icon: "ri-bank-line"          },
-        { label: "Organisation",     href: "/organisation",        icon: "ri-organization-chart" },
+        { label: "Org Units",        href: "/organisation",        icon: "ri-organization-chart" },
         { label: "Hierarchy Levels", href: "/organisation/levels", icon: "ri-list-settings-line" },
         { label: "Branch Types",     href: "/branch-types",  icon: "ri-git-branch-line"    },
       ],
