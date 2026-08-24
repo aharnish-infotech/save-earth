@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1400" viewBox="0 0 1200 1400">
+<defs>
+  <linearGradient id="tower" x1="0" x2="1">
+    <stop offset="0" stop-color="#D9F4F2"/>
+    <stop offset=".5" stop-color="#FFFFFF"/>
+    <stop offset="1" stop-color="#A7D9D7"/>
+  </linearGradient>
+  <linearGradient id="nacelle" x1="0" x2="1">
+    <stop offset="0" stop-color="#0F766E"/>
+    <stop offset="1" stop-color="#164E63"/>
+  </linearGradient>
+  <linearGradient id="blade" x1="0" x2="1">
+    <stop offset="0" stop-color="#F8FAFC"/>
+    <stop offset=".7" stop-color="#D9F4F2"/>
+    <stop offset="1" stop-color="#94D7D2"/>
+  </linearGradient>
+  <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#0F172A"/>
+    <stop offset="1" stop-color="#123C43"/>
+  </linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+    <feDropShadow dx="0" dy="12" stdDeviation="14" flood-opacity=".16"/>
+  </filter>
+</defs>
+
+<!-- sky -->
+<!-- bg removed for transparency -->
+<path d="M95 380c30-38 87-38 116 0 29-17 71 0 72 34H70c0-18 9-27 25-34z" fill="#DDECEF"/>
+<path d="M875 270c34-52 104-48 128 5 42-19 91 10 90 53H820c1-27 22-44 55-58z" fill="#DDECEF"/>
+
+<!-- distant land -->
+<path d="M70 930 C230 880 355 925 500 900 C690 865 820 915 1120 885 L1120 1120 L70 1120Z" fill="#E2F1F3"/>
+<g fill="#C7D8DC" opacity=".9">
+  <path d="M105 945c10-74 57-108 91-50 18-72 80-68 91 2 32-25 67 5 57 48z"/>
+  <path d="M835 950c9-70 56-105 91-48 19-71 79-67 91 3 30-26 68 3 57 45z"/>
+  <path d="M250 945c8-61 49-92 79-42 15-57 66-56 78 2 27-22 57 4 48 40z"/>
+</g>
+
+<!-- ground -->
+<path d="M40 1090 C180 1035 310 1080 430 1065 C600 1040 755 1095 910 1060 C1030 1032 1090 1070 1160 1095 L1160 1240 C1040 1290 950 1250 830 1270 C660 1300 540 1260 410 1280 C260 1305 145 1285 55 1250 C120 1200 115 1160 40 1090Z" fill="#287A4A"/>
+<path d="M300 1170c130-38 350-28 530 0-75 70-405 70-530 0z" fill="#1F613C" opacity=".65"/>
+
+<!-- tower shadow -->
+<ellipse cx="600" cy="1195" rx="170" ry="30" fill="#174B35" opacity=".35"/>
+
+<!-- tower -->
+<path d="M535 450 L665 450 L685 1140 L515 1140 Z" fill="url(#tower)" stroke="#9CC6C8" stroke-width="3"/>
+<path d="M552 470 L570 1115" stroke="#FFFFFF" stroke-width="12" opacity=".8"/>
+<path d="M648 470 L632 1115" stroke="#8CBEC0" stroke-width="8" opacity=".5"/>
+<g stroke="#159E9A" stroke-width="7">
+  <path d="M528 690 L672 690"/>
+  <path d="M520 890 L678 890"/>
+</g>
+
+<!-- base -->
+<path d="M500 1120 Q600 1095 700 1120 L715 1190 Q600 1210 485 1190Z" fill="#F3FAF9" stroke="#9CC6C8" stroke-width="4"/>
+<path d="M505 1170 Q600 1190 695 1170 L680 1215 Q600 1235 520 1215Z" fill="#D1E8E7"/>
+
+<!-- nacelle -->
+<g filter="url(#shadow)">
+  <path d="M430 410 Q440 370 485 365 L690 365 Q735 370 750 408 L745 475 L470 475 Q430 463 430 410Z" fill="url(#nacelle)"/>
+  <path d="M470 385 L680 385 Q710 390 720 410 L710 455 L470 455Z" fill="#F4FBFB"/>
+  <path d="M650 390 Q670 420 650 452" fill="none" stroke="#0EA5A5" stroke-width="7"/>
+  <rect x="665" y="402" width="43" height="32" rx="5" fill="#D9F4F2"/>
+  <rect x="672" y="410" width="9" height="18" rx="2" fill="#F4B942"/>
+  <rect x="686" y="407" width="9" height="21" rx="2" fill="#32A852"/>
+  <rect x="700" y="404" width="9" height="24" rx="2" fill="#0EA5A5"/>
+</g>
+
+<!-- hub -->
+<circle cx="445" cy="420" r="55" fill="#FFFFFF" stroke="#A7D9D7" stroke-width="6"/>
+<circle cx="445" cy="420" r="23" fill="#164E63"/>
+
+<!-- blades, mirrored face direction -->
+<g transform="translate(445 420)">
+  <animateTransform attributeName="transform" attributeType="XML"
+    type="rotate" from="0 0 0" to="-360 0 0" dur="4s" repeatCount="indefinite" additive="sum"/>
+  <g transform="rotate(-90)">
+    <path d="M15 -15 C70 -42 150 -130 245 -275 C260 -298 276 -300 284 -279 C260 -175 202 -62 65 5Z" fill="url(#blade)" stroke="#A7D9D7" stroke-width="4"/>
+    <path d="M246 -276 L284 -279 C276 -263 272 -248 266 -232 L230 -244Z" fill="#E45B6A"/>
+    <path d="M238 -258 L275 -261" stroke="#FFFFFF" stroke-width="8"/>
+  </g>
+  <g transform="rotate(30)">
+    <path d="M15 -15 C70 -42 150 -130 245 -275 C260 -298 276 -300 284 -279 C260 -175 202 -62 65 5Z" fill="url(#blade)" stroke="#A7D9D7" stroke-width="4"/>
+    <path d="M246 -276 L284 -279 C276 -263 272 -248 266 -232 L230 -244Z" fill="#E45B6A"/>
+    <path d="M238 -258 L275 -261" stroke="#FFFFFF" stroke-width="8"/>
+  </g>
+  <g transform="rotate(150)">
+    <path d="M15 -15 C70 -42 150 -130 245 -275 C260 -298 276 -300 284 -279 C260 -175 202 -62 65 5Z" fill="url(#blade)" stroke="#A7D9D7" stroke-width="4"/>
+    <path d="M246 -276 L284 -279 C276 -263 272 -248 266 -232 L230 -244Z" fill="#E45B6A"/>
+    <path d="M238 -258 L275 -261" stroke="#FFFFFF" stroke-width="8"/>
+  </g>
+</g>
+
+<!-- control panel -->
+<g filter="url(#shadow)">
+  <rect x="520" y="835" width="250" height="155" rx="12" fill="#F4B942"/>
+  <rect x="535" y="850" width="220" height="125" rx="7" fill="url(#screen)"/>
+  <g stroke="#39D98A" stroke-width="5" fill="none">
+    <rect x="550" y="868" width="82" height="12"/>
+    <rect x="550" y="890" width="82" height="12"/>
+    <rect x="550" y="912" width="82" height="12"/>
+    <path d="M650 920 L675 900 L695 910 L720 880 L742 900"/>
+  </g>
+  <g stroke="#E2E8F0" stroke-width="3">
+    <path d="M650 866h90M650 880h70M650 940h85M650 952h60"/>
+  </g>
+</g>
+
+<!-- red flowers/base accent -->
+<g fill="#E45B6A">
+  <path d="M535 1200c-35-60-80-50-60 10 20 35 50 45 70 22z"/>
+  <path d="M565 1210c-10-72 30-90 50-25 10 38-8 61-35 68z"/>
+  <path d="M610 1210c20-72 62-67 56 0-8 38-30 52-55 45z"/>
+  <path d="M655 1215c35-65 73-45 48 15-20 31-45 35-62 15z"/>
+</g>
+
+<!-- worker on the right: mirrored composition -->
+<g>
+  <!-- legs -->
+  <path d="M870 1080 L900 1080 L885 1170 L855 1170Z" fill="#1976A8"/>
+  <path d="M915 1080 L942 1082 L958 1168 L930 1170Z" fill="#1976A8"/>
+  <ellipse cx="868" cy="1175" rx="24" ry="8" fill="#3D245A"/>
+  <ellipse cx="946" cy="1173" rx="24" ry="8" fill="#3D245A"/>
+  <!-- torso -->
+  <path d="M850 955 Q900 930 948 958 L950 1075 Q900 1100 852 1075Z" fill="#F97316"/>
+  <path d="M855 985 Q900 1000 946 985" fill="none" stroke="#FFE9A8" stroke-width="8"/>
+  <path d="M860 1008 Q900 1020 944 1008" fill="none" stroke="#FFE9A8" stroke-width="8"/>
+  <!-- arms -->
+  <path d="M858 970 Q825 1010 790 955 L805 945 Q830 970 870 950Z" fill="#C0267D"/>
+  <path d="M943 970 Q970 1010 990 1050 L975 1060 Q940 1030 930 995Z" fill="#C0267D"/>
+  <!-- head -->
+  <circle cx="900" cy="920" r="34" fill="#F3B49A"/>
+  <!-- hair -->
+  <path d="M865 915 Q870 870 915 875 Q950 885 936 925 Q925 900 905 902 Q890 920 865 915Z" fill="#1976D2"/>
+  <path d="M875 900 Q850 915 858 950 Q870 965 883 945 L880 920Z" fill="#1976D2"/>
+  <!-- cap -->
+  <path d="M866 891 Q900 865 930 890 L925 903 L875 903Z" fill="#2563EB"/>
+  <!-- hand pointing -->
+  <circle cx="795" cy="951" r="9" fill="#F3B49A"/>
+  <!-- clipboard -->
+  <rect x="970" y="1040" width="55" height="85" rx="5" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="3"/>
+  <path d="M980 1060h35M980 1073h35M980 1086h28M980 1099h35" stroke="#64748B" stroke-width="3"/>
+</g>
+
+<!-- subtle decorative renewable-energy arcs -->
+<path d="M780 610 Q930 520 1050 610" fill="none" stroke="#B9E4E2" stroke-width="6" stroke-linecap="round"/>
+<path d="M800 630 Q930 560 1030 630" fill="none" stroke="#D9F4F2" stroke-width="4" stroke-linecap="round"/>
+
+</svg>

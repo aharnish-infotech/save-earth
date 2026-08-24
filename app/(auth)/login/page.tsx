@@ -105,6 +105,26 @@ export default function LoginPage() {
           }}
         />
 
+        {/* Windmill 2 — bottom right */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/media/windmill2.svg"
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            bottom: 0,
+            right: 32,
+            height: 320,
+            width: "auto",
+            pointerEvents: "none",
+            userSelect: "none",
+            opacity: 0.9,
+            zIndex: 10,
+            display: "block",
+          }}
+        />
+
         {/* Card */}
         <div style={{
           width: "100%", maxWidth: 380,
