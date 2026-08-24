@@ -13,8 +13,8 @@ const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color:
   { id: "electrical-parameters", label: "Electrical Parameters", shortLabel: "Electrical",icon: "ri-plug-line",           color: "#166534", desc: "Panel-wise voltage, current, PF & earthing" },
   { id: "elec-sld",              label: "Electrical SLD Data",   shortLabel: "Elec SLD",  icon: "ri-node-tree",           color: "#14532d", desc: "MDB busbar, cables, MCCBs, ACDB, LDB & earthing" },
   { id: "questionnaire",  label: "Questionnaire",   shortLabel: "Questions",     icon: "ri-questionnaire-line",    color: "#0891b2", desc: "All active audit questions" },
-  { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
   { id: "load-sheet",     label: "Load Sheet",       shortLabel: "Load Sheet",    icon: "ri-lightbulb-line",        color: "#16a34a", desc: "Equipment & power load details" },
+  { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
   { id: "onsite-atm",    label: "Onsite ATM",       shortLabel: "ATM",           icon: "ri-bank-card-line",        color: "#7c3aed", desc: "ATM safety & compliance checklist" },
   { id: "dg-set",                label: "Diesel Generator",      shortLabel: "DG Set",    icon: "ri-settings-3-line",    color: "#b91c1c", desc: "DG specs, batteries & risk" },
 ];

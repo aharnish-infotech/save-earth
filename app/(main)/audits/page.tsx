@@ -209,8 +209,8 @@ export default function AllAuditsPage() {
                       {/* Audited By */}
                       <td style={TD}>
                         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                          <div style={{ width:32, height:32, borderRadius:8, background:"linear-gradient(135deg,#16a34a,#15803d)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:11, fontWeight:700, flexShrink:0 }}>
-                            {a.auditor.split(" ").map(w => w[0]).join("").slice(0,2)}
+                          <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#16a34a,#15803d)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:11, fontWeight:700, flexShrink:0 }}>
+                            {a.auditor.split(" ").filter(Boolean).map(w => w[0].toUpperCase()).filter((_, i, arr) => i === 0 || i === arr.length - 1).join("")}
                           </div>
                           <div>
                             <div style={{ fontWeight:600, fontSize:13, color:"#111827" }}>{a.auditor}</div>
