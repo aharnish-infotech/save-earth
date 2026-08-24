@@ -306,8 +306,9 @@ export default function NotFound() {
             }}>
               <i className="ri-focus-3-line" style={{ fontSize: 14, color: "#fff" }}/>
             </div>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#374151", letterSpacing: "0.05em" }}>ORBIT</span>
-            <span style={{ fontSize: 11, color: "#4b5563" }}>InspectFlow ERP</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "#f9fafb", letterSpacing: "0.08em", fontFamily: "monospace" }}>ORBIT</span>
+            <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.15)", display: "inline-block" }}/>
+            <span style={{ fontSize: 11, color: "#6b7280", fontFamily: "monospace", letterSpacing: "0.04em" }}>InspectFlow ERP</span>
           </div>
 
         </div>
