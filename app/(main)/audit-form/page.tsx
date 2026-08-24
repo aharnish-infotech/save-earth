@@ -1253,8 +1253,9 @@ function UPSCard({
 }
 
 function UPSParametersSection({ branchName }: { branchName: string }) {
-  const [units, setUnits] = useState<UPSUnit[]>([newUPS(0)]);
-  const [saved, setSaved] = useState(false);
+  const [units, setUnits]       = useState<UPSUnit[]>([newUPS(0)]);
+  const [saved, setSaved]       = useState(false);
+  const [schemaOpen, setSchemaOpen] = useState(false);
 
   const violet = "#6d28d9"; const violetDark = "#4c1d95";
 
@@ -1307,6 +1308,296 @@ function UPSParametersSection({ branchName }: { branchName: string }) {
           style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${violet},${violetDark})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(109,40,217,0.35)" }}>
           <i className="ri-save-line"/>Save UPS Parameters
         </button>
+      </div>
+
+      {/* ── DB Schema Reference ─────────────────────────────────────────────── */}
+      <div style={{ marginTop:24, borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+        {/* Toggle header */}
+        <button
+          onClick={() => setSchemaOpen(o => !o)}
+          style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px", background:"#1e1b4b", border:"none", cursor:"pointer", outline:"none" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:32, height:32, borderRadius:8, background:"rgba(167,139,250,0.2)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-database-2-line" style={{ color:"#a78bfa", fontSize:16 }}/>
+            </div>
+            <div style={{ textAlign:"left" }}>
+              <div style={{ fontSize:13, fontWeight:800, color:"#fff" }}>Developer Reference — DB Schema</div>
+              <div style={{ fontSize:11, color:"#a78bfa", marginTop:2 }}>PostgreSQL + Prisma — UPS Parameters (Step 3)</div>
+            </div>
+          </div>
+          <i className={`ri-arrow-${schemaOpen ? "up" : "down"}-s-line`} style={{ color:"#a78bfa", fontSize:20 }}/>
+        </button>
+
+        {schemaOpen && (
+          <div style={{ background:"#0f172a", padding:"20px 22px", overflowX:"auto" }}>
+
+            {/* Branch Unique ID callout */}
+            <div style={{ background:"rgba(167,139,250,0.12)", border:"1px solid rgba(167,139,250,0.3)", borderRadius:10, padding:"12px 16px", marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#a78bfa", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>Primary Reference Key</div>
+              <code style={{ fontSize:13, fontWeight:700, color:"#e2e8f0" }}>branch_unique_id  UUID  FK → branches(id)</code>
+              <p style={{ fontSize:12, color:"#94a3b8", margin:"6px 0 0", lineHeight:1.6 }}>
+                Denormalised into <code style={{ color:"#c4b5fd" }}>audit_ups_units</code> so any UPS record can be queried directly by branch without joining through <code style={{ color:"#c4b5fd" }}>audit_sessions</code>.
+              </p>
+            </div>
+
+            {/* ERD */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Entity Relationship</div>
+              <pre style={{ fontSize:12, color:"#94a3b8", margin:0, lineHeight:1.8, fontFamily:"monospace" }}>{`branches
+  └── audit_sessions       [1 branch : many sessions]
+        └── audit_ups_units  [1 session : many UPS units]`}</pre>
+            </div>
+
+            {/* Enums */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Enums</div>
+              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`CREATE TYPE ups_type_enum    AS ENUM ('Branch', 'ATM');
+CREATE TYPE ups_device_enum  AS ENUM ('UPS', 'Inverter');
+CREATE TYPE ups_phase_enum   AS ENUM ('1-Phase', '3-Phase');
+CREATE TYPE audit_status_enum AS ENUM (
+  'DRAFT','IN_PROGRESS','COMPLETED','SUBMITTED','APPROVED','REJECTED'
+);`}</pre>
+            </div>
+
+            {/* audit_sessions */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Table: audit_sessions</div>
+              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`CREATE TABLE audit_sessions (
+  id               UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  branch_unique_id UUID          NOT NULL REFERENCES branches(id),
+  auditor_id       UUID          NOT NULL REFERENCES users(id),
+  audit_date       DATE          NOT NULL,
+  status           audit_status_enum NOT NULL DEFAULT 'DRAFT',
+  audit_lat        DOUBLE PRECISION,
+  audit_lng        DOUBLE PRECISION,
+  submitted_at     TIMESTAMPTZ,
+  approved_at      TIMESTAMPTZ,
+  approved_by      UUID          REFERENCES users(id),
+  created_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  deleted_at       TIMESTAMPTZ
+);
+
+CREATE INDEX idx_audit_sessions_branch  ON audit_sessions(branch_unique_id);
+CREATE INDEX idx_audit_sessions_auditor ON audit_sessions(auditor_id);
+CREATE INDEX idx_audit_sessions_date    ON audit_sessions(audit_date);
+CREATE INDEX idx_audit_sessions_status  ON audit_sessions(status);`}</pre>
+            </div>
+
+            {/* audit_ups_units */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Table: audit_ups_units</div>
+              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`CREATE TABLE audit_ups_units (
+  id                    UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
+  -- Reference keys
+  audit_session_id      UUID    NOT NULL REFERENCES audit_sessions(id) ON DELETE CASCADE,
+  branch_unique_id      UUID    NOT NULL REFERENCES branches(id),  -- denormalised
+
+  -- Identity
+  unit_index            SMALLINT NOT NULL DEFAULT 1,     -- 1-based display order
+  unit_name             VARCHAR(50) NOT NULL DEFAULT 'UPS 1',
+
+  -- Classification
+  ups_type              ups_type_enum,    -- Branch | ATM
+  device_type           ups_device_enum,  -- UPS | Inverter
+
+  -- Spec table
+  make                  VARCHAR(100),
+  capacity_kva          NUMERIC(10,3),
+  phase_type            ups_phase_enum,   -- drives reading layout
+  battery_make          VARCHAR(100),
+  battery_capacity_ah   NUMERIC(8,2),
+  battery_count         SMALLINT,
+  spec_photo_key        TEXT,             -- S3/MinIO object key
+
+  -- Shared readings (1-Phase + 3-Phase)
+  input_ne_earthing_v   NUMERIC(8,3),    -- V  ← auto-fills output
+  output_voltage_pn_v   NUMERIC(8,3),    -- V
+  output_ne_earthing_v  NUMERIC(8,3),    -- V  default = input_ne_earthing_v
+  output_ne_photo_key   TEXT,
+  frequency_hz          NUMERIC(6,2),    -- Hz
+
+  -- 1-Phase only (NULL for 3-Phase)
+  input_voltage_pn_v    NUMERIC(8,3),    -- V  Input P-N
+  current_reading_a     NUMERIC(8,3),    -- A
+
+  -- 3-Phase only (NULL for 1-Phase)
+  input_voltage_rn_v    NUMERIC(8,3),    -- V
+  input_voltage_yn_v    NUMERIC(8,3),    -- V
+  input_voltage_bn_v    NUMERIC(8,3),    -- V
+  current_r_phase_a     NUMERIC(8,3),    -- A
+  current_y_phase_a     NUMERIC(8,3),    -- A
+  current_b_phase_a     NUMERIC(8,3),    -- A
+
+  -- Audit trail
+  created_by            UUID REFERENCES users(id),
+  updated_by            UUID REFERENCES users(id),
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at            TIMESTAMPTZ,
+
+  CONSTRAINT unique_ups_per_session UNIQUE (audit_session_id, unit_index),
+  CONSTRAINT ups_index_positive     CHECK  (unit_index >= 1),
+  CONSTRAINT ups_kva_positive       CHECK  (capacity_kva IS NULL OR capacity_kva > 0),
+  CONSTRAINT ups_batt_positive      CHECK  (battery_capacity_ah IS NULL OR battery_capacity_ah > 0),
+  CONSTRAINT ups_batt_count_pos     CHECK  (battery_count IS NULL OR battery_count > 0)
+);
+
+CREATE INDEX idx_ups_session        ON audit_ups_units(audit_session_id);
+CREATE INDEX idx_ups_branch         ON audit_ups_units(branch_unique_id);
+CREATE INDEX idx_ups_branch_session ON audit_ups_units(branch_unique_id, audit_session_id);
+CREATE INDEX idx_ups_phase          ON audit_ups_units(phase_type);
+CREATE INDEX idx_ups_deleted        ON audit_ups_units(deleted_at) WHERE deleted_at IS NULL;`}</pre>
+            </div>
+
+            {/* Trigger */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Trigger — Auto-fill Output N-E Earthing</div>
+              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`CREATE OR REPLACE FUNCTION fn_ups_ne_earthing_default()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.output_ne_earthing_v IS NULL AND NEW.input_ne_earthing_v IS NOT NULL THEN
+    NEW.output_ne_earthing_v := NEW.input_ne_earthing_v;
+  END IF;
+  NEW.updated_at := NOW();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_ups_ne_earthing_default
+  BEFORE INSERT OR UPDATE ON audit_ups_units
+  FOR EACH ROW EXECUTE FUNCTION fn_ups_ne_earthing_default();`}</pre>
+            </div>
+
+            {/* Prisma model */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Prisma Schema (schema.prisma)</div>
+              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`model AuditUpsUnit {
+  id                  String      @id @default(uuid())
+  auditSessionId      String      @map("audit_session_id")
+  branchUniqueId      String      @map("branch_unique_id")
+  unitIndex           Int         @map("unit_index")          @db.SmallInt
+  unitName            String      @map("unit_name")           @db.VarChar(50)
+  upsType             UpsType?    @map("ups_type")
+  deviceType          UpsDevice?  @map("device_type")
+  make                String?     @db.VarChar(100)
+  capacityKva         Decimal?    @map("capacity_kva")        @db.Decimal(10,3)
+  phaseType           UpsPhase?   @map("phase_type")
+  batteryMake         String?     @map("battery_make")        @db.VarChar(100)
+  batteryCapacityAh   Decimal?    @map("battery_capacity_ah") @db.Decimal(8,2)
+  batteryCount        Int?        @map("battery_count")       @db.SmallInt
+  specPhotoKey        String?     @map("spec_photo_key")
+  inputNeEarthingV    Decimal?    @map("input_ne_earthing_v") @db.Decimal(8,3)
+  outputVoltagePnV    Decimal?    @map("output_voltage_pn_v") @db.Decimal(8,3)
+  outputNeEarthingV   Decimal?    @map("output_ne_earthing_v")@db.Decimal(8,3)
+  outputNePhotoKey    String?     @map("output_ne_photo_key")
+  frequencyHz         Decimal?    @map("frequency_hz")        @db.Decimal(6,2)
+  inputVoltagePnV     Decimal?    @map("input_voltage_pn_v")  @db.Decimal(8,3)
+  currentReadingA     Decimal?    @map("current_reading_a")   @db.Decimal(8,3)
+  inputVoltageRnV     Decimal?    @map("input_voltage_rn_v")  @db.Decimal(8,3)
+  inputVoltageYnV     Decimal?    @map("input_voltage_yn_v")  @db.Decimal(8,3)
+  inputVoltageBnV     Decimal?    @map("input_voltage_bn_v")  @db.Decimal(8,3)
+  currentRPhaseA      Decimal?    @map("current_r_phase_a")   @db.Decimal(8,3)
+  currentYPhaseA      Decimal?    @map("current_y_phase_a")   @db.Decimal(8,3)
+  currentBPhaseA      Decimal?    @map("current_b_phase_a")   @db.Decimal(8,3)
+  createdBy           String?     @map("created_by")
+  updatedBy           String?     @map("updated_by")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt      @map("updated_at")
+  deletedAt           DateTime?   @map("deleted_at")
+  auditSession        AuditSession @relation(fields:[auditSessionId], references:[id], onDelete:Cascade)
+  branch              Branch       @relation(fields:[branchUniqueId], references:[id])
+  @@unique([auditSessionId, unitIndex])
+  @@index([branchUniqueId])
+  @@index([branchUniqueId, auditSessionId])
+  @@map("audit_ups_units")
+}`}</pre>
+            </div>
+
+            {/* Field mapping table */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>UI → DB Field Mapping</div>
+              <div style={{ background:"#1e293b", borderRadius:9, overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1.5fr 1.8fr 0.8fr 1fr", borderBottom:"2px solid #334155" }}>
+                  {["UI Label","DB Column","Type","Notes"].map(h => (
+                    <div key={h} style={{ padding:"8px 12px", fontSize:10, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
+                  ))}
+                </div>
+                {[
+                  ["Branch Unique ID",       "branch_unique_id",       "UUID",         "FK → branches(id)"],
+                  ["Audit Session ID",        "audit_session_id",       "UUID",         "FK → audit_sessions(id)"],
+                  ["UPS Label",               "unit_name",              "VARCHAR(50)",  "Editable, e.g. 'UPS 1'"],
+                  ["Order",                   "unit_index",             "SMALLINT",     "1-based"],
+                  ["TYPE dropdown",           "ups_type",               "UpsType",      "Branch | ATM"],
+                  ["UPS / Inverter?",         "device_type",            "UpsDevice",    "UPS | Inverter"],
+                  ["Make",                    "make",                   "VARCHAR(100)", ""],
+                  ["Capacity KVA",            "capacity_kva",           "DECIMAL(10,3)",""],
+                  ["1-Ph / 3-Ph",             "phase_type",             "UpsPhase",     "Drives reading layout"],
+                  ["Battery Make",            "battery_make",           "VARCHAR(100)", ""],
+                  ["Battery Ah",              "battery_capacity_ah",    "DECIMAL(8,2)", ""],
+                  ["No. of Batteries",        "battery_count",          "SMALLINT",     ""],
+                  ["UPS Photo",               "spec_photo_key",         "TEXT",         "S3/MinIO key"],
+                  ["Input Voltage P-N",       "input_voltage_pn_v",     "DECIMAL(8,3)", "1-Phase only · V"],
+                  ["Input N-E Earthing",      "input_ne_earthing_v",    "DECIMAL(8,3)", "Both · V · auto-fills output"],
+                  ["Output Voltage P-N",      "output_voltage_pn_v",    "DECIMAL(8,3)", "Both · V"],
+                  ["Output N-E Earthing",     "output_ne_earthing_v",   "DECIMAL(8,3)", "Both · V · default=input NE"],
+                  ["Output N-E Photo",        "output_ne_photo_key",    "TEXT",         "S3/MinIO key"],
+                  ["Current Reading",         "current_reading_a",      "DECIMAL(8,3)", "1-Phase only · A"],
+                  ["Frequency",               "frequency_hz",           "DECIMAL(6,2)", "Both · Hz"],
+                  ["Input Voltage R-N",       "input_voltage_rn_v",     "DECIMAL(8,3)", "3-Phase only · V"],
+                  ["Input Voltage Y-N",       "input_voltage_yn_v",     "DECIMAL(8,3)", "3-Phase only · V"],
+                  ["Input Voltage B-N",       "input_voltage_bn_v",     "DECIMAL(8,3)", "3-Phase only · V"],
+                  ["Current R Phase",         "current_r_phase_a",      "DECIMAL(8,3)", "3-Phase only · A"],
+                  ["Current Y Phase",         "current_y_phase_a",      "DECIMAL(8,3)", "3-Phase only · A"],
+                  ["Current B Phase",         "current_b_phase_a",      "DECIMAL(8,3)", "3-Phase only · A"],
+                ].map(([label, col, type, note], i) => (
+                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1.5fr 1.8fr 0.8fr 1fr", borderTop:"1px solid #1e293b", background: i%2===0 ? "#1e293b" : "#263145" }}>
+                    <div style={{ padding:"7px 12px", fontSize:11, color:"#e2e8f0", fontWeight:600 }}>{label}</div>
+                    <div style={{ padding:"7px 12px", fontFamily:"monospace", fontSize:11, color:"#c4b5fd" }}>{col}</div>
+                    <div style={{ padding:"7px 12px", fontFamily:"monospace", fontSize:10, color:"#94a3b8" }}>{type}</div>
+                    <div style={{ padding:"7px 12px", fontSize:11, color:"#64748b" }}>{note}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sample API payload */}
+            <div style={{ marginBottom:8 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Sample API Payload — POST /api/v1/audits/{"{session_id}"}/ups</div>
+              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`{
+  "branchUniqueId":   "b1a2c3d4-e5f6-7890-abcd-ef1234567890",
+  "auditSessionId":   "a9b8c7d6-e5f4-3210-fedc-ba0987654321",
+  "units": [
+    {
+      "unitIndex":        1,
+      "unitName":         "UPS 1",
+      "upsType":          "Branch",
+      "deviceType":       "UPS",
+      "make":             "APC",
+      "capacityKva":      10.0,
+      "phaseType":        "3-Phase",
+      "batteryMake":      "Exide",
+      "batteryCapacityAh": 42,
+      "batteryCount":     8,
+      "specPhotoKey":     "audits/{session_id}/ups/1/spec.jpg",
+      "inputVoltageRnV":  230.5,
+      "inputVoltageYnV":  231.0,
+      "inputVoltageBnV":  229.8,
+      "inputNeEarthingV": 1.2,
+      "outputVoltagePnV": 230.0,
+      "outputNeEarthingV": 1.2,
+      "outputNePhotoKey": "audits/{session_id}/ups/1/ne.jpg",
+      "currentRPhaseA":   12.4,
+      "currentYPhaseA":   11.9,
+      "currentBPhaseA":   12.1,
+      "frequencyHz":      50.0
+    }
+  ]
+}`}</pre>
+            </div>
+
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2150,3 +2441,383 @@ export default function AuditFormPage() {
     </div>
   );
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATABASE SCHEMA — UPS Parameters (Step 3)
+// For developer reference. All tables use PostgreSQL + Prisma ORM.
+// branch_unique_id is the UUID from the `branches` table and is the
+// primary foreign key linking every audit record back to the branch.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ENTITY RELATIONSHIP OVERVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  branches (existing)
+    └── audit_sessions          [1 branch : many audit sessions]
+          └── audit_ups_units   [1 session : many UPS units]
+
+  branch_unique_id flows through EVERY table so that any record can be
+  directly queried by branch without joining through audit_sessions.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  POSTGRESQL — RAW SQL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- ── ENUMS ───────────────────────────────────────────────────────────────────
+
+CREATE TYPE ups_type_enum      AS ENUM ('Branch', 'ATM');
+CREATE TYPE ups_device_enum    AS ENUM ('UPS', 'Inverter');
+CREATE TYPE ups_phase_enum     AS ENUM ('1-Phase', '3-Phase');
+CREATE TYPE audit_status_enum  AS ENUM ('DRAFT', 'IN_PROGRESS', 'COMPLETED', 'SUBMITTED', 'APPROVED', 'REJECTED');
+
+-- ── audit_sessions ───────────────────────────────────────────────────────────
+-- One row per audit visit to a branch.
+-- All step data (UPS, Electrical, Meters, Questionnaire…) hangs off this table.
+
+CREATE TABLE audit_sessions (
+  id                UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  branch_unique_id  UUID          NOT NULL REFERENCES branches(id) ON DELETE RESTRICT,
+  auditor_id        UUID          NOT NULL REFERENCES users(id),
+  audit_date        DATE          NOT NULL,
+  status            audit_status_enum NOT NULL DEFAULT 'DRAFT',
+
+  -- GPS at time of audit (from Step 1 GPS capture)
+  audit_lat         DOUBLE PRECISION,
+  audit_lng         DOUBLE PRECISION,
+
+  -- Timestamps
+  submitted_at      TIMESTAMPTZ,
+  approved_at       TIMESTAMPTZ,
+  approved_by       UUID          REFERENCES users(id),
+  created_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  deleted_at        TIMESTAMPTZ   -- soft delete
+);
+
+CREATE INDEX idx_audit_sessions_branch   ON audit_sessions(branch_unique_id);
+CREATE INDEX idx_audit_sessions_auditor  ON audit_sessions(auditor_id);
+CREATE INDEX idx_audit_sessions_date     ON audit_sessions(audit_date);
+CREATE INDEX idx_audit_sessions_status   ON audit_sessions(status);
+
+-- ── audit_ups_units ──────────────────────────────────────────────────────────
+-- One row per UPS/Inverter unit captured during the audit.
+-- A branch may have multiple UPS units (UPS 1, UPS 2 …).
+-- UPS 1 (unit_index = 1) TYPE is always 'Branch'.
+-- UPS 2+ can be 'Branch' or 'ATM'.
+
+CREATE TABLE audit_ups_units (
+  id                    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Reference keys
+  audit_session_id      UUID          NOT NULL REFERENCES audit_sessions(id) ON DELETE CASCADE,
+  branch_unique_id      UUID          NOT NULL REFERENCES branches(id),        -- denormalised for fast branch queries
+
+  -- Identity / ordering
+  unit_index            SMALLINT      NOT NULL DEFAULT 1,                       -- 1-based display order
+  unit_name             VARCHAR(50)   NOT NULL DEFAULT 'UPS 1',                 -- editable label e.g. "UPS 1", "UPS 2"
+
+  -- Classification (Step 3 header dropdowns)
+  ups_type              ups_type_enum,                                          -- Branch | ATM
+  device_type           ups_device_enum,                                        -- UPS | Inverter
+
+  -- ── Spec Table ─────────────────────────────────────────────────────────────
+  make                  VARCHAR(100),                                            -- UPS/Inverter Make   e.g. "APC", "Emerson"
+  capacity_kva          NUMERIC(10,3),                                           -- Capacity in KVA     e.g. 10.000
+  phase_type            ups_phase_enum,                                          -- 1-Phase | 3-Phase   drives reading table layout
+  battery_make          VARCHAR(100),                                            -- Make of Batteries   e.g. "Exide", "Amara Raja"
+  battery_capacity_ah   NUMERIC(8,2),                                            -- Battery capacity Ah e.g. 42.00
+  battery_count         SMALLINT,                                                -- Number of batteries e.g. 8
+
+  -- UPS spec photo (stored as S3/MinIO object key; resolve to URL via CDN)
+  spec_photo_key        TEXT,                                                    -- e.g. "audits/{session_id}/ups/{id}/spec.jpg"
+
+  -- ── Readings — SHARED (both 1-Phase and 3-Phase) ──────────────────────────
+  -- Input side
+  input_ne_earthing_v   NUMERIC(8,3),  -- Input N-E Earthing (V). This value auto-fills Output N-E Earthing.
+
+  -- Output side
+  output_voltage_pn_v   NUMERIC(8,3),  -- Output Voltage P-N (V)
+  output_ne_earthing_v  NUMERIC(8,3),  -- Output N-E Earthing (V). Default = input_ne_earthing_v. Store separately for audit trail.
+  output_ne_photo_key   TEXT,          -- Photo evidence for Output N-E Earthing
+
+  -- Frequency
+  frequency_hz          NUMERIC(6,2),  -- Output frequency (Hz) e.g. 50.00
+
+  -- ── Readings — 1-Phase ONLY ───────────────────────────────────────────────
+  -- (NULL when phase_type = '3-Phase')
+  input_voltage_pn_v    NUMERIC(8,3),  -- Input Voltage P-N (V)
+  current_reading_a     NUMERIC(8,3),  -- Current Reading (A)
+
+  -- ── Readings — 3-Phase ONLY ───────────────────────────────────────────────
+  -- (NULL when phase_type = '1-Phase')
+  input_voltage_rn_v    NUMERIC(8,3),  -- Input Voltage R-N (V)
+  input_voltage_yn_v    NUMERIC(8,3),  -- Input Voltage Y-N (V)
+  input_voltage_bn_v    NUMERIC(8,3),  -- Input Voltage B-N (V)
+  current_r_phase_a     NUMERIC(8,3),  -- Current R Phase (A)
+  current_y_phase_a     NUMERIC(8,3),  -- Current Y Phase (A)
+  current_b_phase_a     NUMERIC(8,3),  -- Current B Phase (A)
+
+  -- ── Audit trail ───────────────────────────────────────────────────────────
+  created_by            UUID          REFERENCES users(id),
+  updated_by            UUID          REFERENCES users(id),
+  created_at            TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  updated_at            TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  deleted_at            TIMESTAMPTZ,  -- soft delete
+
+  -- Constraints
+  CONSTRAINT unique_ups_per_session UNIQUE (audit_session_id, unit_index),
+  CONSTRAINT ups_index_positive     CHECK  (unit_index >= 1),
+  CONSTRAINT ups_kva_positive       CHECK  (capacity_kva IS NULL OR capacity_kva > 0),
+  CONSTRAINT ups_batt_positive      CHECK  (battery_capacity_ah IS NULL OR battery_capacity_ah > 0),
+  CONSTRAINT ups_batt_count_pos     CHECK  (battery_count IS NULL OR battery_count > 0)
+);
+
+-- Indexes
+CREATE INDEX idx_ups_session          ON audit_ups_units(audit_session_id);
+CREATE INDEX idx_ups_branch           ON audit_ups_units(branch_unique_id);           -- direct branch lookup
+CREATE INDEX idx_ups_branch_session   ON audit_ups_units(branch_unique_id, audit_session_id);
+CREATE INDEX idx_ups_phase            ON audit_ups_units(phase_type);
+CREATE INDEX idx_ups_type             ON audit_ups_units(ups_type);
+CREATE INDEX idx_ups_deleted          ON audit_ups_units(deleted_at) WHERE deleted_at IS NULL;
+
+-- Trigger: auto-copy input_ne_earthing_v → output_ne_earthing_v if output not explicitly set
+CREATE OR REPLACE FUNCTION fn_ups_ne_earthing_default()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.output_ne_earthing_v IS NULL AND NEW.input_ne_earthing_v IS NOT NULL THEN
+    NEW.output_ne_earthing_v := NEW.input_ne_earthing_v;
+  END IF;
+  NEW.updated_at := NOW();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_ups_ne_earthing_default
+  BEFORE INSERT OR UPDATE ON audit_ups_units
+  FOR EACH ROW EXECUTE FUNCTION fn_ups_ne_earthing_default();
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PRISMA SCHEMA  (schema.prisma)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+enum UpsType {
+  Branch
+  ATM
+}
+
+enum UpsDevice {
+  UPS
+  Inverter
+}
+
+enum UpsPhase {
+  OnePhase   @map("1-Phase")
+  ThreePhase @map("3-Phase")
+}
+
+enum AuditStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model AuditSession {
+  id               String      @id @default(uuid())
+  branchUniqueId   String      @map("branch_unique_id")
+  auditorId        String      @map("auditor_id")
+  auditDate        DateTime    @map("audit_date") @db.Date
+  status           AuditStatus @default(DRAFT)
+
+  auditLat         Float?      @map("audit_lat")
+  auditLng         Float?      @map("audit_lng")
+
+  submittedAt      DateTime?   @map("submitted_at")
+  approvedAt       DateTime?   @map("approved_at")
+  approvedBy       String?     @map("approved_by")
+
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt      @map("updated_at")
+  deletedAt        DateTime?   @map("deleted_at")
+
+  // Relations
+  branch           Branch      @relation(fields: [branchUniqueId], references: [id])
+  auditor          User        @relation("AuditSessionAuditor", fields: [auditorId], references: [id])
+  upsUnits         AuditUpsUnit[]
+
+  @@index([branchUniqueId])
+  @@index([auditorId])
+  @@index([auditDate])
+  @@index([status])
+  @@map("audit_sessions")
+}
+
+model AuditUpsUnit {
+  id                  String      @id @default(uuid())
+
+  // Reference keys
+  auditSessionId      String      @map("audit_session_id")
+  branchUniqueId      String      @map("branch_unique_id")   // denormalised
+
+  // Identity
+  unitIndex           Int         @map("unit_index")          @db.SmallInt
+  unitName            String      @map("unit_name")           @db.VarChar(50)
+
+  // Classification
+  upsType             UpsType?    @map("ups_type")
+  deviceType          UpsDevice?  @map("device_type")
+
+  // Spec table
+  make                String?     @db.VarChar(100)
+  capacityKva         Decimal?    @map("capacity_kva")        @db.Decimal(10, 3)
+  phaseType           UpsPhase?   @map("phase_type")
+  batteryMake         String?     @map("battery_make")        @db.VarChar(100)
+  batteryCapacityAh   Decimal?    @map("battery_capacity_ah") @db.Decimal(8, 2)
+  batteryCount        Int?        @map("battery_count")       @db.SmallInt
+  specPhotoKey        String?     @map("spec_photo_key")
+
+  // Shared readings
+  inputNeEarthingV    Decimal?    @map("input_ne_earthing_v") @db.Decimal(8, 3)
+  outputVoltagePnV    Decimal?    @map("output_voltage_pn_v") @db.Decimal(8, 3)
+  outputNeEarthingV   Decimal?    @map("output_ne_earthing_v")@db.Decimal(8, 3) // default = inputNeEarthingV via trigger
+  outputNePhotoKey    String?     @map("output_ne_photo_key")
+  frequencyHz         Decimal?    @map("frequency_hz")        @db.Decimal(6, 2)
+
+  // 1-Phase only
+  inputVoltagePnV     Decimal?    @map("input_voltage_pn_v")  @db.Decimal(8, 3)
+  currentReadingA     Decimal?    @map("current_reading_a")   @db.Decimal(8, 3)
+
+  // 3-Phase only
+  inputVoltageRnV     Decimal?    @map("input_voltage_rn_v")  @db.Decimal(8, 3)
+  inputVoltageYnV     Decimal?    @map("input_voltage_yn_v")  @db.Decimal(8, 3)
+  inputVoltageBnV     Decimal?    @map("input_voltage_bn_v")  @db.Decimal(8, 3)
+  currentRPhaseA      Decimal?    @map("current_r_phase_a")   @db.Decimal(8, 3)
+  currentYPhaseA      Decimal?    @map("current_y_phase_a")   @db.Decimal(8, 3)
+  currentBPhaseA      Decimal?    @map("current_b_phase_a")   @db.Decimal(8, 3)
+
+  // Audit trail
+  createdBy           String?     @map("created_by")
+  updatedBy           String?     @map("updated_by")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt      @map("updated_at")
+  deletedAt           DateTime?   @map("deleted_at")
+
+  // Relations
+  auditSession        AuditSession @relation(fields: [auditSessionId], references: [id], onDelete: Cascade)
+  branch              Branch       @relation(fields: [branchUniqueId], references: [id])
+
+  @@unique([auditSessionId, unitIndex])
+  @@index([branchUniqueId])
+  @@index([branchUniqueId, auditSessionId])
+  @@index([phaseType])
+  @@index([upsType])
+  @@map("audit_ups_units")
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  FIELD REFERENCE — For developer mapping UI → DB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  UI Label                    DB Column                    Type          Notes
+  ─────────────────────────────────────────────────────────────────────────────
+  [Branch Unique ID]           branch_unique_id             UUID          FK → branches.id
+  [Audit Session ID]           audit_session_id             UUID          FK → audit_sessions.id
+  UPS 1 / UPS 2 (label)        unit_name                    VARCHAR(50)
+  Order / sequence             unit_index                   SMALLINT      1-based
+  TYPE dropdown                ups_type                     UpsType       'Branch'|'ATM'
+  Is it UPS/Inverter?          device_type                  UpsDevice     'UPS'|'Inverter'
+  UPS/Inverter Make            make                         VARCHAR(100)
+  Capacity in KVA              capacity_kva                 DECIMAL(10,3)
+  1-Phase or 3-Phase           phase_type                   UpsPhase      drives reading layout
+  Make of Batteries            battery_make                 VARCHAR(100)
+  Capacity of Batteries Ah     battery_capacity_ah          DECIMAL(8,2)
+  Number of Batteries          battery_count                SMALLINT
+  UPS Photo                    spec_photo_key               TEXT          S3/MinIO object key
+  ─ 1-Phase readings ──────────────────────────────────────────────────────────
+  Input Voltage P-N            input_voltage_pn_v           DECIMAL(8,3)  V
+  Input N-E Earthing           input_ne_earthing_v          DECIMAL(8,3)  V  ← auto-fills output
+  Output Voltage P-N           output_voltage_pn_v          DECIMAL(8,3)  V
+  Output N-E Earthing          output_ne_earthing_v         DECIMAL(8,3)  V  ← default = input_ne_earthing_v
+  Output N-E Photo             output_ne_photo_key          TEXT
+  Current Reading              current_reading_a            DECIMAL(8,3)  A
+  Frequency                    frequency_hz                 DECIMAL(6,2)  Hz
+  ─ 3-Phase readings ──────────────────────────────────────────────────────────
+  Input Voltage R-N            input_voltage_rn_v           DECIMAL(8,3)  V
+  Input Voltage Y-N            input_voltage_yn_v           DECIMAL(8,3)  V
+  Input Voltage B-N            input_voltage_bn_v           DECIMAL(8,3)  V
+  Input N-E Earthing           input_ne_earthing_v          DECIMAL(8,3)  V  ← same as 1-phase
+  Output Voltage P-N           output_voltage_pn_v          DECIMAL(8,3)  V  ← same as 1-phase
+  Output N-E Earthing          output_ne_earthing_v         DECIMAL(8,3)  V  ← same as 1-phase
+  Output N-E Photo             output_ne_photo_key          TEXT          same as 1-phase
+  Current R Phase              current_r_phase_a            DECIMAL(8,3)  A
+  Current Y Phase              current_y_phase_a            DECIMAL(8,3)  A
+  Current B Phase              current_b_phase_a            DECIMAL(8,3)  A
+  Frequency                    frequency_hz                 DECIMAL(6,2)  Hz  same as 1-phase
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SAMPLE API PAYLOAD  (POST /api/v1/audits/{session_id}/ups)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  {
+    "branchUniqueId":     "b1a2c3d4-e5f6-7890-abcd-ef1234567890",
+    "auditSessionId":     "a9b8c7d6-e5f4-3210-fedc-ba0987654321",
+    "units": [
+      {
+        "unitIndex":          1,
+        "unitName":           "UPS 1",
+        "upsType":            "Branch",
+        "deviceType":         "UPS",
+        "make":               "APC",
+        "capacityKva":        10.0,
+        "phaseType":          "3-Phase",
+        "batteryMake":        "Exide",
+        "batteryCapacityAh":  42,
+        "batteryCount":       8,
+        "specPhotoKey":       "audits/a9b8c.../ups/1/spec.jpg",
+        "inputVoltageRnV":    230.5,
+        "inputVoltageYnV":    231.0,
+        "inputVoltageBnV":    229.8,
+        "inputNeEarthingV":   1.2,
+        "outputVoltagePnV":   230.0,
+        "outputNeEarthingV":  1.2,
+        "outputNePhotoKey":   "audits/a9b8c.../ups/1/ne.jpg",
+        "currentRPhaseA":     12.4,
+        "currentYPhaseA":     11.9,
+        "currentBPhaseA":     12.1,
+        "frequencyHz":        50.0
+      }
+    ]
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  NOTES FOR DEVELOPER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. branch_unique_id is denormalised into audit_ups_units intentionally.
+     This allows a direct `WHERE branch_unique_id = ?` without joining
+     audit_sessions — critical for dashboard and reporting queries.
+
+  2. Photos are stored as object KEYS (not full URLs). Resolve to signed
+     CDN URLs at query time via S3/MinIO presigned URL.
+
+  3. output_ne_earthing_v defaults to input_ne_earthing_v via a DB trigger.
+     The API should still accept an explicit value (override case).
+     The frontend pre-fills it in green as "auto" until overridden.
+
+  4. 1-Phase columns (input_voltage_pn_v, current_reading_a) will be NULL
+     for 3-Phase UPS records, and vice versa. Add a CHECK constraint or
+     application-layer validation to ensure consistency with phase_type.
+
+  5. unit_index = 1 must always have ups_type = 'Branch'. Enforce this
+     in the API service layer, not just the frontend.
+
+  6. Soft deletes: always filter `WHERE deleted_at IS NULL` in queries.
+     Use a Prisma middleware or global query scope to enforce this.
+
+  7. Migration order: audit_sessions → audit_ups_units (foreign key dependency).
+*/
