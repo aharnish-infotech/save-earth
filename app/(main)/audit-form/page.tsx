@@ -46,41 +46,40 @@ interface IFSCData {
 }
 
 // ─── BRANCH LOAD SHEET TYPES ──────────────────────────────────────────────────
-interface EquipItem {
-  id: string; name: string; nos: string; watt: string; tons?: string; optional?: boolean;
+interface LoadRow { id: string; type: string; nos: string; watt: string; tons?: string; }
+interface LoadGroup {
+  id: string; label: string; icon: string; color: string; hasAC?: boolean;
+  typeOptions: string[]; defaultWatts: Record<string, string>; rows: LoadRow[];
 }
-interface EquipGroup { id: string; label: string; hasAC?: boolean; items: EquipItem[]; }
 
-const mkItem  = (id: string, name: string, watt: string, optional = false): EquipItem => ({ id, name, nos: "", watt, optional });
-const mkAC    = (id: string, name: string, watt: string): EquipItem => ({ id, name, nos: "", watt, tons: "", optional: true });
+const newLoadRow = (hasAC?: boolean): LoadRow => ({
+  id: uid(), type: "", nos: "", watt: "", ...(hasAC ? { tons: "" } : {}),
+});
 
-const INITIAL_GROUPS: EquipGroup[] = [
-  { id: "lighting", label: "Lighting Load", items: [
-    mkItem("fl2x2","Flush Lights 2X2","36"), mkItem("dl","Down Lights","12"),
-    mkItem("tl","Tubelights + GSB T/Ls","40"), mkItem("led","LED Bulbs","15"),
-    mkItem("cfl","CFL / PL Lights","23",true), mkItem("panel","LED Panel Lights","18",true),
-    mkItem("spot","Spotlights","7",true),
-  ]},
-  { id: "fans", label: "Fans", items: [
-    mkItem("cfan","Ceiling Fans","100"), mkItem("wfan","Wall Fans / Table Fan","80"),
-    mkItem("efan","Exhaust Fans","150"), mkItem("blow","Blower","100",true),
-    mkItem("afan","Air Circulators","55",true),
-  ]},
-  { id: "ac", label: "AC / Air Conditioning", hasAC: true, items: [
-    mkAC("sac","Split AC","1500"), mkAC("cac","Cassette AC","2000"),
-    mkAC("wac","Window AC","1200"), mkAC("vrf","VRF / VRV AC","1800"),
-  ]},
-  { id: "computers", label: "Computer / IT Equipment", items: [
-    mkItem("desk","Desktop Computers","200"), mkItem("lap","Laptops","65"),
-    mkItem("monit","Monitors","30"), mkItem("print","Printers / Scanners","150",true),
-    mkItem("srv","Servers / NAS","400",true),
-  ]},
-  { id: "other", label: "Other Equipment", items: [
-    mkItem("wm","Water Machine / Cooler","150"), mkItem("mw","Microwave / OTG","1000",true),
-    mkItem("ktle","Electric Kettle","1500",true), mkItem("geysr","Water Heater / Geyser","2000",true),
-    mkItem("cctv","CCTV System","50"), mkItem("oth","Other Miscellaneous","0",true),
-  ]},
+const LOAD_GROUPS_DEF: Omit<LoadGroup, "rows">[] = [
+  { id: "lighting", label: "Lighting Load", icon: "ri-lightbulb-flash-line", color: "#f59e0b",
+    typeOptions: ["Flush Lights 2×2","Down Lights","LED Tube Light (4ft)","LED Tube Light (2ft)","LED Bulbs","CFL / PL Lights","LED Panel Lights","Spotlights","Emergency Lights","T5 / T8 Batten","Ceiling Light","Other Lighting"],
+    defaultWatts: { "Flush Lights 2×2":"36","Down Lights":"12","LED Tube Light (4ft)":"18","LED Tube Light (2ft)":"9","LED Bulbs":"9","CFL / PL Lights":"23","LED Panel Lights":"18","Spotlights":"7","Emergency Lights":"8","T5 / T8 Batten":"28","Ceiling Light":"40" },
+  },
+  { id: "fans", label: "Fans", icon: "ri-windy-line", color: "#06b6d4",
+    typeOptions: ["Ceiling Fan","Wall Fan","Table Fan","Pedestal Fan","Exhaust Fan","Air Circulator","Blower","Other Fan"],
+    defaultWatts: { "Ceiling Fan":"75","Wall Fan":"50","Table Fan":"50","Pedestal Fan":"60","Exhaust Fan":"30","Air Circulator":"55","Blower":"100" },
+  },
+  { id: "ac", label: "AC / Air Conditioning", icon: "ri-temp-cold-line", color: "#0284c7", hasAC: true,
+    typeOptions: ["Split AC","Cassette AC","Window AC","VRF / VRV AC","Floor Standing AC","Precision AC (PAC)","Tower AC","Other AC"],
+    defaultWatts: { "Split AC":"1500","Cassette AC":"2000","Window AC":"1200","VRF / VRV AC":"1800","Floor Standing AC":"3000","Precision AC (PAC)":"2200","Tower AC":"2500" },
+  },
+  { id: "computers", label: "Computer / IT Equipment", icon: "ri-computer-line", color: "#6366f1",
+    typeOptions: ["Desktop Computer","Laptop","Monitor","Printer / Scanner","Server / NAS","Network Switch / Router","Firewall / UTM","Cash Counting Machine","POS Terminal","Biometric Device","DVR / NVR","CCTV Camera","Other IT Equipment"],
+    defaultWatts: { "Desktop Computer":"200","Laptop":"65","Monitor":"30","Printer / Scanner":"150","Server / NAS":"400","Network Switch / Router":"20","Firewall / UTM":"50","Cash Counting Machine":"40","POS Terminal":"35","Biometric Device":"5","DVR / NVR":"25","CCTV Camera":"8" },
+  },
+  { id: "other", label: "Other Equipment", icon: "ri-plug-line", color: "#8b5cf6",
+    typeOptions: ["Water Cooler / Machine","Microwave / OTG","Electric Kettle","Water Heater / Geyser","Refrigerator","PA System","Projector","Photocopier","Shredder","LED Display Board","Air Purifier","Other Equipment"],
+    defaultWatts: { "Water Cooler / Machine":"150","Microwave / OTG":"1000","Electric Kettle":"1500","Water Heater / Geyser":"2000","Refrigerator":"150","PA System":"100","Projector":"300","Photocopier":"800","Shredder":"200","LED Display Board":"100","Air Purifier":"50" },
+  },
 ];
+
+const INITIAL_LOAD_GROUPS: LoadGroup[] = LOAD_GROUPS_DEF.map(g => ({ ...g, rows: [newLoadRow(g.hasAC)] }));
 
 // ─── METER TYPES ──────────────────────────────────────────────────────────────
 interface Meter {
@@ -515,130 +514,209 @@ function CaptureBranchStep({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STEP 2 — Branch Load Sheet
+// STEP 9 — Branch Load Sheet
 // ═══════════════════════════════════════════════════════════════════════════════
 function LoadSheetSection({ branchName }: { branchName: string }) {
-  const [groups, setGroups] = useState<EquipGroup[]>(INITIAL_GROUPS);
-  const [open, setOpen]     = useState<Record<string,boolean>>({ lighting:true, fans:true, ac:true, computers:false, other:false });
-  const [saved, setSaved]   = useState(false);
+  const [groups, setGroups] = useState<LoadGroup[]>(() =>
+    LOAD_GROUPS_DEF.map(g => ({ ...g, rows: [newLoadRow(g.hasAC)] }))
+  );
+  const [open, setOpen] = useState<Record<string, boolean>>(
+    Object.fromEntries(LOAD_GROUPS_DEF.map((g, i) => [g.id, i < 3]))
+  );
+  const [saved, setSaved] = useState(false);
 
-  const upd = useCallback((gid:string, iid:string, field:keyof EquipItem, val:string) =>
-    setGroups(gs => gs.map(g => g.id!==gid ? g : { ...g, items: g.items.map(i => i.id!==iid ? i : {...i,[field]:val}) })), []);
+  const addRow = (gid: string) =>
+    setGroups(gs => gs.map(g => g.id !== gid ? g : { ...g, rows: [...g.rows, newLoadRow(g.hasAC)] }));
 
-  const grand  = groups.reduce((s,g) => s + g.items.reduce((a,i) => a + (parseFloat(i.nos)||0)*(parseFloat(i.watt)||0), 0), 0);
-  const active = groups.reduce((s,g) => s + g.items.filter(i => parseFloat(i.nos)>0).length, 0);
-  const save   = () => { setSaved(true); setTimeout(()=>setSaved(false),3000); };
+  const delRow = (gid: string, rid: string) =>
+    setGroups(gs => gs.map(g => g.id !== gid ? g : { ...g, rows: g.rows.filter(r => r.id !== rid) }));
+
+  const updRow = useCallback((gid: string, rid: string, field: keyof LoadRow, val: string) =>
+    setGroups(gs => gs.map(g => {
+      if (g.id !== gid) return g;
+      return {
+        ...g,
+        rows: g.rows.map(r => {
+          if (r.id !== rid) return r;
+          const updated = { ...r, [field]: val };
+          // Auto-fill wattage when type is selected
+          if (field === "type" && val && g.defaultWatts[val]) {
+            updated.watt = g.defaultWatts[val];
+          }
+          return updated;
+        }),
+      };
+    })), []);
+
+  const grand = groups.reduce((s, g) =>
+    s + g.rows.reduce((a, r) => a + (parseFloat(r.nos) || 0) * (parseFloat(r.watt) || 0), 0), 0);
+  const filledRows = groups.reduce((s, g) =>
+    s + g.rows.filter(r => r.type && parseFloat(r.nos) > 0).length, 0);
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
 
   return (
     <div>
-      {saved && <div style={{marginBottom:14,background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
-        <i className="ri-checkbox-circle-fill" style={{color:"#16a34a",fontSize:18}}/><span style={{fontSize:13,fontWeight:700,color:"#15803d"}}>Load Sheet saved successfully</span>
-      </div>}
+      {saved && (
+        <div style={{ marginBottom:14, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:"#15803d" }}>Load Sheet saved successfully</span>
+        </div>
+      )}
 
-      <div style={card}>
-        <div style={{padding:"13px 18px",borderBottom:"1px solid #f3f4f6",display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:34,height:34,borderRadius:10,background:"#f0fdf4",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <i className="ri-building-2-line" style={{color:"#16a34a",fontSize:16}}/>
+      {/* Summary header */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:14 }}>
+        <div style={{ padding:"13px 18px", background:"linear-gradient(135deg,#16a34a,#15803d)", display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:38, height:38, borderRadius:10, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-lightbulb-line" style={{ color:"#fff", fontSize:18 }}/>
           </div>
-          <div>
-            <div style={{fontSize:14,fontWeight:800,color:"#111827"}}>{branchName}</div>
-            <div style={{fontSize:11,color:"#9ca3af"}}>Branch Load Sheet — S.No 1</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>{branchName}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>Branch Load Sheet — add equipment rows per section</div>
           </div>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr"}}>
-          {[{l:"Total (W)",v:grand.toFixed(0),c:"#16a34a"},{l:"Total (kW)",v:(grand/1000).toFixed(2),c:"#2563eb"},{l:"Active Items",v:String(active),c:"#d97706"}].map((s,i)=>(
-            <div key={s.l} style={{padding:"14px 18px",borderRight:i<2?"1px solid #f3f4f6":"none",textAlign:"center"}}>
-              <div style={{fontSize:22,fontWeight:900,color:s.c,lineHeight:1}}>{s.v}</div>
-              <div style={{fontSize:10,color:"#9ca3af",fontWeight:600,marginTop:3,textTransform:"uppercase",letterSpacing:"0.04em"}}>{s.l}</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr" }}>
+          {[
+            { l:"Total (W)",    v: grand.toFixed(0),          c:"#16a34a" },
+            { l:"Total (kW)",   v: (grand/1000).toFixed(2),   c:"#2563eb" },
+            { l:"Filled Rows",  v: String(filledRows),         c:"#d97706" },
+          ].map((s, i) => (
+            <div key={s.l} style={{ padding:"13px 18px", borderRight:i<2?"1px solid #f3f4f6":"none", textAlign:"center" }}>
+              <div style={{ fontSize:22, fontWeight:900, color:s.c, lineHeight:1 }}>{s.v}</div>
+              <div style={{ fontSize:10, color:"#9ca3af", fontWeight:600, marginTop:3, textTransform:"uppercase", letterSpacing:"0.04em" }}>{s.l}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={card}>
-        <div style={{padding:"13px 18px",borderBottom:"1px solid #e5e7eb",background:"#f9fafb",display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:28,height:28,borderRadius:8,background:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <span style={{fontSize:13,fontWeight:900,color:"#fff"}}>1</span>
-          </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:800,color:"#111827"}}>Equipment Load Details</div>
-            <div style={{fontSize:11,color:"#9ca3af"}}>Enter Nos. and Wattage per item</div>
-          </div>
-        </div>
-        {groups.map((group,gi) => {
-          const gt = group.items.reduce((s,i) => s + (parseFloat(i.nos)||0)*(parseFloat(i.watt)||0), 0);
-          const isOpen = open[group.id] !== false;
-          return (
-            <div key={group.id}>
-              <div onClick={()=>setOpen(o=>({...o,[group.id]:!o[group.id]}))}
-                style={{padding:"10px 18px",background:"#fafafa",borderTop:gi>0?"1px solid #e5e7eb":"none",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",userSelect:"none"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{width:3,height:18,borderRadius:99,background:"#16a34a"}}/>
-                  <span style={{fontSize:12,fontWeight:800,color:"#374151"}}>{group.label}</span>
-                  {group.id==="ac" && <span style={{fontSize:10,fontWeight:700,color:"#d97706",background:"#fef3c7",borderRadius:20,padding:"1px 8px"}}>Optional</span>}
+      {/* Equipment groups */}
+      {groups.map((group, gi) => {
+        const gt = group.rows.reduce((a, r) => a + (parseFloat(r.nos) || 0) * (parseFloat(r.watt) || 0), 0);
+        const isOpen = open[group.id] !== false;
+        return (
+          <div key={group.id} style={{ ...card, overflow:"hidden", marginBottom:12 }}>
+            {/* Group header — click to collapse */}
+            <button
+              onClick={() => setOpen(o => ({ ...o, [group.id]: !o[group.id] }))}
+              style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"11px 16px", background:"#f9fafb", border:"none", borderBottom: isOpen ? "1px solid #e5e7eb" : "none", cursor:"pointer", outline:"none" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+                <div style={{ width:30, height:30, borderRadius:8, background:group.color, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <i className={group.icon} style={{ color:"#fff", fontSize:14 }}/>
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  {gt>0 && <span style={{fontSize:12,fontWeight:800,color:"#16a34a"}}>{gt.toFixed(0)} W</span>}
-                  <i className={`ri-arrow-${isOpen?"up":"down"}-s-line`} style={{color:"#9ca3af",fontSize:16}}/>
+                <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>{group.label}</span>
+                <span style={{ fontSize:11, color:"#9ca3af" }}>{group.rows.length} row{group.rows.length !== 1 ? "s" : ""}</span>
+                {group.hasAC && (
+                  <span style={{ fontSize:10, fontWeight:700, color:"#0284c7", background:"#e0f2fe", borderRadius:20, padding:"2px 8px" }}>Tons field</span>
+                )}
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                {gt > 0 && <span style={{ fontSize:12, fontWeight:800, color:group.color }}>{gt.toFixed(0)} W</span>}
+                <i className={`ri-arrow-${isOpen ? "up" : "down"}-s-line`} style={{ color:"#9ca3af", fontSize:16 }}/>
+              </div>
+            </button>
+
+            {isOpen && (
+              <div style={{ padding:"12px 14px" }}>
+                {/* Column labels */}
+                <div style={{ display:"grid", gridTemplateColumns:group.hasAC ? "1fr 72px 72px 72px 72px 32px" : "1fr 80px 90px 80px 32px", gap:8, marginBottom:6, padding:"0 4px" }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em" }}>Equipment Type</div>
+                  {group.hasAC && <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", textAlign:"center" }}>Tons</div>}
+                  <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", textAlign:"center" }}>Nos.</div>
+                  <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", textAlign:"center" }}>Watt (W)</div>
+                  <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", textAlign:"right" }}>Total W</div>
+                  <div/>
+                </div>
+
+                {/* Rows */}
+                {group.rows.map((row, ri) => {
+                  const tw = (parseFloat(row.nos) || 0) * (parseFloat(row.watt) || 0);
+                  return (
+                    <div key={row.id} style={{ display:"grid", gridTemplateColumns:group.hasAC ? "1fr 72px 72px 72px 72px 32px" : "1fr 80px 90px 80px 32px", gap:8, alignItems:"center", marginBottom:7, padding:"8px 10px", background: tw > 0 ? "#f0fdf4" : "#fafafa", borderRadius:9, border:`1px solid ${tw > 0 ? "#bbf7d0" : "#f3f4f6"}` }}>
+                      {/* Type dropdown */}
+                      <select
+                        value={row.type}
+                        onChange={e => updRow(group.id, row.id, "type", e.target.value)}
+                        style={{ border:"1px solid #e5e7eb", borderRadius:7, padding:"7px 8px", fontSize:12, color:row.type ? "#111827" : "#9ca3af", outline:"none", background:"#fff", fontWeight:600, width:"100%" }}>
+                        <option value="">— Select type —</option>
+                        {group.typeOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+
+                      {/* Tons (AC only) */}
+                      {group.hasAC && (
+                        <input
+                          type="number" min="0" step="0.5"
+                          value={row.tons ?? ""}
+                          placeholder="Tons"
+                          onChange={e => updRow(group.id, row.id, "tons", e.target.value)}
+                          style={{ border:"1px solid #e5e7eb", borderRadius:7, padding:"7px 6px", fontSize:12, color:"#7c3aed", outline:"none", textAlign:"center", width:"100%", boxSizing:"border-box" }}/>
+                      )}
+
+                      {/* Nos */}
+                      <input
+                        type="number" min="0"
+                        value={row.nos}
+                        placeholder="0"
+                        onChange={e => updRow(group.id, row.id, "nos", e.target.value)}
+                        style={{ border:`1px solid ${parseFloat(row.nos) > 0 ? "#86efac" : "#e5e7eb"}`, borderRadius:7, padding:"7px 6px", fontSize:12, color: parseFloat(row.nos) > 0 ? "#16a34a" : "#9ca3af", outline:"none", textAlign:"center", width:"100%", boxSizing:"border-box", background: parseFloat(row.nos) > 0 ? "#f0fdf4" : "#fff" }}/>
+
+                      {/* Watt */}
+                      <input
+                        type="number" min="0"
+                        value={row.watt}
+                        placeholder="W"
+                        onChange={e => updRow(group.id, row.id, "watt", e.target.value)}
+                        style={{ border:"1px solid #e5e7eb", borderRadius:7, padding:"7px 6px", fontSize:12, color:"#2563eb", outline:"none", textAlign:"center", width:"100%", boxSizing:"border-box", fontWeight:600 }}/>
+
+                      {/* Total W */}
+                      <div style={{ fontSize:13, fontWeight: tw > 0 ? 800 : 400, color: tw > 0 ? "#16a34a" : "#d1d5db", textAlign:"right", paddingRight:4 }}>
+                        {tw > 0 ? tw.toFixed(0) : "—"}
+                      </div>
+
+                      {/* Delete row */}
+                      <button
+                        onClick={() => delRow(group.id, row.id)}
+                        disabled={group.rows.length === 1}
+                        title="Remove row"
+                        style={{ width:28, height:28, borderRadius:7, border:"1px solid #fecaca", background: group.rows.length === 1 ? "#f9fafb" : "#fff5f5", color: group.rows.length === 1 ? "#d1d5db" : "#ef4444", cursor: group.rows.length === 1 ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>
+                        <i className="ri-delete-bin-line"/>
+                      </button>
+                    </div>
+                  );
+                })}
+
+                {/* Add Row + Section Total */}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:6 }}>
+                  <button
+                    onClick={() => addRow(group.id)}
+                    style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:8, border:`1.5px dashed ${group.color}`, background:"transparent", color:group.color, fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                    <i className="ri-add-line" style={{ fontSize:15 }}/>Add Row
+                  </button>
+                  {gt > 0 && (
+                    <div style={{ display:"flex", alignItems:"center", gap:8, background:group.color, borderRadius:8, padding:"6px 14px" }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{group.label} Total</span>
+                      <span style={{ fontSize:14, fontWeight:900, color:"#fff" }}>{gt.toFixed(0)} W</span>
+                    </div>
+                  )}
                 </div>
               </div>
-              {isOpen && (
-                <div style={{overflowX:"auto"}}>
-                  <table style={{width:"100%",borderCollapse:"collapse"}}>
-                    <thead><tr>
-                      <th style={{...TH_S,width:"40%",paddingLeft:20}}>Equipment Installed</th>
-                      {group.hasAC && <th style={{...TH_S,width:80,textAlign:"center"}}>Tons</th>}
-                      <th style={{...TH_S,width:90,textAlign:"center"}}>Nos.</th>
-                      <th style={{...TH_S,width:100,textAlign:"center"}}>Watt (W)</th>
-                      <th style={{...TH_S,width:100,textAlign:"right",paddingRight:18}}>Total W</th>
-                    </tr></thead>
-                    <tbody>
-                      {group.items.map(item => {
-                        const tw = (parseFloat(item.nos)||0)*(parseFloat(item.watt)||0);
-                        return (
-                          <tr key={item.id} onMouseEnter={e=>(e.currentTarget.style.background="#f9fafb")} onMouseLeave={e=>(e.currentTarget.style.background="transparent")}>
-                            <td style={{...TD_S,paddingLeft:20,color:item.optional&&!parseFloat(item.nos)?"#9ca3af":"#374151"}}>{item.name}</td>
-                            {group.hasAC && <td style={{...TD_S,textAlign:"center"}}>
-                              <input type="number" value={item.tons??""} placeholder="-" onChange={e=>upd(group.id,item.id,"tons",e.target.value)} style={{...NI,width:60,color:"#7c3aed"}}/>
-                            </td>}
-                            <td style={{...TD_S,textAlign:"center"}}>
-                              <input type="number" min="0" value={item.nos} placeholder="-" onChange={e=>upd(group.id,item.id,"nos",e.target.value)}
-                                style={{...NI,width:70,background:parseFloat(item.nos)>0?"#f0fdf4":"#fff",color:parseFloat(item.nos)>0?"#16a34a":"#9ca3af",borderColor:parseFloat(item.nos)>0?"#86efac":"#e5e7eb"}}/>
-                            </td>
-                            <td style={{...TD_S,textAlign:"center"}}>
-                              <input type="number" min="0" value={item.watt} onChange={e=>upd(group.id,item.id,"watt",e.target.value)} style={{...NI,width:80,color:"#2563eb"}}/>
-                            </td>
-                            <td style={{...TD_S,textAlign:"right",paddingRight:18}}>
-                              <span style={{fontSize:13,fontWeight:tw>0?800:400,color:tw>0?"#111827":"#d1d5db"}}>{tw>0?tw.toFixed(0):"0"}</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <div style={{padding:"10px 18px",background:gt>0?"#16a34a":"#374151",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{group.label} Total</span>
-                    <span style={{fontSize:15,fontWeight:900,color:"#fff"}}>{gt.toFixed(0)} W</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-        <div style={{padding:"16px 18px",background:grand>0?"linear-gradient(135deg,#16a34a,#15803d)":"#374151",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"2px solid #fff"}}>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.8)",textTransform:"uppercase",letterSpacing:"0.05em"}}>Grand Total Wattage</div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.6)",marginTop:2}}>All equipment combined</div>
+            )}
           </div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:26,fontWeight:900,color:"#fff",lineHeight:1}}>{grand.toFixed(0)} W</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:2}}>{(grand/1000).toFixed(2)} kW</div>
-          </div>
+        );
+      })}
+
+      {/* Grand Total */}
+      <div style={{ background: grand > 0 ? "linear-gradient(135deg,#16a34a,#15803d)" : "#374151", borderRadius:14, padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+        <div>
+          <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:"0.05em" }}>Grand Total Wattage</div>
+          <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>All equipment combined</div>
+        </div>
+        <div style={{ textAlign:"right" }}>
+          <div style={{ fontSize:28, fontWeight:900, color:"#fff", lineHeight:1 }}>{grand.toFixed(0)} W</div>
+          <div style={{ fontSize:12, color:"rgba(255,255,255,0.7)", marginTop:3 }}>{(grand / 1000).toFixed(2)} kW</div>
         </div>
       </div>
 
-      <div style={{display:"flex",justifyContent:"flex-end"}}>
-        <button onClick={save} style={{padding:"12px 28px",borderRadius:10,border:"none",background:"#16a34a",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 14px rgba(22,163,74,0.35)"}}>
+      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+        <button onClick={save} style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#16a34a,#15803d)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(22,163,74,0.35)" }}>
           <i className="ri-save-line"/>Save Load Sheet
         </button>
       </div>
@@ -3873,11 +3951,11 @@ export default function AuditFormPage() {
           onContinue={() => { setCompletedSteps(prev => new Set([...prev, "branch-photo"])); goNext(); }}
         />
       )}
-      {currentStep === "load-sheet" && (
-        <LoadSheetSection branchName={branchDisplayName} />
-      )}
       {currentStep === "meter-details" && (
         <MeterDetailsSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "load-sheet" && (
+        <LoadSheetSection branchName={branchDisplayName} />
       )}
       {currentStep === "dg-set" && (
         <DGSetSection branchName={branchDisplayName} />

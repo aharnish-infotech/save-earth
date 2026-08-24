@@ -114,7 +114,7 @@ export default function AllAuditsPage() {
         <div className="no-print" style={{ background:"#fff", border:"1px solid #e5e7eb", borderRadius:12, padding:"12px 16px", marginBottom:12, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
 
           {/* Search */}
-          <div style={{ display:"flex", alignItems:"center", gap:6, background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:7, padding:"5px 10px", minWidth:230, flex:1 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6, background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:7, padding:"5px 10px", width:220 }}>
             <i className="ri-search-line" style={{ color:"#9ca3af", fontSize:14, flexShrink:0 }} />
             <input value={search} onChange={e => { setSearch(e.target.value); reset(); }}
               placeholder="Search by Audit ID, Bank, Branch, IFSC…"
