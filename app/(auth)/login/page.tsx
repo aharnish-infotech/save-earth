@@ -107,7 +107,7 @@ export default function LoginPage() {
 
         {/* Card */}
         <div style={{
-          width: "100%", maxWidth: 420,
+          width: "100%", maxWidth: 380,
           animation: "fadeUp 0.5s ease both",
           position: "relative", zIndex: 1,
         }}>
