@@ -244,7 +244,7 @@ export default function LoginPage() {
 
         {/* ── Energy Scene ── */}
         <div style={{ position:"absolute", bottom:0, left:0, right:0, height:210, pointerEvents:"none" }}>
-          <svg viewBox="0 0 1400 210" preserveAspectRatio="xMidYMax slice"
+          <svg viewBox="0 0 1400 210" preserveAspectRatio="none"
             style={{ width:"100%", height:"100%" }} xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="sc-sky" x1="0" x2="0" y1="0" y2="1">
@@ -265,165 +265,215 @@ export default function LoginPage() {
             <rect x="0" y="0" width="1400" height="210" fill="url(#sc-sky)"/>
 
             {/* ── SUN ── */}
-            <circle cx="1310" cy="40" r="36" fill="url(#sc-sun)" opacity="0.95"/>
-            <circle cx="1310" cy="40" r="48" fill="#ffd54f" opacity="0.15"/>
-            <circle cx="1310" cy="40" r="60" fill="#ffecb3" opacity="0.09"/>
+            <circle cx="1300" cy="38" r="34" fill="url(#sc-sun)"/>
+            <circle cx="1300" cy="38" r="48" fill="#ffd54f" opacity="0.14"/>
+            <circle cx="1300" cy="38" r="62" fill="#ffecb3" opacity="0.08"/>
 
             {/* ── CLOUDS ── */}
             <g opacity="0.93">
-              <ellipse cx="155" cy="32" rx="50" ry="20" fill="white"/>
-              <ellipse cx="116" cy="40" rx="34" ry="17" fill="white"/>
-              <ellipse cx="194" cy="40" rx="30" ry="15" fill="white"/>
-              <ellipse cx="152" cy="46" rx="52" ry="13" fill="white"/>
+              <ellipse cx="155" cy="30" rx="50" ry="20" fill="white"/>
+              <ellipse cx="116" cy="38" rx="34" ry="17" fill="white"/>
+              <ellipse cx="194" cy="38" rx="30" ry="15" fill="white"/>
+              <ellipse cx="152" cy="45" rx="52" ry="13" fill="white"/>
             </g>
-            <g opacity="0.78">
-              <ellipse cx="490" cy="22" rx="36" ry="15" fill="white"/>
-              <ellipse cx="462" cy="28" rx="25" ry="12" fill="white"/>
-              <ellipse cx="518" cy="28" rx="22" ry="11" fill="white"/>
-              <ellipse cx="490" cy="34" rx="38" ry="9"  fill="white"/>
+            <g opacity="0.75">
+              <ellipse cx="550" cy="20" rx="34" ry="14" fill="white"/>
+              <ellipse cx="524" cy="26" rx="23" ry="11" fill="white"/>
+              <ellipse cx="576" cy="26" rx="20" ry="10" fill="white"/>
+              <ellipse cx="550" cy="31" rx="36" ry="8"  fill="white"/>
             </g>
-            <g opacity="0.65">
-              <ellipse cx="860" cy="18" rx="28" ry="11" fill="white"/>
-              <ellipse cx="840" cy="24" rx="19" ry="9"  fill="white"/>
-              <ellipse cx="880" cy="24" rx="17" ry="8"  fill="white"/>
-              <ellipse cx="860" cy="29" rx="30" ry="7"  fill="white"/>
+            <g opacity="0.62">
+              <ellipse cx="960" cy="16" rx="26" ry="10" fill="white"/>
+              <ellipse cx="942" cy="22" rx="18" ry="8"  fill="white"/>
+              <ellipse cx="978" cy="22" rx="16" ry="7"  fill="white"/>
+              <ellipse cx="960" cy="27" rx="28" ry="6"  fill="white"/>
             </g>
 
-            {/* ── FLAT GROUND STRIP ── */}
+            {/* ── FLAT GROUND ── */}
             <rect x="0" y="183" width="1400" height="27" fill="url(#sc-ground)"/>
             <line x1="0" y1="183" x2="1400" y2="183" stroke="#81c784" strokeWidth="2"/>
 
-            {/* ── SOLAR PANELS — left ── */}
-            {[18,68,118,168,218,268].map((x) => (
+            {/* ── SOLAR PANELS — left cluster ── */}
+            {[14,62,110,158,206,254].map((x) => (
               <g key={x}>
-                <line x1={x+12} y1="183" x2={x+8}  y2="148" stroke="#78909c" strokeWidth="2"/>
-                <line x1={x+30} y1="183" x2={x+34} y2="148" stroke="#78909c" strokeWidth="2"/>
-                <rect x={x} y="126" width="44" height="26" rx="3"
-                  transform={`rotate(-16 ${x+22} 139)`} fill="#1565c0"/>
-                <line x1={x+14} y1="129" x2={x+12} y2="149" stroke="#42a5f5" strokeWidth="0.8" opacity="0.5"
-                  transform={`rotate(-16 ${x+22} 139)`}/>
-                <line x1={x+22} y1="128" x2={x+20} y2="150" stroke="#42a5f5" strokeWidth="0.8" opacity="0.5"
-                  transform={`rotate(-16 ${x+22} 139)`}/>
-                <line x1={x+30} y1="128" x2={x+28} y2="150" stroke="#42a5f5" strokeWidth="0.8" opacity="0.5"
-                  transform={`rotate(-16 ${x+22} 139)`}/>
-                <line x1={x+2}  y1="136" x2={x+42} y2="134" stroke="#42a5f5" strokeWidth="0.6" opacity="0.35"
-                  transform={`rotate(-16 ${x+22} 139)`}/>
-                <rect x={x+2} y="127" width="40" height="7" rx="1" fill="white" opacity="0.1"
-                  transform={`rotate(-16 ${x+22} 139)`}/>
+                <line x1={x+12} y1="183" x2={x+8}  y2="150" stroke="#78909c" strokeWidth="2"/>
+                <line x1={x+30} y1="183" x2={x+34} y2="150" stroke="#78909c" strokeWidth="2"/>
+                <rect x={x} y="128" width="44" height="26" rx="3"
+                  transform={`rotate(-16 ${x+22} 141)`} fill="#1565c0"/>
+                <line x1={x+14} y1="131" x2={x+12} y2="151" stroke="#42a5f5" strokeWidth="0.8" opacity="0.5"
+                  transform={`rotate(-16 ${x+22} 141)`}/>
+                <line x1={x+22} y1="130" x2={x+20} y2="152" stroke="#42a5f5" strokeWidth="0.8" opacity="0.5"
+                  transform={`rotate(-16 ${x+22} 141)`}/>
+                <line x1={x+30} y1="130" x2={x+28} y2="152" stroke="#42a5f5" strokeWidth="0.8" opacity="0.5"
+                  transform={`rotate(-16 ${x+22} 141)`}/>
+                <line x1={x+2} y1="138" x2={x+42} y2="136" stroke="#42a5f5" strokeWidth="0.6" opacity="0.35"
+                  transform={`rotate(-16 ${x+22} 141)`}/>
+                <rect x={x+2} y="129" width="40" height="7" rx="1" fill="white" opacity="0.1"
+                  transform={`rotate(-16 ${x+22} 141)`}/>
               </g>
             ))}
 
-            {/* ── TREE 1 — x=378 ── */}
-            <rect x="375" y="158" width="8" height="25" rx="3" fill="#795548"/>
-            <ellipse cx="379" cy="146" rx="22" ry="24" fill="#388e3c"/>
-            <ellipse cx="379" cy="139" rx="17" ry="18" fill="#43a047"/>
-            <ellipse cx="381" cy="132" rx="12" ry="14" fill="#66bb6a"/>
+            {/* ── TREE A — x=338 ── */}
+            <rect x="335" y="160" width="8" height="23" rx="3" fill="#795548"/>
+            <ellipse cx="339" cy="148" rx="21" ry="23" fill="#388e3c"/>
+            <ellipse cx="339" cy="141" rx="16" ry="17" fill="#43a047"/>
+            <ellipse cx="341" cy="134" rx="11" ry="13" fill="#66bb6a"/>
 
-            {/* ── WIND TURBINE X-LARGE — x=480, hub y=22 ── */}
-            <line x1="480" y1="22" x2="480" y2="183" stroke="#90a4ae" strokeWidth="5"/>
-            <circle cx="480" cy="22" r="9" fill="#546e7a"/>
-            <circle cx="480" cy="22" r="5" fill="#cfd8dc"/>
+            {/* ── TURBINE 1 — x=420, hub y=18 (tallest) ── */}
+            <line x1="420" y1="18" x2="420" y2="183" stroke="#b0bec5" strokeWidth="5"/>
+            <circle cx="420" cy="18" r="8" fill="#546e7a"/>
+            <circle cx="420" cy="18" r="4" fill="#e0e0e0"/>
             <g>
               <animateTransform attributeName="transform" attributeType="XML"
-                type="rotate" from="0 480 22" to="360 480 22" dur="3.5s" repeatCount="indefinite"/>
-              <ellipse cx="480" cy="-10" rx="5" ry="33" fill="white" stroke="#90a4ae" strokeWidth="1.2"/>
-              <ellipse cx="480" cy="-10" rx="5" ry="33" fill="white" stroke="#90a4ae" strokeWidth="1.2" transform="rotate(120 480 22)"/>
-              <ellipse cx="480" cy="-10" rx="5" ry="33" fill="white" stroke="#90a4ae" strokeWidth="1.2" transform="rotate(240 480 22)"/>
+                type="rotate" from="0 420 18" to="360 420 18" dur="3.8s" repeatCount="indefinite"/>
+              <path d="M420,18 C416,12 413,-6 420,-10 C427,-6 424,12 420,18 Z" fill="#1565c0"/>
+              <path d="M420,18 C416,12 413,-6 420,-10 C427,-6 424,12 420,18 Z" fill="#1565c0" transform="rotate(120 420 18)"/>
+              <path d="M420,18 C416,12 413,-6 420,-10 C427,-6 424,12 420,18 Z" fill="#1565c0" transform="rotate(240 420 18)"/>
             </g>
 
-            {/* ── WIND TURBINE LARGE — x=590, hub y=40 ── */}
-            <line x1="590" y1="40" x2="590" y2="183" stroke="#90a4ae" strokeWidth="4.5"/>
-            <circle cx="590" cy="40" r="8" fill="#546e7a"/>
-            <circle cx="590" cy="40" r="4.5" fill="#cfd8dc"/>
+            {/* ── TREE B — x=518 ── */}
+            <rect x="515" y="163" width="7" height="20" rx="3" fill="#795548"/>
+            <ellipse cx="519" cy="151" rx="18" ry="20" fill="#2e7d32"/>
+            <ellipse cx="519" cy="145" rx="14" ry="15" fill="#388e3c"/>
+            <ellipse cx="521" cy="139" rx="9"  ry="11" fill="#43a047"/>
+
+            {/* ── TURBINE 2 — x=660, hub y=45 ── */}
+            <line x1="660" y1="45" x2="660" y2="183" stroke="#b0bec5" strokeWidth="4.5"/>
+            <circle cx="660" cy="45" r="7" fill="#546e7a"/>
+            <circle cx="660" cy="45" r="3.5" fill="#e0e0e0"/>
             <g>
               <animateTransform attributeName="transform" attributeType="XML"
-                type="rotate" from="0 590 40" to="360 590 40" dur="4.2s" repeatCount="indefinite"/>
-              <ellipse cx="590" cy="14" rx="4.5" ry="27" fill="white" stroke="#90a4ae" strokeWidth="1.2"/>
-              <ellipse cx="590" cy="14" rx="4.5" ry="27" fill="white" stroke="#90a4ae" strokeWidth="1.2" transform="rotate(120 590 40)"/>
-              <ellipse cx="590" cy="14" rx="4.5" ry="27" fill="white" stroke="#90a4ae" strokeWidth="1.2" transform="rotate(240 590 40)"/>
+                type="rotate" from="0 660 45" to="360 660 45" dur="4.5s" repeatCount="indefinite"/>
+              <path d="M660,45 C657,40 654,23 660,20 C666,23 663,40 660,45 Z" fill="#1976d2"/>
+              <path d="M660,45 C657,40 654,23 660,20 C666,23 663,40 660,45 Z" fill="#1976d2" transform="rotate(120 660 45)"/>
+              <path d="M660,45 C657,40 654,23 660,20 C666,23 663,40 660,45 Z" fill="#1976d2" transform="rotate(240 660 45)"/>
             </g>
 
-            {/* ── WIND TURBINE MEDIUM — x=692, hub y=60 ── */}
-            <line x1="692" y1="60" x2="692" y2="183" stroke="#90a4ae" strokeWidth="4"/>
-            <circle cx="692" cy="60" r="7" fill="#546e7a"/>
-            <circle cx="692" cy="60" r="4" fill="#cfd8dc"/>
+            {/* ── TURBINE 3 — x=850, hub y=22 ── */}
+            <line x1="850" y1="22" x2="850" y2="183" stroke="#b0bec5" strokeWidth="5"/>
+            <circle cx="850" cy="22" r="8" fill="#546e7a"/>
+            <circle cx="850" cy="22" r="4" fill="#e0e0e0"/>
             <g>
               <animateTransform attributeName="transform" attributeType="XML"
-                type="rotate" from="0 692 60" to="360 692 60" dur="3s" repeatCount="indefinite"/>
-              <ellipse cx="692" cy="38" rx="4" ry="23" fill="white" stroke="#90a4ae" strokeWidth="1.1"/>
-              <ellipse cx="692" cy="38" rx="4" ry="23" fill="white" stroke="#90a4ae" strokeWidth="1.1" transform="rotate(120 692 60)"/>
-              <ellipse cx="692" cy="38" rx="4" ry="23" fill="white" stroke="#90a4ae" strokeWidth="1.1" transform="rotate(240 692 60)"/>
+                type="rotate" from="0 850 22" to="360 850 22" dur="3.2s" repeatCount="indefinite"/>
+              <path d="M850,22 C846,16 843,-2 850,-6 C857,-2 854,16 850,22 Z" fill="#1565c0"/>
+              <path d="M850,22 C846,16 843,-2 850,-6 C857,-2 854,16 850,22 Z" fill="#1565c0" transform="rotate(120 850 22)"/>
+              <path d="M850,22 C846,16 843,-2 850,-6 C857,-2 854,16 850,22 Z" fill="#1565c0" transform="rotate(240 850 22)"/>
             </g>
 
-            {/* ── WIND TURBINE SMALL — x=782, hub y=78 ── */}
-            <line x1="782" y1="78" x2="782" y2="183" stroke="#90a4ae" strokeWidth="3.5"/>
-            <circle cx="782" cy="78" r="6" fill="#546e7a"/>
-            <circle cx="782" cy="78" r="3.5" fill="#cfd8dc"/>
+            {/* ── TREE C — x=940 ── */}
+            <rect x="937" y="162" width="7" height="21" rx="3" fill="#795548"/>
+            <ellipse cx="941" cy="150" rx="19" ry="21" fill="#388e3c"/>
+            <ellipse cx="941" cy="143" rx="14" ry="15" fill="#43a047"/>
+            <ellipse cx="943" cy="137" rx="10" ry="11" fill="#66bb6a"/>
+
+            {/* ── TURBINE 4 — x=1065, hub y=55 ── */}
+            <line x1="1065" y1="55" x2="1065" y2="183" stroke="#b0bec5" strokeWidth="4"/>
+            <circle cx="1065" cy="55" r="6" fill="#546e7a"/>
+            <circle cx="1065" cy="55" r="3" fill="#e0e0e0"/>
             <g>
               <animateTransform attributeName="transform" attributeType="XML"
-                type="rotate" from="0 782 78" to="360 782 78" dur="2.6s" repeatCount="indefinite"/>
-              <ellipse cx="782" cy="60" rx="3.5" ry="19" fill="white" stroke="#90a4ae" strokeWidth="1"/>
-              <ellipse cx="782" cy="60" rx="3.5" ry="19" fill="white" stroke="#90a4ae" strokeWidth="1" transform="rotate(120 782 78)"/>
-              <ellipse cx="782" cy="60" rx="3.5" ry="19" fill="white" stroke="#90a4ae" strokeWidth="1" transform="rotate(240 782 78)"/>
+                type="rotate" from="0 1065 55" to="360 1065 55" dur="3s" repeatCount="indefinite"/>
+              <path d="M1065,55 C1062,50 1059,34 1065,31 C1071,34 1068,50 1065,55 Z" fill="#1976d2"/>
+              <path d="M1065,55 C1062,50 1059,34 1065,31 C1071,34 1068,50 1065,55 Z" fill="#1976d2" transform="rotate(120 1065 55)"/>
+              <path d="M1065,55 C1062,50 1059,34 1065,31 C1071,34 1068,50 1065,55 Z" fill="#1976d2" transform="rotate(240 1065 55)"/>
             </g>
 
-            {/* ── TREE 2 — x=870 ── */}
-            <rect x="867" y="162" width="7" height="21" rx="3" fill="#795548"/>
-            <ellipse cx="871" cy="150" rx="19" ry="21" fill="#2e7d32"/>
-            <ellipse cx="871" cy="143" rx="14" ry="16" fill="#388e3c"/>
-            <ellipse cx="873" cy="137" rx="10" ry="12" fill="#43a047"/>
-
-            {/* ── POWER POLE — x=960 ── */}
-            <line x1="960" y1="80" x2="960" y2="183" stroke="#78716c" strokeWidth="4.5"/>
-            <line x1="930" y1="80" x2="990" y2="80" stroke="#78716c" strokeWidth="3.5"/>
-            <line x1="960" y1="80" x2="960" y2="108" stroke="#9e9e9e" strokeWidth="2.5"/>
-            <line x1="944" y1="108" x2="976" y2="108" stroke="#78716c" strokeWidth="3"/>
-            <line x1="930" y1="80" x2="944" y2="108" stroke="#78716c" strokeWidth="2"/>
-            <line x1="990" y1="80" x2="976" y2="108" stroke="#78716c" strokeWidth="2"/>
-            <circle cx="930" cy="80" r="5" fill="#90a4ae"/>
-            <circle cx="960" cy="80" r="5" fill="#90a4ae"/>
-            <circle cx="990" cy="80" r="5" fill="#90a4ae"/>
-
-            {/* ── TREE 3 — x=1058 ── */}
-            <rect x="1055" y="165" width="6" height="18" rx="3" fill="#795548"/>
-            <ellipse cx="1058" cy="154" rx="16" ry="18" fill="#388e3c"/>
-            <ellipse cx="1058" cy="148" rx="12" ry="13" fill="#43a047"/>
-
-            {/* ── TRANSFORMER — x=1140 ── */}
-            <line x1="1140" y1="82" x2="1140" y2="183" stroke="#78716c" strokeWidth="4.5"/>
-            <rect x="1118" y="78" width="46" height="40" rx="6" fill="#37474f"/>
-            <rect x="1123" y="82" width="36" height="14" rx="3" fill="#546e7a"/>
-            <rect x="1123" y="98" width="36" height="7"  rx="2" fill="#455a64"/>
-            <rect x="1123" y="107" width="36" height="7" rx="2" fill="#455a64"/>
-            <line x1="1130" y1="74" x2="1130" y2="79" stroke="#90a4ae" strokeWidth="3"/>
-            <line x1="1140" y1="72" x2="1140" y2="79" stroke="#90a4ae" strokeWidth="3"/>
-            <line x1="1150" y1="74" x2="1150" y2="79" stroke="#90a4ae" strokeWidth="3"/>
-            <circle cx="1130" cy="74" r="3.5" fill="#78909c"/>
-            <circle cx="1140" cy="72" r="3.5" fill="#78909c"/>
-            <circle cx="1150" cy="74" r="3.5" fill="#78909c"/>
+            {/* ── TREE D — x=1148 ── */}
+            <rect x="1145" y="165" width="6" height="18" rx="2" fill="#795548"/>
+            <ellipse cx="1148" cy="154" rx="16" ry="18" fill="#2e7d32"/>
+            <ellipse cx="1148" cy="148" rx="12" ry="13" fill="#43a047"/>
 
             {/* ── BUILDINGS ── */}
-            {/* Tall B1 x=1220 */}
-            <rect x="1220" y="55" width="72" height="128" rx="4" fill="#b0bec5"/>
-            <rect x="1220" y="55" width="72" height="11"  rx="3" fill="#90a4ae"/>
-            {[0,1,2,3,4,5,6].map(r => [0,1,2].map(c => (
-              <rect key={`b1r${r}c${c}`} x={1228+c*21} y={72+r*16} width="14" height="10" rx="2"
+            {/* Tall B1 */}
+            <rect x="1190" y="52" width="68" height="131" rx="4" fill="#b0bec5"/>
+            <rect x="1190" y="52" width="68" height="11"  rx="3" fill="#90a4ae"/>
+            {[0,1,2,3,4,5,6].map((r: number) => [0,1,2].map((c: number) => (
+              <rect key={`b1r${r}c${c}`} x={1198+c*20} y={69+r*16} width="13" height="10" rx="2"
                 fill={[1,1,0,1,0,1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,0][r*3+c] ? "#fff9c4" : "#eceff1"} opacity="0.95"/>
             )))}
-            {/* Medium B2 x=1308 */}
-            <rect x="1308" y="76" width="58" height="107" rx="4" fill="#cfd8dc"/>
-            <rect x="1308" y="76" width="58" height="10"  rx="3" fill="#b0bec5"/>
-            {[0,1,2,3,4,5].map(r => [0,1].map(c => (
-              <rect key={`b2r${r}c${c}`} x={1316+c*26} y={92+r*16} width="16" height="10" rx="2"
+            {/* Medium B2 */}
+            <rect x="1272" y="72" width="58" height="111" rx="4" fill="#cfd8dc"/>
+            <rect x="1272" y="72" width="58" height="10"  rx="3" fill="#b0bec5"/>
+            {[0,1,2,3,4,5].map((r: number) => [0,1].map((c: number) => (
+              <rect key={`b2r${r}c${c}`} x={1280+c*26} y={88+r*16} width="15" height="10" rx="2"
                 fill={[1,0,0,1,1,0,1,1,0,1,0,1][r*2+c] ? "#fff9c4" : "#eceff1"} opacity="0.9"/>
             )))}
-            {/* Small B3 x=1382 */}
-            <rect x="1382" y="108" width="40" height="75" rx="3" fill="#b0bec5"/>
-            <rect x="1382" y="108" width="40" height="8"  rx="2" fill="#90a4ae"/>
-            {[0,1,2,3].map(r => (
-              <rect key={`b3r${r}`} x={1390} y={122+r*16} width="24" height="9" rx="2"
-                fill={[1,0,1,1][r] ? "#fff9c4" : "#eceff1"} opacity="0.9"/>
-            ))}
+            {/* Short B3 */}
+            <rect x="1344" y="98" width="50" height="85" rx="4" fill="#b0bec5"/>
+            <rect x="1344" y="98" width="50" height="9"  rx="3" fill="#90a4ae"/>
+            {[0,1,2,3,4].map((r: number) => [0,1].map((c: number) => (
+              <rect key={`b3r${r}c${c}`} x={1351+c*22} y={113+r*16} width="13" height="10" rx="2"
+                fill={[1,1,0,1,0,1,1,0,1,0][r*2+c] ? "#fff9c4" : "#eceff1"} opacity="0.9"/>
+            )))}
+
+            {/* ── ELECTRIC CAR — LTR blue ── */}
+            <g>
+              <animateTransform attributeName="transform" attributeType="XML"
+                type="translate" from="-100 183" to="1520 183" dur="16s" repeatCount="indefinite"/>
+              <rect x="2" y="-36" width="86" height="26" rx="5" fill="#1565c0"/>
+              <rect x="14" y="-55" width="54" height="22" rx="7" fill="#1976d2"/>
+              <rect x="18" y="-52" width="21" height="15" rx="2" fill="#b3e5fc" opacity="0.9"/>
+              <rect x="43" y="-52" width="21" height="15" rx="2" fill="#b3e5fc" opacity="0.9"/>
+              <circle cx="17" cy="-9" r="11" fill="#263238"/>
+              <circle cx="17" cy="-9" r="5"  fill="#546e7a"/>
+              <circle cx="73" cy="-9" r="11" fill="#263238"/>
+              <circle cx="73" cy="-9" r="5"  fill="#546e7a"/>
+              <ellipse cx="89" cy="-22" rx="3" ry="5" fill="#fffde7" opacity="0.95"/>
+              <circle cx="10" cy="-40" r="4" fill="#4caf50"/>
+            </g>
+
+            {/* ── ELECTRIC CAR — RTL green ── */}
+            <g>
+              <animateTransform attributeName="transform" attributeType="XML"
+                type="translate" from="1520 183" to="-100 183" dur="20s" begin="6s" repeatCount="indefinite"/>
+              <g transform="translate(90,0) scale(-1,1)">
+                <rect x="2" y="-36" width="86" height="26" rx="5" fill="#2e7d32"/>
+                <rect x="14" y="-55" width="54" height="22" rx="7" fill="#388e3c"/>
+                <rect x="18" y="-52" width="21" height="15" rx="2" fill="#c8e6c9" opacity="0.9"/>
+                <rect x="43" y="-52" width="21" height="15" rx="2" fill="#c8e6c9" opacity="0.9"/>
+                <circle cx="17" cy="-9" r="11" fill="#263238"/>
+                <circle cx="17" cy="-9" r="5"  fill="#546e7a"/>
+                <circle cx="73" cy="-9" r="11" fill="#263238"/>
+                <circle cx="73" cy="-9" r="5"  fill="#546e7a"/>
+                <ellipse cx="89" cy="-22" rx="3" ry="5" fill="#fffde7" opacity="0.95"/>
+                <circle cx="10" cy="-40" r="4" fill="#ffb300"/>
+              </g>
+            </g>
+
+            {/* ── ELECTRIC SCOOTER — LTR ── */}
+            <g>
+              <animateTransform attributeName="transform" attributeType="XML"
+                type="translate" from="-60 183" to="1480 183" dur="11s" begin="3s" repeatCount="indefinite"/>
+              <circle cx="10" cy="-10" r="10" fill="#37474f"/>
+              <circle cx="10" cy="-10" r="4.5" fill="#607d8b"/>
+              <circle cx="46" cy="-10" r="10" fill="#37474f"/>
+              <circle cx="46" cy="-10" r="4.5" fill="#607d8b"/>
+              <rect x="6" y="-30" width="44" height="10" rx="4" fill="#00897b"/>
+              <rect x="8" y="-42" width="22" height="12" rx="4" fill="#00695c"/>
+              <rect x="42" y="-50" width="5" height="26" rx="2" fill="#546e7a"/>
+              <rect x="33" y="-51" rx="2" width="22" height="5" fill="#546e7a"/>
+              <ellipse cx="22" cy="-52" rx="8" ry="12" fill="#ff7043"/>
+              <circle  cx="22" cy="-65" r="9"  fill="#bf360c"/>
+            </g>
+
+            {/* ── ELECTRIC SCOOTER — RTL ── */}
+            <g>
+              <animateTransform attributeName="transform" attributeType="XML"
+                type="translate" from="1480 183" to="-60 183" dur="13s" begin="9s" repeatCount="indefinite"/>
+              <g transform="translate(56,0) scale(-1,1)">
+                <circle cx="10" cy="-10" r="10" fill="#37474f"/>
+                <circle cx="10" cy="-10" r="4.5" fill="#607d8b"/>
+                <circle cx="46" cy="-10" r="10" fill="#37474f"/>
+                <circle cx="46" cy="-10" r="4.5" fill="#607d8b"/>
+                <rect x="6" y="-30" width="44" height="10" rx="4" fill="#0288d1"/>
+                <rect x="8" y="-42" width="22" height="12" rx="4" fill="#01579b"/>
+                <rect x="42" y="-50" width="5" height="26" rx="2" fill="#546e7a"/>
+                <rect x="33" y="-51" rx="2" width="22" height="5" fill="#546e7a"/>
+                <ellipse cx="22" cy="-52" rx="8" ry="12" fill="#ffa726"/>
+                <circle  cx="22" cy="-65" r="9"  fill="#e65100"/>
+              </g>
+            </g>
 
           </svg>
         </div>
