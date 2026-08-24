@@ -107,13 +107,13 @@ export default function LoginPage() {
 
             {/* Header */}
             <div style={{ marginBottom: "1.5rem" }}>
-              {/* Save Earth logo inside card */}
+              {/* Save Earth logo inside card — full width, aspect ratio preserved */}
               <div style={{ marginBottom: 16 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/media/savearth_logo.png"
                   alt="Save Earth Energy"
-                  style={{ height: 48, maxWidth: 180, objectFit: "contain" }}
+                  style={{ width: "100%", height: "auto", objectFit: "contain", display: "block" }}
                 />
               </div>
               <h4 style={{ fontWeight: 800, fontSize: 22, color: "#111827", margin: "0 0 4px" }}>
@@ -230,7 +230,7 @@ export default function LoginPage() {
             <img
               src="/media/orbit-compliance-full.png"
               alt="ORBIT Compliance ERP"
-              style={{ height: 32, maxWidth: 180, objectFit: "contain", opacity: 0.7 }}
+              style={{ height: 38, maxWidth: 200, objectFit: "contain", imageRendering: "crisp-edges" }}
             />
           </div>
 
