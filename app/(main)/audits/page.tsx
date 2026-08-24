@@ -23,11 +23,40 @@ const SEL: React.CSSProperties = {
 const ALL_STATUS: AuditStatus[] = ["In Progress", "Draft", "Pending Approval", "Delivered"];
 const PAGE_SIZE = 15;
 
+function exportCSV(data: typeof AUDITS) {
+  const headers = ["Audit ID","Bank","Branch","Branch Code","Auditor","Auditor ID","Audit Date","Due Date","HT/LT","Photos","GPS Lat","GPS Lng","Status"];
+  const rows = data.map(a => [
+    a.id, a.bank, a.branch, a.branchCode, a.auditor, a.auditorId,
+    a.startDate, a.dueDate, a.htLt, a.photos,
+    a.gps?.lat ?? "", a.gps?.lng ?? "", a.status,
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = "audits.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportXLS(data: typeof AUDITS) {
+  const headers = ["Audit ID","Bank","Branch","Branch Code","Auditor","Auditor ID","Audit Date","Due Date","HT/LT","Photos","GPS Lat","GPS Lng","Status"];
+  const rows = data.map(a => [
+    a.id, a.bank, a.branch, a.branchCode, a.auditor, a.auditorId,
+    a.startDate, a.dueDate, a.htLt, a.photos,
+    a.gps?.lat ?? "", a.gps?.lng ?? "", a.status,
+  ]);
+  const table = `<table><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</table>`;
+  const blob = new Blob([`<html><body>${table}</body></html>`], { type:"application/vnd.ms-excel" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = "audits.xls"; a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AllAuditsPage() {
-  const [search,   setSearch]   = useState("");
-  const [bankF,    setBankF]    = useState("All Banks");
-  const [statusF,  setStatusF]  = useState("All Status");
-  const [auditorF, setAuditorF] = useState("All Auditors");
+  const [search,      setSearch]      = useState("");
+  const [bankF,       setBankF]       = useState("All Banks");
+  const [statusF,     setStatusF]     = useState("All Status");
+  const [auditorF,    setAuditorF]    = useState("All Auditors");
+  const [exportOpen,  setExportOpen]  = useState(false);
   const [page,     setPage]     = useState(1);
 
   const reset = () => setPage(1);
@@ -73,14 +102,33 @@ export default function AllAuditsPage() {
         {/* Header */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
           <h4 style={{ fontSize:22, fontWeight:800, color:"#111827", margin:0 }}>All Audits</h4>
-          <div className="no-print" style={{ display:"flex", gap:8 }}>
-            <button onClick={() => window.print()}
-              style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"8px 14px", border:"1px solid #e5e7eb", borderRadius:8, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#374151" }}>
-              <i className="ri-printer-line" /> Print
-            </button>
-            <button style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"8px 14px", border:"1px solid #e5e7eb", borderRadius:8, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#374151" }}>
-              <i className="ri-download-2-line" /> Export
-            </button>
+          <div className="no-print" style={{ display:"flex", gap:8, alignItems:"center" }}>
+
+            {/* Export dropdown */}
+            <div style={{ position:"relative" }}>
+              <button onClick={() => setExportOpen(o => !o)}
+                style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"8px 14px", border:"1px solid #e5e7eb", borderRadius:8, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#374151" }}>
+                <i className="ri-download-2-line" /> Export <i className="ri-arrow-down-s-line" style={{ fontSize:14, marginLeft:2 }}/>
+              </button>
+              {exportOpen && (
+                <div style={{ position:"absolute", top:"calc(100% + 6px)", right:0, background:"#fff", border:"1px solid #e5e7eb", borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.10)", zIndex:50, minWidth:140, overflow:"hidden" }}>
+                  <button onClick={() => { exportXLS(filtered); setExportOpen(false); }}
+                    style={{ display:"flex", alignItems:"center", gap:8, width:"100%", padding:"10px 16px", background:"none", border:"none", cursor:"pointer", fontSize:13, color:"#374151", fontWeight:600 }}
+                    onMouseEnter={e => (e.currentTarget.style.background="#f9fafb")}
+                    onMouseLeave={e => (e.currentTarget.style.background="none")}>
+                    <i className="ri-file-excel-2-line" style={{ color:"#16a34a", fontSize:15 }}/> Export XLS
+                  </button>
+                  <div style={{ height:1, background:"#f3f4f6" }}/>
+                  <button onClick={() => { exportCSV(filtered); setExportOpen(false); }}
+                    style={{ display:"flex", alignItems:"center", gap:8, width:"100%", padding:"10px 16px", background:"none", border:"none", cursor:"pointer", fontSize:13, color:"#374151", fontWeight:600 }}
+                    onMouseEnter={e => (e.currentTarget.style.background="#f9fafb")}
+                    onMouseLeave={e => (e.currentTarget.style.background="none")}>
+                    <i className="ri-file-text-line" style={{ color:"#2563eb", fontSize:15 }}/> Export CSV
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"8px 16px", background:"var(--primary-color,#16a34a)", color:"#fff", border:"none", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>
               <i className="ri-add-line" /> New Audit
             </button>
