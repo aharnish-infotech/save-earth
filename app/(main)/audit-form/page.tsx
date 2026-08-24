@@ -1917,7 +1917,7 @@ export default function AuditFormPage() {
                         : <span style={{ fontSize:11, fontWeight:800, color:"#9ca3af" }}>{idx+1}</span>
                     }
                   </div>
-                  <div style={{ textAlign:"left", display:window.innerWidth < 600 ? "none" : "block" }}>
+                  <div style={{ textAlign:"left" }}>
                     <div style={{ fontSize:11, fontWeight:800, color: isCurrent ? step.color : isDone ? "#16a34a" : "#9ca3af", lineHeight:1.2 }}>{step.shortLabel}</div>
                     <div style={{ fontSize:10, color:"#9ca3af", marginTop:1, display: isCurrent ? "block" : "none" }}>{step.desc}</div>
                   </div>
