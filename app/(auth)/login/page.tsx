@@ -85,6 +85,24 @@ export default function LoginPage() {
         <div style={{ position: "absolute", top: "-8%", left: "-6%", width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(22,163,74,0.08) 0%, transparent 70%)", pointerEvents: "none" }}/>
         <div style={{ position: "absolute", bottom: "-10%", right: "-8%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(21,128,61,0.07) 0%, transparent 70%)", pointerEvents: "none" }}/>
 
+        {/* Windmill — bottom left */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/media/windmill.svg"
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 40,
+            height: 280,
+            width: "auto",
+            pointerEvents: "none",
+            userSelect: "none",
+            opacity: 0.82,
+          }}
+        />
+
         {/* Card */}
         <div style={{
           width: "100%", maxWidth: 420,
