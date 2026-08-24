@@ -1,8 +1,46 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 
-// ─── SHARED TYPES ─────────────────────────────────────────────────────────────
-type Tab = "load-sheet" | "meter-details" | "dg-set";
+// ─── STEP DEFINITIONS ─────────────────────────────────────────────────────────
+type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "electrical-parameters" | "meter-details" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-set";
+
+const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color: string; desc: string }[] = [
+  { id: "capture-branch",  label: "Capture Branch",     shortLabel: "Branch",    icon: "ri-building-2-line",    color: "#2563eb", desc: "Bank, IFSC, GPS & Classification" },
+  { id: "branch-photo",    label: "Branch Photo",        shortLabel: "Photo",     icon: "ri-camera-line",        color: "#0d9488", desc: "Location verification photo" },
+  { id: "ups-parameters",        label: "UPS Parameters",        shortLabel: "UPS",       icon: "ri-battery-charge-line", color: "#6d28d9", desc: "Voltage, current & earthing readings" },
+  { id: "electrical-parameters", label: "Electrical Parameters", shortLabel: "Electrical",icon: "ri-plug-line",           color: "#166534", desc: "Panel-wise voltage, current, PF & earthing" },
+  { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
+  { id: "questionnaire",  label: "Questionnaire",   shortLabel: "Questions",     icon: "ri-questionnaire-line",    color: "#0891b2", desc: "All active audit questions" },
+  { id: "load-sheet",     label: "Load Sheet",       shortLabel: "Load Sheet",    icon: "ri-lightbulb-line",        color: "#16a34a", desc: "Equipment & power load details" },
+  { id: "onsite-atm",    label: "Onsite ATM",       shortLabel: "ATM",           icon: "ri-bank-card-line",        color: "#7c3aed", desc: "ATM safety & compliance checklist" },
+  { id: "dg-set",                label: "Diesel Generator",      shortLabel: "DG Set",    icon: "ri-settings-3-line",    color: "#b91c1c", desc: "DG specs, batteries & risk" },
+];
+
+// ─── BANK MASTER ──────────────────────────────────────────────────────────────
+const BANK_LIST = [
+  { name: "State Bank of India",   code: "SBIN" },
+  { name: "HDFC Bank",             code: "HDFC" },
+  { name: "ICICI Bank",            code: "ICIC" },
+  { name: "Axis Bank",             code: "UTIB" },
+  { name: "Bank of Baroda",        code: "BARB" },
+  { name: "Punjab National Bank",  code: "PUNB" },
+  { name: "Canara Bank",           code: "CNRB" },
+  { name: "Union Bank of India",   code: "UBIN" },
+  { name: "Bank of India",         code: "BKID" },
+  { name: "Bank of Maharashtra",   code: "MAHB" },
+  { name: "Central Bank of India", code: "CBIN" },
+  { name: "Indian Bank",           code: "IDIB" },
+  { name: "IDBI Bank",             code: "IBKL" },
+  { name: "Kotak Mahindra Bank",   code: "KKBK" },
+  { name: "IndusInd Bank",         code: "INDB" },
+  { name: "Yes Bank",              code: "YESB" },
+];
+
+interface IFSCData {
+  STATE: string; DISTRICT: string; BRANCH: string; CENTRE: string;
+  ADDRESS: string; CITY: string; MICR: string; ISO3166: string;
+  CONTACT: string; BANK: string; BANKCODE: string; IFSC: string;
+}
 
 // ─── BRANCH LOAD SHEET TYPES ──────────────────────────────────────────────────
 interface EquipItem {
@@ -10,10 +48,8 @@ interface EquipItem {
 }
 interface EquipGroup { id: string; label: string; hasAC?: boolean; items: EquipItem[]; }
 
-const mkItem = (id: string, name: string, watt: string, optional = false): EquipItem =>
-  ({ id, name, nos: "", watt, optional });
-const mkAC = (id: string, name: string, watt: string): EquipItem =>
-  ({ id, name, nos: "", watt, tons: "", optional: true });
+const mkItem  = (id: string, name: string, watt: string, optional = false): EquipItem => ({ id, name, nos: "", watt, optional });
+const mkAC    = (id: string, name: string, watt: string): EquipItem => ({ id, name, nos: "", watt, tons: "", optional: true });
 
 const INITIAL_GROUPS: EquipGroup[] = [
   { id: "lighting", label: "Lighting Load", items: [
@@ -43,23 +79,15 @@ const INITIAL_GROUPS: EquipGroup[] = [
   ]},
 ];
 
-const totalW = (item: EquipItem) => (parseFloat(item.nos)||0) * (parseFloat(item.watt)||0);
-const groupTotal = (g: EquipGroup) => g.items.reduce((s,i) => s + totalW(i), 0);
-
-// ─── METER DETAILS TYPES ──────────────────────────────────────────────────────
+// ─── METER TYPES ──────────────────────────────────────────────────────────────
 interface Meter {
-  id: string;
-  provider: string; type: string;
-  sanctionedLoad: string; meterNo: string;
-  consumption: string; avgBill: string;
+  id: string; provider: string; type: string;
+  sanctionedLoad: string; meterNo: string; consumption: string; avgBill: string;
 }
 const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
-const newMeter = (): Meter => ({
-  id: uid(),
-  provider:"", type:"", sanctionedLoad:"", meterNo:"", consumption:"", avgBill:"",
-});
+const newMeter = (): Meter => ({ id: uid(), provider:"", type:"", sanctionedLoad:"", meterNo:"", consumption:"", avgBill:"" });
 
-// ─── DG SET TYPES ─────────────────────────────────────────────────────────────
+// ─── DG TYPES & DATA ──────────────────────────────────────────────────────────
 type RiskLevel = "Low" | "Medium" | "High" | "Critical" | "";
 interface DGQuestion {
   id: string; no: number; label: string; badge: string;
@@ -67,39 +95,436 @@ interface DGQuestion {
   options?: string[];
   value: string; obs: string; recommendation: string; risk: RiskLevel;
 }
-
 const INITIAL_DG: DGQuestion[] = [
   { id:"dg1", no:1, label:"Is the DG set on hiring or owned by the Bank?", badge:"Hired / Owned / Not Installed", inputType:"select", options:["Hired","Owned","Not Installed"], value:"", obs:"", recommendation:"", risk:"" },
-  { id:"dg2", no:2, label:"DG set capacity", badge:"KVA", inputType:"number", value:"", obs:"", recommendation:"", risk:"" },
-  { id:"dg3", no:3, label:"DG set make", badge:"OEM", inputType:"text", value:"", obs:"", recommendation:"", risk:"" },
-  { id:"dg4", no:4, label:"Is the DG set with Acoustic enclosure?", badge:"YES / NO", inputType:"yesno", value:"", obs:"", recommendation:"", risk:"" },
-  { id:"dg5", no:5, label:"DG set model / year of manufacture", badge:"Year", inputType:"text", value:"", obs:"", recommendation:"", risk:"" },
-  { id:"dg6", no:6, label:"No. of DG set Batteries", badge:"Nos.", inputType:"number", value:"", obs:"", recommendation:"", risk:"" },
-  { id:"dg7", no:7, label:"DG set Battery rating", badge:"AH", inputType:"number", value:"", obs:"", recommendation:"", risk:"" },
+  { id:"dg2", no:2, label:"DG set capacity",                               badge:"KVA",        inputType:"number", value:"", obs:"", recommendation:"", risk:"" },
+  { id:"dg3", no:3, label:"DG set make",                                   badge:"OEM",        inputType:"text",   value:"", obs:"", recommendation:"", risk:"" },
+  { id:"dg4", no:4, label:"Is the DG set with Acoustic enclosure?",        badge:"YES / NO",   inputType:"yesno",  value:"", obs:"", recommendation:"", risk:"" },
+  { id:"dg5", no:5, label:"DG set model / year of manufacture",            badge:"Year",       inputType:"text",   value:"", obs:"", recommendation:"", risk:"" },
+  { id:"dg6", no:6, label:"No. of DG set Batteries",                       badge:"Nos.",       inputType:"number", value:"", obs:"", recommendation:"", risk:"" },
+  { id:"dg7", no:7, label:"DG set Battery rating",                         badge:"AH",         inputType:"number", value:"", obs:"", recommendation:"", risk:"" },
 ];
+const RISK_COLORS: Record<RiskLevel, { bg: string; text: string }> = {
+  "Low":      { bg:"#f0fdf4", text:"#16a34a" },
+  "Medium":   { bg:"#fffbeb", text:"#d97706" },
+  "High":     { bg:"#fff7ed", text:"#ea580c" },
+  "Critical": { bg:"#fef2f2", text:"#dc2626" },
+  "":         { bg:"#f9fafb", text:"#6b7280" },
+};
 
 // ─── SHARED STYLES ────────────────────────────────────────────────────────────
 const card: React.CSSProperties = { background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:14 };
-const INP: React.CSSProperties = { width:"100%", border:"1px solid #e5e7eb", borderRadius:8, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fff", boxSizing:"border-box" };
-const LBL: React.CSSProperties = { fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:5, display:"block", textTransform:"uppercase", letterSpacing:"0.04em" };
-const TH: React.CSSProperties = { padding:"8px 10px", fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", background:"#f9fafb", borderBottom:"1px solid #e5e7eb", textAlign:"left", whiteSpace:"nowrap" };
-const TD: React.CSSProperties = { padding:"8px 10px", fontSize:13, color:"#374151", borderBottom:"1px solid #f3f4f6", verticalAlign:"middle" };
-const NI: React.CSSProperties = { width:"100%", border:"1px solid #e5e7eb", borderRadius:7, padding:"6px 8px", fontSize:13, fontWeight:700, color:"#111827", textAlign:"center", outline:"none", background:"#fff", boxSizing:"border-box" };
+const INP: React.CSSProperties  = { width:"100%", border:"1px solid #e5e7eb", borderRadius:8, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fff", boxSizing:"border-box" };
+const LBL: React.CSSProperties  = { fontSize:11, fontWeight:700, color:"#6b7280", marginBottom:5, display:"block", textTransform:"uppercase", letterSpacing:"0.04em" };
+const TH_S: React.CSSProperties  = { padding:"8px 10px", fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", background:"#f9fafb", borderBottom:"1px solid #e5e7eb", textAlign:"left", whiteSpace:"nowrap" };
+const TD_S: React.CSSProperties  = { padding:"8px 10px", fontSize:13, color:"#374151", borderBottom:"1px solid #f3f4f6", verticalAlign:"middle" };
+const NI: React.CSSProperties   = { width:"100%", border:"1px solid #e5e7eb", borderRadius:7, padding:"6px 8px", fontSize:13, fontWeight:700, color:"#111827", textAlign:"center", outline:"none", background:"#fff", boxSizing:"border-box" };
+
+// ─── SECTION CARD ─────────────────────────────────────────────────────────────
+function SectionCard({ icon, iconBg, iconColor, title, children }: {
+  icon: string; iconBg: string; iconColor: string; title: string; children: React.ReactNode;
+}) {
+  return (
+    <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)", marginBottom:12 }}>
+      <div style={{ padding:"12px 16px", borderBottom:"1px solid #f3f4f6", display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ width:32, height:32, borderRadius:9, background:iconBg, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <i className={icon} style={{ fontSize:16, color:iconColor }}/>
+        </div>
+        <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>{title}</span>
+      </div>
+      <div style={{ padding:"14px 16px" }}>{children}</div>
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SECTION A — Branch Load Sheet
+// STEP 1 — Capture Branch
+// ═══════════════════════════════════════════════════════════════════════════════
+interface BranchData {
+  bankCode: string; ifscSuffix: string; ifscData: IFSCData | null;
+  gps: { lat: number; lng: number } | null;
+  htlt: "HT" | "LT" | ""; sld: string;
+  circle: string; rbo: string; branchType: string;
+  openingYear: string; floors: string; branchStatus: string;
+}
+
+function CaptureBranchStep({
+  onComplete,
+}: {
+  onComplete: (data: BranchData) => void;
+}) {
+  const [selectedBank, setSelectedBank] = useState(BANK_LIST[0]);
+  const [ifscSuffix, setIfscSuffix]     = useState("");
+  const [ifscData, setIfscData]         = useState<IFSCData | null>(null);
+  const [ifscLoading, setIfscLoading]   = useState(false);
+  const [ifscError, setIfscError]       = useState("");
+  const [gps, setGps]                   = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsLoading, setGpsLoading]     = useState(false);
+  const [gpsError, setGpsError]         = useState("");
+  const [gpsDenied, setGpsDenied]       = useState(false);
+  const [htlt, setHtlt]                 = useState<"HT" | "LT" | "">("");
+  const [sld, setSld]                   = useState("");
+  const [circle, setCircle]             = useState("");
+  const [rbo, setRbo]                   = useState("");
+  const [branchType, setBranchType]     = useState("Urban");
+  const [openingYear, setOpeningYear]   = useState("");
+  const [floors, setFloors]             = useState("");
+  const [branchStatus, setBranchStatus] = useState("Active");
+  const suffixRef = useRef<HTMLInputElement>(null);
+
+  const canProceed = ifscSuffix.trim().length === 7 && !!ifscData && !!gps && htlt !== "" && (htlt === "LT" || (htlt === "HT" && sld !== ""));
+
+  const fetchIFSC = async (suffix: string) => {
+    if (suffix.length !== 7) return;
+    const code = `${selectedBank.code}${suffix.toUpperCase()}`;
+    setIfscLoading(true); setIfscError(""); setIfscData(null);
+    try {
+      const res = await fetch(`https://ifsc.razorpay.com/${code}`);
+      if (!res.ok) throw new Error("IFSC not found");
+      const data: IFSCData = await res.json();
+      setIfscData(data);
+    } catch {
+      setIfscError("Invalid IFSC or branch not found. Please check and retry.");
+    } finally {
+      setIfscLoading(false);
+    }
+  };
+
+  const handleSuffixChange = (v: string) => {
+    const clean = v.replace(/[^a-zA-Z0-9]/g,"").toUpperCase().slice(0,7);
+    setIfscSuffix(clean); setIfscData(null); setIfscError("");
+    if (clean.length === 7) fetchIFSC(clean);
+  };
+
+  const handleBankChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const bank = BANK_LIST.find(b => b.code === e.target.value) ?? BANK_LIST[0];
+    setSelectedBank(bank); setIfscSuffix(""); setIfscData(null); setIfscError("");
+  };
+
+  const fetchGPS = () => {
+    if (!navigator.geolocation) { setGpsError("not-supported"); return; }
+    setGpsLoading(true); setGpsError(""); setGpsDenied(false);
+    navigator.geolocation.getCurrentPosition(
+      pos => { setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsLoading(false); },
+      err => {
+        setGpsLoading(false);
+        if (err.code === 1) { setGpsDenied(true); setGpsError("denied"); }
+        else if (err.code === 2) setGpsError("unavailable");
+        else setGpsError("timeout");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleProceed = () => {
+    if (!canProceed) return;
+    onComplete({
+      bankCode: selectedBank.code, ifscSuffix, ifscData, gps,
+      htlt, sld, circle, rbo, branchType, openingYear, floors, branchStatus,
+    });
+  };
+
+  const checklist = [
+    { label: "Bank Selected",    done: true },
+    { label: "IFSC Verified",    done: !!ifscData },
+    { label: "GPS Captured",     done: !!gps },
+    { label: "HT / LT Selected", done: htlt !== "" },
+    { label: "SLD (if HT)",      done: htlt === "LT" || (htlt === "HT" && sld !== "") },
+  ];
+  const doneCt = checklist.filter(c => c.done).length;
+
+  return (
+    <div style={{ maxWidth:680, margin:"0 auto" }}>
+
+      {/* Progress bar */}
+      <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 18px", marginBottom:16, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Completion</span>
+          <span style={{ fontSize:13, fontWeight:800, color:"#2563eb" }}>{doneCt} / {checklist.length}</span>
+        </div>
+        <div style={{ height:6, background:"#f3f4f6", borderRadius:99, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${(doneCt/checklist.length)*100}%`, background:"linear-gradient(90deg,#2563eb,#60a5fa)", borderRadius:99, transition:"width 0.3s ease" }}/>
+        </div>
+        <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
+          {checklist.map(item => (
+            <div key={item.label} style={{ display:"flex", alignItems:"center", gap:4 }}>
+              <i className={item.done ? "ri-checkbox-circle-fill" : "ri-checkbox-blank-circle-line"} style={{ fontSize:13, color:item.done?"#2563eb":"#d1d5db" }}/>
+              <span style={{ fontSize:11, color:item.done?"#374151":"#9ca3af", fontWeight:item.done?600:400 }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 1. Bank Selection */}
+      <SectionCard icon="ri-bank-line" iconBg="#dbeafe" iconColor="#2563eb" title="Bank Selection">
+        <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>BANK NAME</label>
+        <select
+          value={selectedBank.code}
+          onChange={handleBankChange}
+          style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", background:"#fff", outline:"none", cursor:"pointer", fontWeight:600 }}
+        >
+          {BANK_LIST.map(b => <option key={b.code} value={b.code}>{b.name}</option>)}
+        </select>
+      </SectionCard>
+
+      {/* 2. IFSC Code */}
+      <SectionCard icon="ri-barcode-line" iconBg="#dcfce7" iconColor="#16a34a" title="IFSC Code">
+        <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:8 }}>
+          <div style={{ flexShrink:0, background:"#111827", color:"#fff", borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
+            {selectedBank.code}
+          </div>
+          <input
+            ref={suffixRef}
+            value={ifscSuffix}
+            onChange={e => handleSuffixChange(e.target.value)}
+            placeholder="0000000"
+            maxLength={7}
+            style={{ flex:1, border:`1.5px solid ${ifscSuffix.length===7?(ifscData?"#16a34a":ifscError?"#dc2626":"#e5e7eb"):"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:15, color:"#111827", outline:"none", fontFamily:"monospace", letterSpacing:"0.1em", fontWeight:700, textTransform:"uppercase", background:"#fafafa" }}
+          />
+          {ifscLoading && <i className="ri-loader-4-line" style={{ color:"#9ca3af", fontSize:18, animation:"spin 1s linear infinite" }}/>}
+          {ifscData && !ifscLoading && <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:18 }}/>}
+        </div>
+        <div style={{ fontSize:12, color:"#6b7280", marginBottom:8 }}>
+          Full IFSC: <strong style={{ color:"#111827", fontFamily:"monospace", letterSpacing:"0.06em" }}>{selectedBank.code}{ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}</strong>
+          <span style={{ marginLeft:6, fontSize:10, color:"#9ca3af" }}>{ifscSuffix.length}/7 characters</span>
+        </div>
+        {ifscError && (
+          <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"8px 12px", fontSize:12, color:"#dc2626", display:"flex", gap:7, alignItems:"center" }}>
+            <i className="ri-error-warning-line"/>{ifscError}
+          </div>
+        )}
+        {ifscData && (
+          <div style={{ marginTop:10, background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:10, padding:"12px" }}>
+            <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8 }}>Branch Details — Auto Populated</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {[
+                { label:"Branch",   value: ifscData.BRANCH   },
+                { label:"Address",  value: ifscData.ADDRESS  },
+                { label:"City",     value: ifscData.CITY     },
+                { label:"District", value: ifscData.DISTRICT },
+                { label:"State",    value: ifscData.STATE    },
+                { label:"MICR",     value: ifscData.MICR     },
+                { label:"Contact",  value: ifscData.CONTACT  },
+              ].filter(f => f.value).map(f => (
+                <div key={f.label} style={{ display:"flex", gap:8 }}>
+                  <span style={{ fontSize:10, fontWeight:700, color:"#6b7280", minWidth:60, textTransform:"uppercase", paddingTop:1 }}>{f.label}</span>
+                  <span style={{ fontSize:12, color:"#111827", fontWeight:500, flex:1 }}>{f.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </SectionCard>
+
+      {/* 3. GPS Co-ordinates */}
+      <SectionCard icon="ri-map-pin-2-line" iconBg="#fef9c3" iconColor="#ca8a04" title="GPS Co-ordinates">
+        {!gps ? (
+          <>
+            {gpsDenied ? (
+              <div style={{ marginBottom:12 }}>
+                <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:10, padding:"12px 14px", marginBottom:10 }}>
+                  <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:8 }}>
+                    <i className="ri-lock-line" style={{ color:"#ea580c", fontSize:18, flexShrink:0, marginTop:1 }}/>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:800, color:"#9a3412" }}>Location Access Blocked</div>
+                      <div style={{ fontSize:11, color:"#c2410c", marginTop:2 }}>Follow the steps below to enable location access.</div>
+                    </div>
+                  </div>
+                  <div style={{ borderTop:"1px solid #fed7aa", paddingTop:10, display:"flex", flexDirection:"column", gap:6 }}>
+                    {[
+                      { step:"1", text:"Click the 🔒 lock icon in your browser's address bar" },
+                      { step:"2", text:'Find "Location" and change it to "Allow"' },
+                      { step:"3", text:"Refresh the page, then click Fetch GPS again" },
+                    ].map(s => (
+                      <div key={s.step} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+                        <span style={{ width:18, height:18, borderRadius:"50%", background:"#ea580c", color:"#fff", fontSize:10, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{s.step}</span>
+                        <span style={{ fontSize:11, color:"#7c2d12", lineHeight:1.5 }}>{s.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={() => window.location.reload()}
+                  style={{ width:"100%", padding:"9px", borderRadius:8, border:"1px solid #fed7aa", background:"#fff7ed", color:"#ea580c", cursor:"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                  <i className="ri-refresh-line"/>Refresh Page & Retry
+                </button>
+              </div>
+            ) : gpsError === "unavailable" ? (
+              <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
+                <i className="ri-map-pin-off-line" style={{ fontSize:16 }}/>Position unavailable. Check your device GPS and try again.
+              </div>
+            ) : gpsError === "timeout" ? (
+              <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
+                <i className="ri-time-line" style={{ fontSize:16 }}/>Location request timed out. Move to a better signal area and retry.
+              </div>
+            ) : gpsError === "not-supported" ? (
+              <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
+                <i className="ri-error-warning-line" style={{ fontSize:16 }}/>Geolocation not supported. Please use Chrome or Edge.
+              </div>
+            ) : (
+              <div style={{ fontSize:12, color:"#9ca3af", marginBottom:10 }}>Tap to fetch current location coordinates</div>
+            )}
+            {!gpsDenied && (
+              <button onClick={fetchGPS} disabled={gpsLoading}
+                style={{ width:"100%", padding:"11px", borderRadius:9, border:"none", background:gpsLoading?"#9ca3af":"#16a34a", color:"#fff", cursor:gpsLoading?"not-allowed":"pointer", fontWeight:800, fontSize:12, letterSpacing:"0.06em", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                {gpsLoading ? <><i className="ri-loader-4-line" style={{ animation:"spin 1s linear infinite" }}/>FETCHING LOCATION…</> : <><i className="ri-crosshair-2-line"/>FETCH GPS CO-ORDINATES</>}
+              </button>
+            )}
+          </>
+        ) : (
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:9, padding:"10px 14px" }}>
+              <div style={{ display:"flex", gap:16 }}>
+                <div>
+                  <div style={{ fontSize:9, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Latitude</div>
+                  <div style={{ fontSize:14, fontWeight:800, color:"#15803d", fontFamily:"monospace", marginTop:2 }}>{gps.lat.toFixed(7)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:9, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Longitude</div>
+                  <div style={{ fontSize:14, fontWeight:800, color:"#15803d", fontFamily:"monospace", marginTop:2 }}>{gps.lng.toFixed(7)}</div>
+                </div>
+                <button onClick={() => setGps(null)} style={{ marginLeft:"auto", background:"none", border:"none", color:"#9ca3af", cursor:"pointer", fontSize:18, alignSelf:"flex-start" }}>×</button>
+              </div>
+            </div>
+            <div style={{ fontSize:11, color:"#16a34a", display:"flex", alignItems:"center", gap:5 }}>
+              <i className="ri-checkbox-circle-fill"/>GPS co-ordinates captured
+            </div>
+          </div>
+        )}
+      </SectionCard>
+
+      {/* 4. HT / LT */}
+      <SectionCard icon="ri-flashlight-line" iconBg="#fee2e2" iconColor="#dc2626" title="Is this branch HT or LT?">
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom: htlt !== "" ? 12 : 0 }}>
+          {(["HT","LT"] as const).map(type => (
+            <button key={type} onClick={() => { setHtlt(type); setSld(type === "LT" ? "Yes" : ""); }}
+              style={{
+                padding:"12px", borderRadius:10,
+                border: htlt === type ? `2px solid ${type==="HT"?"#dc2626":"#16a34a"}` : "2px solid #e5e7eb",
+                background: htlt === type ? (type==="HT"?"#fef2f2":"#f0fdf4") : "#fff",
+                color: htlt === type ? (type==="HT"?"#dc2626":"#16a34a") : "#6b7280",
+                cursor:"pointer", fontWeight:800, fontSize:15, letterSpacing:"0.05em", transition:"all 0.15s",
+              }}
+            >{type}</button>
+          ))}
+        </div>
+        {htlt !== "" && (
+          <div style={{ marginTop:4 }}>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+              Do you want SLD?{htlt==="HT" && <span style={{ color:"#dc2626" }}> *</span>}
+            </label>
+            {htlt === "LT" ? (
+              <div style={{ display:"flex", alignItems:"center", gap:8, border:"1.5px solid #86efac", borderRadius:9, padding:"10px 12px", background:"#f0fdf4" }}>
+                <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:16 }}/>
+                <span style={{ fontSize:13, fontWeight:700, color:"#15803d" }}>Yes</span>
+                <span style={{ fontSize:11, color:"#6b7280", marginLeft:4 }}>(Default for LT — always required)</span>
+              </div>
+            ) : (
+              <select value={sld} onChange={e => setSld(e.target.value)}
+                style={{ width:"100%", border:`1.5px solid ${sld?"#16a34a":"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:13, color:sld?"#111827":"#9ca3af", background:"#fff", outline:"none", cursor:"pointer", fontWeight:600 }}>
+                <option value="">Select…</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            )}
+          </div>
+        )}
+      </SectionCard>
+
+      {/* 5. Branch Classification */}
+      <SectionCard icon="ri-links-line" iconBg="#f5f3ff" iconColor="#7c3aed" title="Branch Classification">
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <div>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Circle / Zone / AO</label>
+            <input value={circle} onChange={e => setCircle(e.target.value)} placeholder="e.g. SBI Gujarat Circle"
+              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
+          </div>
+          <div>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>RBO / CO / Region / ZO</label>
+            <input value={rbo} onChange={e => setRbo(e.target.value)} placeholder="e.g. Ahmedabad RBO"
+              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
+          </div>
+          <div>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Type</label>
+            <select value={branchType} onChange={e => setBranchType(e.target.value)}
+              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
+              {["Metro","Urban","Semi-Urban","Rural"].map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <div>
+              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Opening Year</label>
+              <select value={openingYear} onChange={e => setOpeningYear(e.target.value)}
+                style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:openingYear?"#111827":"#9ca3af", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
+                <option value="">— Select Year —</option>
+                {Array.from({ length: 2035 - 1950 + 1 }, (_, i) => 2035 - i).map(y => (
+                  <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>No. of Floors</label>
+              <input type="number" min="1" max="99" value={floors} onChange={e => setFloors(e.target.value)} placeholder="e.g. 3"
+                style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* 6. Status */}
+      <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 16px", marginBottom:16, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+        <div style={{ fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>STATUS</div>
+        <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+          {(["Active","Inactive"] as const).map((s, i) => {
+            const sel = branchStatus === s;
+            const col = s === "Active" ? "#16a34a" : "#dc2626";
+            return (
+              <button key={s} onClick={() => setBranchStatus(s)}
+                style={{ flex:1, padding:"7px 10px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700,
+                  background:sel?col:"#fff", color:sel?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <i className={s==="Active"?"ri-checkbox-circle-line":"ri-close-circle-line"} style={{ fontSize:14 }}/>{s}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Proceed button — always enabled in testing mode */}
+      <button onClick={handleProceed}
+        style={{
+          width:"100%", padding:"15px", borderRadius:12, border:"none",
+          background: canProceed ? "#2563eb" : "#60a5fa",
+          color:"#fff", cursor:"pointer",
+          fontWeight:900, fontSize:13, letterSpacing:"0.08em",
+          boxShadow:"0 4px 14px rgba(37,99,235,0.35)",
+          transition:"all 0.2s", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+        }}>
+        <i className="ri-arrow-right-line"/>
+        PROCEED TO BRANCH PHOTO
+      </button>
+
+      {!canProceed && (
+        <p style={{ textAlign:"center", fontSize:11, color:"#9ca3af", marginTop:10 }}>
+          ⚡ Testing mode — proceed freely without filling all fields
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 2 — Branch Load Sheet
 // ═══════════════════════════════════════════════════════════════════════════════
 function LoadSheetSection({ branchName }: { branchName: string }) {
   const [groups, setGroups] = useState<EquipGroup[]>(INITIAL_GROUPS);
-  const [open, setOpen] = useState<Record<string,boolean>>({ lighting:true, fans:true, ac:true, computers:false, other:false });
-  const [saved, setSaved] = useState(false);
+  const [open, setOpen]     = useState<Record<string,boolean>>({ lighting:true, fans:true, ac:true, computers:false, other:false });
+  const [saved, setSaved]   = useState(false);
 
   const upd = useCallback((gid:string, iid:string, field:keyof EquipItem, val:string) =>
     setGroups(gs => gs.map(g => g.id!==gid ? g : { ...g, items: g.items.map(i => i.id!==iid ? i : {...i,[field]:val}) })), []);
 
-  const grand   = groups.reduce((s,g) => s + groupTotal(g), 0);
-  const active  = groups.reduce((s,g) => s + g.items.filter(i => parseFloat(i.nos)>0).length, 0);
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false),3000); };
+  const grand  = groups.reduce((s,g) => s + g.items.reduce((a,i) => a + (parseFloat(i.nos)||0)*(parseFloat(i.watt)||0), 0), 0);
+  const active = groups.reduce((s,g) => s + g.items.filter(i => parseFloat(i.nos)>0).length, 0);
+  const save   = () => { setSaved(true); setTimeout(()=>setSaved(false),3000); };
 
   return (
     <div>
@@ -107,7 +532,6 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
         <i className="ri-checkbox-circle-fill" style={{color:"#16a34a",fontSize:18}}/><span style={{fontSize:13,fontWeight:700,color:"#15803d"}}>Load Sheet saved successfully</span>
       </div>}
 
-      {/* Live stats */}
       <div style={card}>
         <div style={{padding:"13px 18px",borderBottom:"1px solid #f3f4f6",display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:34,height:34,borderRadius:10,background:"#f0fdf4",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -128,7 +552,6 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
         </div>
       </div>
 
-      {/* Equipment table */}
       <div style={card}>
         <div style={{padding:"13px 18px",borderBottom:"1px solid #e5e7eb",background:"#f9fafb",display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:28,height:28,borderRadius:8,background:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -139,9 +562,8 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
             <div style={{fontSize:11,color:"#9ca3af"}}>Enter Nos. and Wattage per item</div>
           </div>
         </div>
-
         {groups.map((group,gi) => {
-          const gt = groupTotal(group);
+          const gt = group.items.reduce((s,i) => s + (parseFloat(i.nos)||0)*(parseFloat(i.watt)||0), 0);
           const isOpen = open[group.id] !== false;
           return (
             <div key={group.id}>
@@ -161,29 +583,29 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
                 <div style={{overflowX:"auto"}}>
                   <table style={{width:"100%",borderCollapse:"collapse"}}>
                     <thead><tr>
-                      <th style={{...TH,width:"40%",paddingLeft:20}}>Equipment Installed</th>
-                      {group.hasAC && <th style={{...TH,width:80,textAlign:"center"}}>Tons</th>}
-                      <th style={{...TH,width:90,textAlign:"center"}}>Nos.</th>
-                      <th style={{...TH,width:100,textAlign:"center"}}>Watt (W)</th>
-                      <th style={{...TH,width:100,textAlign:"right",paddingRight:18}}>Total W</th>
+                      <th style={{...TH_S,width:"40%",paddingLeft:20}}>Equipment Installed</th>
+                      {group.hasAC && <th style={{...TH_S,width:80,textAlign:"center"}}>Tons</th>}
+                      <th style={{...TH_S,width:90,textAlign:"center"}}>Nos.</th>
+                      <th style={{...TH_S,width:100,textAlign:"center"}}>Watt (W)</th>
+                      <th style={{...TH_S,width:100,textAlign:"right",paddingRight:18}}>Total W</th>
                     </tr></thead>
                     <tbody>
                       {group.items.map(item => {
-                        const tw = totalW(item);
+                        const tw = (parseFloat(item.nos)||0)*(parseFloat(item.watt)||0);
                         return (
                           <tr key={item.id} onMouseEnter={e=>(e.currentTarget.style.background="#f9fafb")} onMouseLeave={e=>(e.currentTarget.style.background="transparent")}>
-                            <td style={{...TD,paddingLeft:20,color:item.optional&&!parseFloat(item.nos)?"#9ca3af":"#374151"}}>{item.name}</td>
-                            {group.hasAC && <td style={{...TD,textAlign:"center"}}>
+                            <td style={{...TD_S,paddingLeft:20,color:item.optional&&!parseFloat(item.nos)?"#9ca3af":"#374151"}}>{item.name}</td>
+                            {group.hasAC && <td style={{...TD_S,textAlign:"center"}}>
                               <input type="number" value={item.tons??""} placeholder="-" onChange={e=>upd(group.id,item.id,"tons",e.target.value)} style={{...NI,width:60,color:"#7c3aed"}}/>
                             </td>}
-                            <td style={{...TD,textAlign:"center"}}>
+                            <td style={{...TD_S,textAlign:"center"}}>
                               <input type="number" min="0" value={item.nos} placeholder="-" onChange={e=>upd(group.id,item.id,"nos",e.target.value)}
                                 style={{...NI,width:70,background:parseFloat(item.nos)>0?"#f0fdf4":"#fff",color:parseFloat(item.nos)>0?"#16a34a":"#9ca3af",borderColor:parseFloat(item.nos)>0?"#86efac":"#e5e7eb"}}/>
                             </td>
-                            <td style={{...TD,textAlign:"center"}}>
+                            <td style={{...TD_S,textAlign:"center"}}>
                               <input type="number" min="0" value={item.watt} onChange={e=>upd(group.id,item.id,"watt",e.target.value)} style={{...NI,width:80,color:"#2563eb"}}/>
                             </td>
-                            <td style={{...TD,textAlign:"right",paddingRight:18}}>
+                            <td style={{...TD_S,textAlign:"right",paddingRight:18}}>
                               <span style={{fontSize:13,fontWeight:tw>0?800:400,color:tw>0?"#111827":"#d1d5db"}}>{tw>0?tw.toFixed(0):"0"}</span>
                             </td>
                           </tr>
@@ -192,7 +614,7 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
                     </tbody>
                   </table>
                   <div style={{padding:"10px 18px",background:gt>0?"#16a34a":"#374151",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{group.id==="ac"?"AC / Air Conditioning Total":"Distributed Load (S.No 1)"}</span>
+                    <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{group.label} Total</span>
                     <span style={{fontSize:15,fontWeight:900,color:"#fff"}}>{gt.toFixed(0)} W</span>
                   </div>
                 </div>
@@ -200,7 +622,6 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
             </div>
           );
         })}
-
         <div style={{padding:"16px 18px",background:grand>0?"linear-gradient(135deg,#16a34a,#15803d)":"#374151",display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"2px solid #fff"}}>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.8)",textTransform:"uppercase",letterSpacing:"0.05em"}}>Grand Total Wattage</div>
@@ -223,29 +644,24 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SECTION B — Meter Details
+// STEP 3 — Meter Details
 // ═══════════════════════════════════════════════════════════════════════════════
 function MeterDetailsSection({ branchName }: { branchName: string }) {
   const [meters, setMeters] = useState<Meter[]>([newMeter()]);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved]   = useState(false);
 
-  const upd = (id:string, field:keyof Meter, val:string) =>
-    setMeters(ms => ms.map(m => m.id!==id ? m : {...m,[field]:val}));
-  const addMeter = () => setMeters(ms => [...ms, newMeter()]);
-  const removeMeter = (id:string) => setMeters(ms => ms.filter(m => m.id!==id));
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false),3000); };
+  const upd        = (id:string, field:keyof Meter, val:string) => setMeters(ms => ms.map(m => m.id!==id ? m : {...m,[field]:val}));
+  const addMeter   = () => setMeters(ms => [...ms, newMeter()]);
+  const removeMeter= (id:string) => setMeters(ms => ms.filter(m => m.id!==id));
+  const save       = () => { setSaved(true); setTimeout(()=>setSaved(false),3000); };
 
-  const amber = "#b45309";
-  const amberBg = "#fef3c7";
-  const amberDark = "#92400e";
+  const amber = "#b45309"; const amberBg = "#fef3c7"; const amberDark = "#92400e";
 
   return (
     <div>
       {saved && <div style={{marginBottom:14,background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
         <i className="ri-checkbox-circle-fill" style={{color:amber,fontSize:18}}/><span style={{fontSize:13,fontWeight:700,color:amberDark}}>Meter details saved successfully</span>
       </div>}
-
-      {/* Branch info bar */}
       <div style={{...card,overflow:"hidden"}}>
         <div style={{padding:"12px 18px",background:"linear-gradient(135deg,#b45309,#92400e)",display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -258,11 +674,8 @@ function MeterDetailsSection({ branchName }: { branchName: string }) {
           <div style={{marginLeft:"auto",background:"rgba(255,255,255,0.2)",borderRadius:20,padding:"3px 12px",fontSize:12,fontWeight:700,color:"#fff"}}>{meters.length} Meter{meters.length>1?"s":""}</div>
         </div>
       </div>
-
-      {/* Meter cards */}
       {meters.map((m, idx) => (
         <div key={m.id} style={card}>
-          {/* Card header */}
           <div style={{padding:"12px 18px",background:amberBg,borderBottom:"1px solid #fde68a",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <div style={{width:28,height:28,borderRadius:8,background:amber,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -271,59 +684,36 @@ function MeterDetailsSection({ branchName }: { branchName: string }) {
               <span style={{fontSize:14,fontWeight:800,color:amberDark}}>Meter {idx+1}</span>
             </div>
             {meters.length > 1 && (
-              <button onClick={()=>removeMeter(m.id)}
-                style={{border:"none",background:"transparent",cursor:"pointer",color:"#ef4444",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
+              <button onClick={()=>removeMeter(m.id)} style={{border:"none",background:"transparent",cursor:"pointer",color:"#ef4444",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
                 <i className="ri-delete-bin-line"/>Remove
               </button>
             )}
           </div>
-
-          {/* Fields */}
           <div style={{padding:18,display:"flex",flexDirection:"column",gap:14}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              <div>
-                <label style={LBL}>Services Provider</label>
-                <input placeholder="e.g. TORRENT" value={m.provider} onChange={e=>upd(m.id,"provider",e.target.value)} style={INP}/>
-              </div>
+              <div><label style={LBL}>Services Provider</label><input placeholder="e.g. TORRENT" value={m.provider} onChange={e=>upd(m.id,"provider",e.target.value)} style={INP}/></div>
               <div>
                 <label style={LBL}>Type</label>
                 <select value={m.type} onChange={e=>upd(m.id,"type",e.target.value)} style={INP}>
                   <option value="">e.g. 3 PHASE</option>
-                  <option>1 PHASE</option>
-                  <option>3 PHASE</option>
-                  <option>HT (High Tension)</option>
-                  <option>LT (Low Tension)</option>
+                  <option>1 PHASE</option><option>3 PHASE</option>
+                  <option>HT (High Tension)</option><option>LT (Low Tension)</option>
                 </select>
               </div>
             </div>
-            <div>
-              <label style={LBL}>Qty. Sanctioned Load (KW)</label>
-              <input type="number" placeholder="e.g. 21.780" value={m.sanctionedLoad} onChange={e=>upd(m.id,"sanctionedLoad",e.target.value)} style={INP}/>
-            </div>
-            <div>
-              <label style={LBL}>Meter No.</label>
-              <input placeholder="e.g. 27001760" value={m.meterNo} onChange={e=>upd(m.id,"meterNo",e.target.value)} style={INP}/>
-            </div>
+            <div><label style={LBL}>Qty. Sanctioned Load (KW)</label><input type="number" placeholder="e.g. 21.780" value={m.sanctionedLoad} onChange={e=>upd(m.id,"sanctionedLoad",e.target.value)} style={INP}/></div>
+            <div><label style={LBL}>Meter No.</label><input placeholder="e.g. 27001760" value={m.meterNo} onChange={e=>upd(m.id,"meterNo",e.target.value)} style={INP}/></div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              <div>
-                <label style={LBL}>Consumption (units/month)</label>
-                <input placeholder="e.g. 2000-3000" value={m.consumption} onChange={e=>upd(m.id,"consumption",e.target.value)} style={INP}/>
-              </div>
-              <div>
-                <label style={LBL}>Avg. Bill/month</label>
-                <input placeholder="e.g. 20-40K" value={m.avgBill} onChange={e=>upd(m.id,"avgBill",e.target.value)} style={INP}/>
-              </div>
+              <div><label style={LBL}>Consumption (units/month)</label><input placeholder="e.g. 2000-3000" value={m.consumption} onChange={e=>upd(m.id,"consumption",e.target.value)} style={INP}/></div>
+              <div><label style={LBL}>Avg. Bill/month</label><input placeholder="e.g. 20-40K" value={m.avgBill} onChange={e=>upd(m.id,"avgBill",e.target.value)} style={INP}/></div>
             </div>
           </div>
         </div>
       ))}
-
-      {/* Add meter */}
       <button onClick={addMeter}
         style={{width:"100%",padding:"13px",borderRadius:12,border:`2px dashed ${amber}`,background:"transparent",color:amber,fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-        <i className="ri-add-line" style={{fontSize:16}}/> + Add Another Meter
+        <i className="ri-add-line" style={{fontSize:16}}/>+ Add Another Meter
       </button>
-
       <div style={{display:"flex",justifyContent:"flex-end"}}>
         <button onClick={save}
           style={{padding:"12px 28px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#b45309,#92400e)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 14px rgba(180,83,9,0.35)"}}>
@@ -335,106 +725,101 @@ function MeterDetailsSection({ branchName }: { branchName: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SECTION C — DG Set
+// STEP 9 — DG Set  (questions sourced from Question Library — "DG Set / Generator" section)
 // ═══════════════════════════════════════════════════════════════════════════════
-const RISK_COLORS: Record<RiskLevel, { bg: string; text: string }> = {
-  "Low":      { bg:"#f0fdf4", text:"#16a34a" },
-  "Medium":   { bg:"#fffbeb", text:"#d97706" },
-  "High":     { bg:"#fff7ed", text:"#ea580c" },
-  "Critical": { bg:"#fef2f2", text:"#dc2626" },
-  "":         { bg:"#f9fafb", text:"#6b7280" },
-};
-
 function DGSetSection({ branchName }: { branchName: string }) {
-  const [questions, setQuestions] = useState<DGQuestion[]>(INITIAL_DG);
-  const [saved, setSaved] = useState(false);
+  // Spec fields (7 operational items)
+  const [specs, setSpecs]     = useState<DGQuestion[]>(INITIAL_DG);
+  // Library questions (Q-031–Q-033)
+  const DG_LIB = AUDIT_QUESTIONS.filter(q => q.section === "DG Set / Generator");
+  const initAnswers = () => Object.fromEntries(DG_LIB.map(q => [q.id, { answer:"", remarks:"", photo:null } as AuditAnswer]));
+  const [answers, setAnswers] = useState<Record<string, AuditAnswer>>(initAnswers);
+  const [saved, setSaved]     = useState(false);
 
-  const upd = (id:string, field:keyof DGQuestion, val:string) =>
-    setQuestions(qs => qs.map(q => q.id!==id ? q : {...q,[field]:val}));
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false),3000); };
+  const updSpec  = (id: string, field: keyof DGQuestion, val: string) =>
+    setSpecs(qs => qs.map(q => q.id !== id ? q : { ...q, [field]: val }));
+  const onAnswer = (id: string, field: keyof AuditAnswer, val: string | null) =>
+    setAnswers(prev => ({ ...prev, [id]: { ...prev[id], [field]: val } }));
 
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
   const red = "#b91c1c"; const redBg = "#fef2f2"; const redDark = "#7f1d1d";
 
   return (
     <div>
-      {saved && <div style={{marginBottom:14,background:redBg,border:"1px solid #fecaca",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
-        <i className="ri-checkbox-circle-fill" style={{color:red,fontSize:18}}/><span style={{fontSize:13,fontWeight:700,color:redDark}}>DG Set details saved successfully</span>
-      </div>}
+      {saved && (
+        <div style={{ marginBottom:14, background:redBg, border:"1px solid #fecaca", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:red, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:redDark }}>DG Set details saved successfully</span>
+        </div>
+      )}
 
       {/* Header */}
-      <div style={{...card,overflow:"hidden"}}>
-        <div style={{padding:"12px 18px",background:"linear-gradient(135deg,#b91c1c,#7f1d1d)",display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <i className="ri-settings-3-line" style={{color:"#fff",fontSize:16}}/>
+      <div style={{ ...card, overflow:"hidden" }}>
+        <div style={{ padding:"12px 18px", background:"linear-gradient(135deg,#b91c1c,#7f1d1d)", display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:34, height:34, borderRadius:10, background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-settings-3-line" style={{ color:"#fff", fontSize:16 }}/>
           </div>
           <div>
-            <div style={{fontSize:14,fontWeight:800,color:"#fff"}}>{branchName}</div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.75)"}}>DG specs, batteries, acoustic enclosure &amp; risk level</div>
+            <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>{branchName}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>DG specs, batteries, acoustic enclosure &amp; risk level</div>
           </div>
         </div>
       </div>
 
-      {/* Question cards */}
-      {questions.map(q => {
+      {/* ── Section A: DG Specifications ── */}
+      <div style={{ fontSize:11, fontWeight:800, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8, marginTop:4 }}>
+        A — DG Set Specifications
+      </div>
+      {specs.map(q => {
         const rCol = RISK_COLORS[q.risk];
         return (
           <div key={q.id} style={card}>
-            {/* Question header */}
-            <div style={{padding:"12px 16px",background:redBg,borderBottom:"1px solid #fecaca",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{minWidth:28,height:28,borderRadius:8,background:red,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <span style={{fontSize:12,fontWeight:900,color:"#fff"}}>{q.no}</span>
+            <div style={{ padding:"12px 16px", background:redBg, borderBottom:"1px solid #fecaca", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ minWidth:28, height:28, borderRadius:8, background:red, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <span style={{ fontSize:12, fontWeight:900, color:"#fff" }}>{q.no}</span>
                 </div>
-                <span style={{fontSize:13,fontWeight:800,color:"#1f2937"}}>{q.label}</span>
+                <span style={{ fontSize:13, fontWeight:800, color:"#1f2937" }}>{q.label}</span>
               </div>
-              <span style={{fontSize:10,fontWeight:700,color:"#6b7280",background:"#fff",border:"1px solid #e5e7eb",borderRadius:20,padding:"2px 10px",whiteSpace:"nowrap"}}>{q.badge}</span>
+              <span style={{ fontSize:10, fontWeight:700, color:"#6b7280", background:"#fff", border:"1px solid #e5e7eb", borderRadius:20, padding:"2px 10px", whiteSpace:"nowrap" }}>{q.badge}</span>
             </div>
-
-            <div style={{padding:16,display:"flex",flexDirection:"column",gap:12}}>
-              {/* Primary input */}
+            <div style={{ padding:16, display:"flex", flexDirection:"column", gap:12 }}>
               {q.inputType === "select" && (
-                <div>
-                  <label style={LBL}>Observations / Remarks</label>
-                  <select value={q.value} onChange={e=>upd(q.id,"value",e.target.value)} style={INP}>
+                <div><label style={LBL}>Observations / Remarks</label>
+                  <select value={q.value} onChange={e => updSpec(q.id, "value", e.target.value)} style={INP}>
                     <option value="">— Select —</option>
                     {q.options?.map(o => <option key={o}>{o}</option>)}
                   </select>
                 </div>
               )}
-              {(q.inputType==="text"||q.inputType==="number") && (
-                <div>
-                  <label style={LBL}>Observations / Remarks</label>
-                  <input type={q.inputType} placeholder={`Enter ${q.badge}`} value={q.value} onChange={e=>upd(q.id,"value",e.target.value)} style={INP}/>
+              {(q.inputType === "text" || q.inputType === "number") && (
+                <div><label style={LBL}>Observations / Remarks</label>
+                  <input type={q.inputType} placeholder={`Enter ${q.badge}`} value={q.value} onChange={e => updSpec(q.id, "value", e.target.value)} style={INP}/>
                 </div>
               )}
               {q.inputType === "yesno" && (
-                <div>
-                  <label style={LBL}>Observations / Remarks</label>
-                  <div style={{display:"flex",gap:10}}>
+                <div><label style={LBL}>Observations / Remarks</label>
+                  <div style={{ display:"flex", gap:10 }}>
                     {["Yes","No"].map(opt => (
-                      <button key={opt} onClick={()=>upd(q.id,"value",opt)}
-                        style={{flex:1,padding:"9px",borderRadius:8,border:`2px solid ${q.value===opt?red:"#e5e7eb"}`,background:q.value===opt?redBg:"#fff",color:q.value===opt?red:"#374151",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                      <button key={opt} onClick={() => updSpec(q.id, "value", opt)}
+                        style={{ flex:1, padding:"9px", borderRadius:8, border:`2px solid ${q.value===opt ? red : "#e5e7eb"}`, background:q.value===opt ? redBg : "#fff", color:q.value===opt ? red : "#374151", fontSize:13, fontWeight:700, cursor:"pointer" }}>
                         {opt}
                       </button>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* Recommendation + Risk Level */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 <div>
                   <label style={LBL}>Recommendation (Safety)</label>
-                  <input placeholder="Enter recommendation" value={q.recommendation} onChange={e=>upd(q.id,"recommendation",e.target.value)} style={INP}/>
+                  <input placeholder="Enter recommendation" value={q.recommendation} onChange={e => updSpec(q.id, "recommendation", e.target.value)} style={INP}/>
                 </div>
                 <div>
                   <label style={LBL}>Risk Level</label>
-                  <select value={q.risk} onChange={e=>upd(q.id,"risk",e.target.value as RiskLevel)}
-                    style={{...INP, background:rCol.bg, color:rCol.text, fontWeight:700}}>
+                  <select value={q.risk} onChange={e => updSpec(q.id, "risk", e.target.value as RiskLevel)}
+                    style={{ ...INP, background:rCol.bg, color:rCol.text, fontWeight:700 }}>
                     <option value="">— Select —</option>
-                    {(["Low","Medium","High","Critical"] as RiskLevel[]).map(r=>(
-                      <option key={r} value={r}>{r}</option>
-                    ))}
+                    {(["Low","Medium","High","Critical"] as RiskLevel[]).map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
               </div>
@@ -443,9 +828,18 @@ function DGSetSection({ branchName }: { branchName: string }) {
         );
       })}
 
-      <div style={{display:"flex",justifyContent:"flex-end"}}>
+      {/* ── Section B: Question Library ── */}
+      <div style={{ fontSize:11, fontWeight:800, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8, marginTop:6 }}>
+        B — Audit Checklist (Question Library)
+      </div>
+      {DG_LIB.map(q => (
+        <QuestionCard key={q.id} q={q} ans={answers[q.id]} onAnswer={onAnswer} />
+      ))}
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8 }}>
         <button onClick={save}
-          style={{padding:"12px 28px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#b91c1c,#7f1d1d)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 14px rgba(185,28,28,0.35)"}}>
+          style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#b91c1c,#7f1d1d)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(185,28,28,0.35)" }}>
           <i className="ri-save-line"/>Save DG Set Details
         </button>
       </div>
@@ -454,57 +848,1159 @@ function DGSetSection({ branchName }: { branchName: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ROOT PAGE
+// STEP 2 — Branch Photo
 // ═══════════════════════════════════════════════════════════════════════════════
-const TABS: { id: Tab; label: string; icon: string; color: string }[] = [
-  { id:"load-sheet",    label:"Branch Load Sheet",        icon:"ri-lightbulb-line",   color:"#16a34a" },
-  { id:"meter-details", label:"Meter Details",            icon:"ri-flashlight-line",  color:"#b45309" },
-  { id:"dg-set",        label:"Diesel Generator (DG) Set",icon:"ri-settings-3-line",  color:"#b91c1c" },
-];
+function BranchPhotoSection({ branchName, onContinue }: { branchName: string; onContinue: () => void }) {
+  const [photo, setPhoto]       = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const teal = "#0d9488"; const tealDark = "#0f766e"; const tealBg = "#f0fdfa"; const tealBorder = "#99f6e4";
 
-export default function AuditFormPage() {
-  const [tab, setTab] = useState<Tab>("load-sheet");
-  const branchName = "SBI - Paldi Branch";
-  const active = TABS.find(t=>t.id===tab)!;
+  const handleFile = (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = e => setPhoto(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
 
   return (
-    <div style={{padding:"24px 0"}}>
-      {/* Page header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-        <div>
-          <h4 style={{fontSize:22,fontWeight:800,color:"#111827",margin:0}}>Audit Form</h4>
-          <div style={{fontSize:12,color:"#9ca3af",marginTop:3}}>
-            Audit Questions / <span style={{color:active.color,fontWeight:600}}>Audit Form</span>
-          </div>
+    <div style={{ maxWidth:600, margin:"0 auto" }}>
+
+      {/* Instruction card */}
+      <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e7eb", padding:"32px 24px", textAlign:"center", marginBottom:16, boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+        <div style={{ width:72, height:72, borderRadius:20, background:tealBg, border:`1px solid ${tealBorder}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 18px" }}>
+          <i className="ri-camera-line" style={{ fontSize:34, color:teal }}/>
         </div>
-        <div style={{fontSize:12,fontWeight:700,color:"#6b7280",background:"#f3f4f6",borderRadius:8,padding:"6px 14px",display:"flex",alignItems:"center",gap:6}}>
-          <i className="ri-building-2-line"/>{branchName}
-        </div>
+        <h3 style={{ fontSize:20, fontWeight:900, color:"#111827", margin:"0 0 10px" }}>Please step outside the branch</h3>
+        <p style={{ fontSize:14, color:"#6b7280", lineHeight:1.6, margin:0 }}>
+          Take a clear photo of the branch entrance / building exterior and submit to proceed.
+        </p>
       </div>
 
-      {/* Tab navigation */}
-      <div style={{display:"flex",gap:4,marginBottom:20,background:"#f3f4f6",borderRadius:12,padding:4}}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={()=>setTab(t.id)}
-            style={{flex:1,padding:"9px 10px",borderRadius:9,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all 0.15s",
-              background:tab===t.id?"#fff":"transparent",
-              color:tab===t.id?t.color:"#6b7280",
-              boxShadow:tab===t.id?"0 1px 6px rgba(0,0,0,0.1)":"none"}}>
-            <i className={t.icon} style={{fontSize:14}}/>
-            <span style={{whiteSpace:"nowrap"}}>{t.label}</span>
-          </button>
+      {/* Drop / capture zone */}
+      {photo ? (
+        <div style={{ borderRadius:16, overflow:"hidden", border:`2px solid ${teal}`, marginBottom:16, position:"relative", boxShadow:"0 4px 16px rgba(13,148,136,0.2)" }}>
+          <img src={photo} alt="Branch exterior" style={{ width:"100%", display:"block", maxHeight:320, objectFit:"cover" }}/>
+          <div style={{ position:"absolute", top:10, right:10, display:"flex", gap:8 }}>
+            <button
+              onClick={() => setPhoto(null)}
+              style={{ background:"rgba(0,0,0,0.6)", border:"none", borderRadius:8, padding:"6px 12px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
+              <i className="ri-refresh-line"/>Retake
+            </button>
+          </div>
+          <div style={{ background:`linear-gradient(135deg,${teal},${tealDark})`, padding:"10px 16px", display:"flex", alignItems:"center", gap:8 }}>
+            <i className="ri-checkbox-circle-fill" style={{ color:"#fff", fontSize:16 }}/>
+            <span style={{ fontSize:13, fontWeight:700, color:"#fff" }}>Photo captured — ready to submit</span>
+          </div>
+        </div>
+      ) : (
+        <div
+          onClick={() => fileRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          style={{
+            borderRadius:16, border:`2px dashed ${dragging ? teal : "#d1d5db"}`,
+            background: dragging ? tealBg : "#fafafa",
+            padding:"48px 24px", textAlign:"center", cursor:"pointer",
+            marginBottom:16, transition:"all 0.15s",
+          }}>
+          <div style={{ width:56, height:56, borderRadius:16, background:"#f3f4f6", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
+            <i className="ri-camera-line" style={{ fontSize:28, color:"#9ca3af" }}/>
+          </div>
+          <div style={{ fontSize:16, fontWeight:800, color:"#111827", marginBottom:5 }}>Tap to capture photo</div>
+          <div style={{ fontSize:13, color:"#9ca3af" }}>Branch exterior / entrance</div>
+          <div style={{ fontSize:11, color:"#d1d5db", marginTop:10 }}>or drag and drop an image here</div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display:"none" }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          />
+        </div>
+      )}
+
+      {/* Photo tips */}
+      <div style={{ background:tealBg, border:`1px solid ${tealBorder}`, borderRadius:12, padding:"14px 16px", marginBottom:24 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
+          <i className="ri-camera-2-line" style={{ color:teal, fontSize:16 }}/>
+          <span style={{ fontSize:13, fontWeight:800, color:tealDark }}>Photo Tips</span>
+        </div>
+        {[
+          "Ensure the bank name board is clearly visible",
+          "Stand at least 5–8 metres from the entrance",
+          "Avoid glare or obstructions in the frame",
+        ].map(tip => (
+          <div key={tip} style={{ display:"flex", alignItems:"flex-start", gap:8, marginBottom:6 }}>
+            <span style={{ color:teal, fontSize:13, lineHeight:1.5, flexShrink:0 }}>•</span>
+            <span style={{ fontSize:13, color:"#374151", lineHeight:1.5 }}>{tip}</span>
+          </div>
         ))}
       </div>
 
-      {/* Tab content */}
-      {tab==="load-sheet"    && <LoadSheetSection branchName={branchName}/>}
-      {tab==="meter-details" && <MeterDetailsSection branchName={branchName}/>}
-      {tab==="dg-set"        && <DGSetSection branchName={branchName}/>}
+      {/* Submit & Continue */}
+      <button
+        onClick={onContinue}
+        style={{
+          width:"100%", padding:"15px", borderRadius:12, border:"none",
+          background: photo
+            ? `linear-gradient(135deg,${teal},${tealDark})`
+            : "#d1d5db",
+          color:"#fff", cursor:"pointer",
+          fontWeight:900, fontSize:14, letterSpacing:"0.06em",
+          boxShadow: photo ? "0 4px 14px rgba(13,148,136,0.35)" : "none",
+          transition:"all 0.2s", display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+        }}>
+        Submit &amp; Continue →
+      </button>
 
+      {!photo && (
+        <p style={{ textAlign:"center", fontSize:11, color:"#9ca3af", marginTop:8 }}>
+          Capture a photo above to enable submit
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 5 — UPS Parameters
+// ═══════════════════════════════════════════════════════════════════════════════
+interface UPSRow {
+  id: string;
+  testPoint: string;
+  reading: string;
+  normalRange: string;
+  remarks: string;
+}
+
+interface UPSGroup {
+  id: string;
+  label: string;
+  rows: UPSRow[];
+}
+
+const INITIAL_UPS_GROUPS: UPSGroup[] = [
+  {
+    id: "input-voltage",
+    label: "INPUT VOLTAGE (V)",
+    rows: [
+      { id: "iv-pp",  testPoint: "Phase to Phase",   reading: "", normalRange: "380–420V",  remarks: "" },
+      { id: "iv-pn",  testPoint: "Phase to Neutral",  reading: "", normalRange: "210–250V",  remarks: "" },
+    ],
+  },
+  {
+    id: "output-voltage",
+    label: "OUTPUT VOLTAGE (V)",
+    rows: [
+      { id: "ov-pp",  testPoint: "Phase to Phase",   reading: "", normalRange: "390–410V",  remarks: "" },
+      { id: "ov-pn",  testPoint: "Phase to Neutral",  reading: "", normalRange: "210–230V",  remarks: "" },
+    ],
+  },
+  {
+    id: "current",
+    label: "CURRENT READING (A)",
+    rows: [
+      { id: "cr-r",   testPoint: "R Phase",          reading: "", normalRange: "—",          remarks: "" },
+      { id: "cr-y",   testPoint: "Y Phase",          reading: "", normalRange: "—",          remarks: "" },
+      { id: "cr-b",   testPoint: "B Phase",          reading: "", normalRange: "—",          remarks: "" },
+      { id: "cr-avg", testPoint: "Avg. Current",     reading: "", normalRange: "—",          remarks: "" },
+    ],
+  },
+  {
+    id: "ne-voltage",
+    label: "N-E VOLTAGE (V)",
+    rows: [
+      { id: "ne",     testPoint: "N-E",              reading: "", normalRange: "0–3V Ok",    remarks: "" },
+    ],
+  },
+  {
+    id: "earthing",
+    label: "EARTHING RESISTANCE",
+    rows: [
+      { id: "ep",     testPoint: "Earthing Pit",     reading: "", normalRange: "< 1 Ohm",   remarks: "" },
+    ],
+  },
+];
+
+function UPSParametersSection({ branchName }: { branchName: string }) {
+  const [groups, setGroups] = useState<UPSGroup[]>(INITIAL_UPS_GROUPS);
+  const [saved, setSaved]   = useState(false);
+
+  const violet = "#6d28d9";
+  const violetBg = "#ede9fe";
+  const violetDark = "#4c1d95";
+
+  const updRow = (gid: string, rid: string, field: "reading" | "remarks", val: string) =>
+    setGroups(gs => gs.map(g => g.id !== gid ? g : {
+      ...g,
+      rows: g.rows.map(r => r.id !== rid ? r : { ...r, [field]: val }),
+    }));
+
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const filledCt = groups.reduce((s, g) => s + g.rows.filter(r => r.reading.trim()).length, 0);
+  const totalCt  = groups.reduce((s, g) => s + g.rows.length, 0);
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:"#f5f3ff", border:"1px solid #c4b5fd", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:violet, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:violetDark }}>UPS Parameters saved successfully</span>
+        </div>
+      )}
+
+      {/* Header card */}
+      <div style={{ ...card, overflow:"hidden", marginBottom:16 }}>
+        <div style={{ padding:"14px 18px", background:`linear-gradient(135deg,${violet},${violetDark})`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:36, height:36, borderRadius:10, background:"rgba(255,255,255,0.18)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-battery-charge-line" style={{ color:"#fff", fontSize:18 }}/>
+            </div>
+            <div>
+              <div style={{ fontSize:14, fontWeight:800, color:"#fff" }}>{branchName}</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>Record actual readings at each UPS test point</div>
+            </div>
+          </div>
+          <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>
+            {filledCt} / {totalCt} filled
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div style={{ height:4, background:"#e5e7eb" }}>
+          <div style={{ height:"100%", width:`${(filledCt/totalCt)*100}%`, background:`linear-gradient(90deg,${violet},#a78bfa)`, transition:"width 0.3s ease" }}/>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:16 }}>
+        {/* Column headers */}
+        <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1.1fr 1fr 1.2fr", background:"#f5f3ff", borderBottom:"2px solid #ddd6fe" }}>
+          {["TEST POINT", "ACTUAL READING", "NORMAL RANGE", "REMARKS"].map(h => (
+            <div key={h} style={{ padding:"10px 14px", fontSize:10, fontWeight:800, color:violet, letterSpacing:"0.07em", textTransform:"uppercase" }}>{h}</div>
+          ))}
+        </div>
+
+        {groups.map((group, gi) => (
+          <div key={group.id}>
+            {/* Group header */}
+            <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1.1fr 1fr 1.2fr", background:"#f8f7ff", borderTop: gi > 0 ? "2px solid #ede9fe" : "none" }}>
+              <div style={{ padding:"9px 14px", gridColumn:"1 / -1", display:"flex", alignItems:"center", gap:8 }}>
+                <div style={{ width:3, height:16, borderRadius:99, background:violet, flexShrink:0 }}/>
+                <span style={{ fontSize:12, fontWeight:900, color:"#1f2937", letterSpacing:"0.03em" }}>{group.label}</span>
+              </div>
+            </div>
+
+            {/* Rows */}
+            {group.rows.map((row, ri) => (
+              <div
+                key={row.id}
+                style={{ display:"grid", gridTemplateColumns:"1.4fr 1.1fr 1fr 1.2fr", borderTop:"1px solid #f3f4f6", transition:"background 0.1s" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#faf9ff")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                {/* Test Point */}
+                <div style={{ padding:"11px 14px", fontSize:13, color:"#6b7280", fontWeight:500, display:"flex", alignItems:"center" }}>
+                  {row.testPoint}
+                </div>
+
+                {/* Actual Reading */}
+                <div style={{ padding:"7px 10px", display:"flex", alignItems:"center" }}>
+                  <input
+                    type="text"
+                    value={row.reading}
+                    onChange={e => updRow(group.id, row.id, "reading", e.target.value)}
+                    placeholder="Enter"
+                    style={{
+                      width:"100%", border:`1.5px solid ${row.reading ? violet : "#e5e7eb"}`,
+                      borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700,
+                      color:"#111827", outline:"none", background: row.reading ? "#f5f3ff" : "#fff",
+                      boxSizing:"border-box", transition:"all 0.15s",
+                    }}
+                  />
+                </div>
+
+                {/* Normal Range */}
+                <div style={{ padding:"11px 14px", fontSize:12, color: row.normalRange === "—" ? "#d1d5db" : "#6b7280", display:"flex", alignItems:"center", fontFamily:"monospace" }}>
+                  {row.normalRange}
+                </div>
+
+                {/* Remarks */}
+                <div style={{ padding:"7px 10px", display:"flex", alignItems:"center" }}>
+                  <input
+                    type="text"
+                    value={row.remarks}
+                    onChange={e => updRow(group.id, row.id, "remarks", e.target.value)}
+                    placeholder="—"
+                    style={{
+                      width:"100%", border:"1.5px solid #e5e7eb", borderRadius:8,
+                      padding:"7px 10px", fontSize:12, color:"#6b7280", outline:"none",
+                      background:"#fff", boxSizing:"border-box",
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Save button */}
+      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+        <button
+          onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${violet},${violetDark})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(109,40,217,0.35)" }}
+        >
+          <i className="ri-save-line"/>Save UPS Parameters
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 4 — Electrical Parameters (multi-panel)
+// ═══════════════════════════════════════════════════════════════════════════════
+interface ElecRow  { id: string; testPt: string; reading: string; normRange: string; remarks: string; }
+interface ElecGroup { id: string; label: string; rows: ElecRow[]; }
+interface ElecPanel { id: string; name: string; groups: ElecGroup[]; }
+
+const makeElecGroups = (): ElecGroup[] => [
+  { id: "voltage", label: "VOLTAGE READING", rows: [
+    { id:"ry",  testPt:"R-Y",         reading:"", normRange:"380–420V", remarks:"" },
+    { id:"yb",  testPt:"Y-B",         reading:"", normRange:"380–420V", remarks:"" },
+    { id:"br",  testPt:"B-R",         reading:"", normRange:"380–420V", remarks:"" },
+    { id:"rn",  testPt:"R-N",         reading:"", normRange:"210–240V", remarks:"" },
+    { id:"yn",  testPt:"Y-N",         reading:"", normRange:"210–240V", remarks:"" },
+    { id:"bn",  testPt:"B-N",         reading:"", normRange:"210–240V", remarks:"" },
+  ]},
+  { id: "current", label: "CURRENT READING", rows: [
+    { id:"cr",  testPt:"R Phase",     reading:"", normRange:"—", remarks:"" },
+    { id:"cy",  testPt:"Y Phase",     reading:"", normRange:"—", remarks:"" },
+    { id:"cb",  testPt:"B Phase",     reading:"", normRange:"—", remarks:"" },
+    { id:"ca",  testPt:"Avg Current", reading:"", normRange:"—", remarks:"" },
+  ]},
+  { id: "frequency", label: "FREQUENCY", rows: [
+    { id:"hz",  testPt:"Hz",          reading:"", normRange:"49.5–50Hz", remarks:"" },
+  ]},
+  { id: "pf", label: "POWER FACTOR", rows: [
+    { id:"pf",  testPt:"PF",          reading:"", normRange:"—", remarks:"" },
+  ]},
+  { id: "ne", label: "N-E VOLTAGE", rows: [
+    { id:"ne",  testPt:"Earthing",    reading:"", normRange:"0–3V", remarks:"" },
+  ]},
+];
+
+const makePanel = (idx: number): ElecPanel => ({
+  id: `panel-${Date.now()}-${idx}`,
+  name: "",
+  groups: makeElecGroups(),
+});
+
+function ElecPanelCard({
+  panel, panelIdx, totalPanels,
+  onNameChange, onRowChange, onRemove,
+}: {
+  panel: ElecPanel; panelIdx: number; totalPanels: number;
+  onNameChange: (id: string, name: string) => void;
+  onRowChange: (panelId: string, gid: string, rid: string, field: "reading" | "remarks", val: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const green = "#166534"; const greenBg = "#dcfce7"; const greenMid = "#16a34a";
+
+  return (
+    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.07)", marginBottom:16 }}>
+
+      {/* Panel header */}
+      <div style={{ background:"#f0fdf4", borderBottom:"2px solid #bbf7d0", padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontSize:13, fontWeight:900, color:green, background:greenBg, borderRadius:8, padding:"4px 12px", flexShrink:0, border:"1px solid #86efac" }}>
+          Panel {panelIdx + 1}
+        </span>
+        <input
+          value={panel.name}
+          onChange={e => onNameChange(panel.id, e.target.value)}
+          placeholder="Enter panel name"
+          style={{ flex:1, border:"1.5px solid #d1fae5", borderRadius:9, padding:"8px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fff", fontWeight:600 }}
+        />
+        {totalPanels > 1 && (
+          <button
+            onClick={() => onRemove(panel.id)}
+            style={{ fontSize:12, fontWeight:700, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:7, padding:"6px 12px", cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", gap:4 }}>
+            <i className="ri-delete-bin-line"/>Remove
+          </button>
+        )}
+      </div>
+
+      {/* Column headers */}
+      <div style={{ display:"grid", gridTemplateColumns:"1.2fr 1.1fr 1fr 1.1fr", background:"#f9fafb", borderBottom:"1px solid #e5e7eb" }}>
+        {["Test Pt.", "Reading", "Norm. Range", "Remarks"].map(h => (
+          <div key={h} style={{ padding:"8px 12px", fontSize:10, fontWeight:800, color:greenMid, letterSpacing:"0.06em", textTransform:"uppercase" }}>{h}</div>
+        ))}
+      </div>
+
+      {/* Groups & rows */}
+      {panel.groups.map((group, gi) => (
+        <div key={group.id}>
+          {/* Group label */}
+          <div style={{ display:"grid", gridTemplateColumns:"1.2fr 1.1fr 1fr 1.1fr", background:"#f0fdf4", borderTop: gi > 0 ? "2px solid #d1fae5" : "none" }}>
+            <div style={{ padding:"8px 12px", gridColumn:"1 / -1", display:"flex", alignItems:"center", gap:8 }}>
+              <div style={{ width:3, height:15, borderRadius:99, background:green, flexShrink:0 }}/>
+              <span style={{ fontSize:11, fontWeight:900, color:green, letterSpacing:"0.05em" }}>{group.label}</span>
+            </div>
+          </div>
+
+          {/* Data rows */}
+          {group.rows.map(row => (
+            <div
+              key={row.id}
+              style={{ display:"grid", gridTemplateColumns:"1.2fr 1.1fr 1fr 1.1fr", borderTop:"1px solid #f3f4f6" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#fafffe")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            >
+              {/* Test point */}
+              <div style={{ padding:"10px 12px", fontSize:13, color:"#6b7280", display:"flex", alignItems:"center", fontWeight:500 }}>
+                {row.testPt}
+              </div>
+
+              {/* Reading input */}
+              <div style={{ padding:"6px 8px", display:"flex", alignItems:"center" }}>
+                <input
+                  type="text"
+                  value={row.reading}
+                  onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
+                  placeholder="—"
+                  style={{
+                    width:"100%", border:`1.5px solid ${row.reading ? green : "#e5e7eb"}`,
+                    borderRadius:7, padding:"6px 10px", fontSize:13, fontWeight:700,
+                    color:"#111827", outline:"none",
+                    background: row.reading ? "#f0fdf4" : "#fff",
+                    boxSizing:"border-box", transition:"all 0.15s",
+                  }}
+                />
+              </div>
+
+              {/* Normal range */}
+              <div style={{ padding:"10px 12px", fontSize:12, color: row.normRange === "—" ? "#d1d5db" : "#6b7280", display:"flex", alignItems:"center", fontFamily:"monospace" }}>
+                {row.normRange}
+              </div>
+
+              {/* Remarks input */}
+              <div style={{ padding:"6px 8px", display:"flex", alignItems:"center" }}>
+                <input
+                  type="text"
+                  value={row.remarks}
+                  onChange={e => onRowChange(panel.id, group.id, row.id, "remarks", e.target.value)}
+                  placeholder="—"
+                  style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:7, padding:"6px 10px", fontSize:12, color:"#6b7280", outline:"none", background:"#fff", boxSizing:"border-box" }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ElectricalParametersSection({ branchName }: { branchName: string }) {
+  const [panels, setPanels] = useState<ElecPanel[]>([makePanel(0)]);
+  const [saved, setSaved]   = useState(false);
+
+  const green = "#166534"; const greenMid = "#16a34a"; const greenBg = "#dcfce7";
+
+  const addPanel    = () => setPanels(ps => [...ps, makePanel(ps.length)]);
+  const removePanel = (id: string) => setPanels(ps => ps.filter(p => p.id !== id));
+
+  const onNameChange = (pid: string, name: string) =>
+    setPanels(ps => ps.map(p => p.id !== pid ? p : { ...p, name }));
+
+  const onRowChange = (pid: string, gid: string, rid: string, field: "reading" | "remarks", val: string) =>
+    setPanels(ps => ps.map(p => p.id !== pid ? p : {
+      ...p,
+      groups: p.groups.map(g => g.id !== gid ? g : {
+        ...g,
+        rows: g.rows.map(r => r.id !== rid ? r : { ...r, [field]: val }),
+      }),
+    }));
+
+  const totalRows   = panels.reduce((s, p) => s + p.groups.reduce((gs, g) => gs + g.rows.length, 0), 0);
+  const filledRows  = panels.reduce((s, p) => s + p.groups.reduce((gs, g) => gs + g.rows.filter(r => r.reading.trim()).length, 0), 0);
+
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:greenMid, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:green }}>Electrical Parameters saved successfully</span>
+        </div>
+      )}
+
+      {/* Page header card */}
+      <div style={{ background:`linear-gradient(135deg,${green},#14532d)`, borderRadius:14, padding:"16px 18px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 4px 12px rgba(22,101,52,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-plug-line" style={{ color:"#fff", fontSize:20 }}/>
+          </div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.7)", marginTop:2 }}>Recorded at site — voltage, current, PF &amp; earthing</div>
+          </div>
+        </div>
+        <div style={{ background:"rgba(255,255,255,0.18)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>
+          {panels.length} Panel{panels.length > 1 ? "s" : ""}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", padding:"12px 16px", marginBottom:16, boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Readings Entered</span>
+          <span style={{ fontSize:13, fontWeight:800, color:greenMid }}>{filledRows} / {totalRows}</span>
+        </div>
+        <div style={{ height:5, background:"#f3f4f6", borderRadius:99, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${totalRows ? (filledRows/totalRows)*100 : 0}%`, background:`linear-gradient(90deg,${greenMid},#4ade80)`, borderRadius:99, transition:"width 0.3s ease" }}/>
+        </div>
+      </div>
+
+      {/* Panel cards */}
+      {panels.map((panel, idx) => (
+        <ElecPanelCard
+          key={panel.id}
+          panel={panel}
+          panelIdx={idx}
+          totalPanels={panels.length}
+          onNameChange={onNameChange}
+          onRowChange={onRowChange}
+          onRemove={removePanel}
+        />
+      ))}
+
+      {/* Add Panel */}
+      <button
+        onClick={addPanel}
+        style={{ width:"100%", padding:"14px", borderRadius:12, border:`2px dashed ${greenMid}`, background:"transparent", color:greenMid, fontSize:13, fontWeight:700, cursor:"pointer", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center", gap:8, transition:"all 0.15s" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#f0fdf4"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+      >
+        <i className="ri-add-line" style={{ fontSize:16 }}/>+ Add Panel
+      </button>
+
+      {/* Save button */}
+      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+        <button
+          onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${green},#14532d)`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(22,101,52,0.35)" }}>
+          <i className="ri-save-line"/>Save Electrical Parameters
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 6 — Questionnaire  (sourced from Question Library — Active questions only)
+// ═══════════════════════════════════════════════════════════════════════════════
+type AuditQType = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "RATING_1_5" | "NUMERIC" | "TEXT";
+
+interface AuditQuestion {
+  id: string; code: string; textEn: string; section: string;
+  type: AuditQType; mandatory: boolean; allowRemarks: boolean; allowPhoto: boolean;
+  riskLevel: "HIGH" | "MEDIUM" | "LOW";
+  recommendEn: string;
+}
+
+interface AuditAnswer {
+  answer: string; remarks: string; photo: string | null;
+}
+
+// ── Active questions pulled from Question Library ─────────────────────────────
+const AUDIT_QUESTIONS: AuditQuestion[] = [
+  // General
+  { id:"q001", code:"Q-001", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether MCCBs/MCBs/ELCBs are provided with proper rating to cater the load" },
+  { id:"q002", code:"Q-002", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether light and emergency light are provided in electrical rooms/operating areas for easy operation & maintenance works" },
+  { id:"q003", code:"Q-003", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether Pump room, DG set room, UPS room, electrical room etc. are maintained dry and in good condition and obsolete/hazardous/old items are not dumped there" },
+  { id:"q004", code:"Q-004", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether water seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc." },
+  { id:"q005", code:"Q-005", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether Earthing pits are provided and connected to the equipment, body of the connected equipment" },
+  { id:"q006", code:"Q-006", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether the Earthing Pits are properly maintained" },
+  { id:"q007", code:"Q-007", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether proper exhaust fan for ventilation of panel room/electrical room/UPS room is provided and paper, old materials or any other scrap kept near DB/Panels/UPS/Batteries etc. are not kept there" },
+  { id:"q008", code:"Q-008", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether penalty is being imposed in electricity bills on account of higher load/poor power factor etc." },
+  { id:"q009", code:"Q-009", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Additional electrical load required if any (from Power Distribution Company)" },
+  { id:"q010", code:"Q-010", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether load is distributed in all 3 phases to avoid unbalancing and no loose electrical connection/haphazard wiring observed in the branch/office premises" },
+  { id:"q011", code:"Q-011", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether isolating switches are provided for switching off non-essential loads during night and main switch to switch off power in case of Fire/Emergency" },
+  { id:"q012", code:"Q-012", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether electrical equipments of Pantry etc. are properly connected to Iron socket box with MCBs and protect them from overload" },
+  { id:"q013", code:"Q-013", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether proper preventive maintenance after opening of Panel boards and Distribution Boards are carried out by licensed Electricians or skilled technicians" },
+  { id:"q014", code:"Q-014", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether appropriate timers used for Server Room ACs and Signage Boards for auto ON/OFF. Thermostat of ACs at server rooms should be set to 30°C" },
+  { id:"q015", code:"Q-015", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether preventive maintenance of electric installation and equipment is carried out by skilled license holder electricians/skilled technician" },
+  { id:"q016", code:"Q-016", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"General condition of electrical control panels, Main switch, electric meter board, ACs, Water coolers, wiring cables etc. is good and all DBs, Panels, Switch boards are properly covered" },
+  { id:"q017", code:"Q-017", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether contact numbers of electricians, power distribution company, Generator service provider, UPS vendor, ACs etc. are available with staff and displayed in Electric Room/UPS room" },
+  { id:"q018", code:"Q-018", section:"General", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether the Power Factor (PF) panel of appropriate rating is installed" },
+  // Fire Prevention
+  { id:"q019", code:"Q-019", section:"Fire Prevention Measures", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"All old disposable records, broken furniture etc. accumulated at the premises have been cleared" },
+  { id:"q020", code:"Q-020", section:"Fire Prevention Measures", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Combustible leaf, litter/waste papers etc. in and around the branch is removed/cleaned periodically" },
+  { id:"q021", code:"Q-021", section:"Fire Prevention Measures", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"No stationery/Records/old obsolete items are stored/kept in the system/UPS room" },
+  { id:"q022", code:"Q-022", section:"Fire Prevention Measures", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Storage racks in Stationery/Record room kept at a safe distance of at least 3 ft from electrical points/switch/junction boxes" },
+  { id:"q023", code:"Q-023", section:"Fire Prevention Measures", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"In the pantry/canteen LPG is used" },
+  // Server and UPS Room
+  { id:"q024", code:"Q-024", section:"Server and UPS Room", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Server room has dual AC units having timer circuit device with independent circuit" },
+  { id:"q025", code:"Q-025", section:"Server and UPS Room", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether metal body exhaust fan is installed in UPS room" },
+  { id:"q026", code:"Q-026", section:"Server and UPS Room", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether all ceiling fans installed are of BLDC type" },
+  // Electrical Safety
+  { id:"q027", code:"Q-027", section:"Electrical Safety", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Power supply to record/stationery room is made through plug and socket arrangement" },
+  { id:"q028", code:"Q-028", section:"Electrical Safety", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether LED lights have been installed. If not, specify number required: Down lights (12/15W) — NOS: ___ | 2×2 Flush lights (36W) — NOS: ___" },
+  { id:"q029", code:"Q-029", section:"Electrical Safety", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether motion sensors/occupancy sensors have been installed. If not, record the number of sensors required in observations" },
+  // Fire Protection
+  { id:"q030", code:"Q-030", section:"Fire Protection", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Are fire extinguishers available in: A. Systems/UPS Room: CO2 (3Kg/4.5Kg) × 2  |  B. Banking Hall: Water/CO2 type × 1  |  C. Stationery Room: Water/CO2 type × 1" },
+  // DG Set
+  { id:"q031", code:"Q-031", section:"DG Set / Generator", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"DG Set / Generator is installed at the branch/office" },
+  { id:"q032", code:"Q-032", section:"DG Set / Generator", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"At least two 6 Kg. ABC capacity fire extinguishers are placed near the diesel generator" },
+  { id:"q033", code:"Q-033", section:"DG Set / Generator", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether electrical safety and energy saving awareness meeting with the staff members was conducted after electrical safety audit" },
+  // Onsite ATM
+  { id:"q034", code:"Q-034", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"5 Kg ABC Automatic Modular Fire Extinguisher is provided and protected in the back room" },
+  { id:"q035", code:"Q-035", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"ATM room is having fire detector connected through branch AFDS (Applicable for Onsite ATMs only)" },
+  { id:"q036", code:"Q-036", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Whether MCCB/MCB/ELCB are provided and apparently in working condition" },
+  { id:"q037", code:"Q-037", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"AC units are provided with timer circuit device" },
+  { id:"q038", code:"Q-038", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Main supply switch/MCB to cut-off the electric supply of ATM has been marked" },
+  { id:"q039", code:"Q-039", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Power supply to AC, UPS and ATM machines is through metal clad plug receptacle socket" },
+  { id:"q040", code:"Q-040", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Electrical wires are properly covered/insulated to prevent exposure of wire" },
+  { id:"q041", code:"Q-041", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Is there any cooking stove/electric heater coil stove noticed in the ATM" },
+  { id:"q042", code:"Q-042", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Is there any water accumulation/seepage in the premises or dripping on electrical gadgets" },
+  { id:"q043", code:"Q-043", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Any combustible container provided in the ATM" },
+  { id:"q044", code:"Q-044", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Steel dustbin container provided in the ATM" },
+  { id:"q045", code:"Q-045", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"No smoking board is provided in the ATM cabin" },
+  { id:"q046", code:"Q-046", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Main entrance shutter is in working condition" },
+  { id:"q047", code:"Q-047", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"Proper locking arrangement is there at the main shutter" },
+  { id:"q048", code:"Q-048", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"All electrical lights are in working condition" },
+  { id:"q049", code:"Q-049", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"ATM is provided with external CCTV camera" },
+  { id:"q050", code:"Q-050", section:"Onsite ATM", type:"YES_NO_NA", mandatory:true, allowRemarks:true, allowPhoto:false, riskLevel:"HIGH", recommendEn:"COMPLIED", textEn:"CCTV is in working condition" },
+];
+
+// "Onsite ATM" → Step 8, "DG Set / Generator" → Step 9 — both excluded here
+const SECTION_ORDER = ["General","Fire Prevention Measures","Server and UPS Room","Electrical Safety","Fire Protection"];
+const SECTION_COLORS: Record<string,{ color:string; bg:string; border:string }> = {
+  "General":                  { color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0" },
+  "Fire Prevention Measures": { color:"#dc2626", bg:"#fef2f2", border:"#fecaca" },
+  "Server and UPS Room":      { color:"#2563eb", bg:"#eff6ff", border:"#bfdbfe" },
+  "Electrical Safety":        { color:"#d97706", bg:"#fffbeb", border:"#fde68a" },
+  "Fire Protection":          { color:"#ea580c", bg:"#fff7ed", border:"#fed7aa" },
+  "DG Set / Generator":       { color:"#7c3aed", bg:"#f5f3ff", border:"#ddd6fe" },
+  "Onsite ATM":               { color:"#0891b2", bg:"#ecfeff", border:"#a5f3fc" },
+};
+const RISK_DOT: Record<string,string> = { HIGH:"#dc2626", MEDIUM:"#d97706", LOW:"#16a34a" };
+
+// ── Answer option definitions ─────────────────────────────────────────────────
+const ANSWER_OPTIONS: Record<AuditQType, { label:string; color:string; bg:string; border:string }[]> = {
+  YES_NO_NA: [
+    { label:"YES",  color:"#16a34a", bg:"#f0fdf4", border:"#16a34a" },
+    { label:"NO",   color:"#dc2626", bg:"#fef2f2", border:"#dc2626" },
+    { label:"N/A",  color:"#6b7280", bg:"#f9fafb", border:"#9ca3af" },
+  ],
+  YES_NO: [
+    { label:"YES",  color:"#16a34a", bg:"#f0fdf4", border:"#16a34a" },
+    { label:"NO",   color:"#dc2626", bg:"#fef2f2", border:"#dc2626" },
+  ],
+  OK_NOT_OK: [
+    { label:"OK",      color:"#16a34a", bg:"#f0fdf4", border:"#16a34a" },
+    { label:"NOT OK",  color:"#dc2626", bg:"#fef2f2", border:"#dc2626" },
+  ],
+  RATING_1_5: [],
+  NUMERIC:    [],
+  TEXT:       [],
+};
+
+function QuestionCard({
+  q, ans, onAnswer,
+}: {
+  q: AuditQuestion;
+  ans: AuditAnswer;
+  onAnswer: (id: string, field: keyof AuditAnswer, val: string | null) => void;
+}) {
+  const sc = SECTION_COLORS[q.section] || { color:"#374151", bg:"#f9fafb", border:"#e5e7eb" };
+  const opts = ANSWER_OPTIONS[q.type];
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = e => onAnswer(q.id, "photo", e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const answered = !!ans.answer;
+
+  return (
+    <div style={{
+      background:"#fff", borderRadius:12, border:`1px solid ${answered ? sc.border : "#e5e7eb"}`,
+      overflow:"hidden", boxShadow: answered ? `0 2px 8px ${sc.color}18` : "0 1px 3px rgba(0,0,0,0.05)",
+      marginBottom:10, transition:"all 0.15s",
+    }}>
+      {/* Question header */}
+      <div style={{ padding:"12px 14px", display:"flex", alignItems:"flex-start", gap:10, borderBottom:"1px solid #f3f4f6" }}>
+        {/* Status dot + code */}
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, flexShrink:0, paddingTop:2 }}>
+          <div style={{ width:8, height:8, borderRadius:"50%", background: answered ? sc.color : "#d1d5db" }}/>
+          <span style={{ fontSize:9, fontWeight:800, color:"#9ca3af", fontFamily:"monospace", letterSpacing:"0.03em" }}>{q.code}</span>
+        </div>
+        {/* Text */}
+        <div style={{ flex:1 }}>
+          <p style={{ fontSize:13, fontWeight:600, color:"#111827", margin:0, lineHeight:1.55 }}>{q.textEn}</p>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:6 }}>
+            {q.mandatory && <span style={{ fontSize:9, fontWeight:700, color:"#dc2626", background:"#fee2e2", borderRadius:4, padding:"1px 6px" }}>MANDATORY</span>}
+            <span style={{ fontSize:9, fontWeight:700, color: RISK_DOT[q.riskLevel], background:`${RISK_DOT[q.riskLevel]}18`, borderRadius:4, padding:"1px 6px" }}>{q.riskLevel} RISK</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Answer area */}
+      <div style={{ padding:"12px 14px", display:"flex", flexDirection:"column", gap:10 }}>
+
+        {/* Button-type answers */}
+        {opts.length > 0 && (
+          <div style={{ display:"flex", gap:8 }}>
+            {opts.map(opt => {
+              const sel = ans.answer === opt.label;
+              return (
+                <button
+                  key={opt.label}
+                  onClick={() => onAnswer(q.id, "answer", sel ? "" : opt.label)}
+                  style={{
+                    flex:1, padding:"10px 8px", borderRadius:9,
+                    border:`2px solid ${sel ? opt.border : "#e5e7eb"}`,
+                    background: sel ? opt.bg : "#fff",
+                    color: sel ? opt.color : "#9ca3af",
+                    fontWeight:800, fontSize:13, cursor:"pointer",
+                    transition:"all 0.15s", letterSpacing:"0.03em",
+                    boxShadow: sel ? `0 2px 6px ${opt.color}30` : "none",
+                  }}>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Rating 1-5 */}
+        {q.type === "RATING_1_5" && (
+          <div style={{ display:"flex", gap:6 }}>
+            {[1,2,3,4,5].map(n => {
+              const sel = parseInt(ans.answer) >= n;
+              return (
+                <button key={n} onClick={() => onAnswer(q.id, "answer", String(n))}
+                  style={{ flex:1, padding:"10px 0", borderRadius:9, border:`2px solid ${sel?"#f59e0b":"#e5e7eb"}`, background:sel?"#fffbeb":"#fff", color:sel?"#d97706":"#9ca3af", fontWeight:800, fontSize:14, cursor:"pointer" }}>
+                  ★
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Numeric */}
+        {q.type === "NUMERIC" && (
+          <input type="number" value={ans.answer} onChange={e => onAnswer(q.id, "answer", e.target.value)}
+            placeholder="Enter numeric value"
+            style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:14, fontWeight:700, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
+        )}
+
+        {/* Text */}
+        {q.type === "TEXT" && (
+          <textarea value={ans.answer} onChange={e => onAnswer(q.id, "answer", e.target.value)}
+            placeholder="Enter your observation"
+            rows={2}
+            style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa", resize:"vertical" }}/>
+        )}
+
+        {/* Remarks */}
+        {q.allowRemarks && ans.answer && (
+          <div>
+            <label style={{ fontSize:10, fontWeight:700, color:"#6b7280", display:"block", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+              Recommendation / Remarks
+            </label>
+            <input
+              value={ans.remarks}
+              onChange={e => onAnswer(q.id, "remarks", e.target.value)}
+              placeholder={`Default: ${q.recommendEn}`}
+              style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:8, padding:"8px 11px", fontSize:12, color:"#374151", outline:"none", boxSizing:"border-box", background:"#f9fafb" }}
+            />
+          </div>
+        )}
+
+        {/* Photo */}
+        {q.allowPhoto && ans.answer && (
+          <div>
+            {ans.photo ? (
+              <div style={{ position:"relative", borderRadius:9, overflow:"hidden", border:"1.5px solid #e5e7eb" }}>
+                <img src={ans.photo} alt="Evidence" style={{ width:"100%", maxHeight:140, objectFit:"cover", display:"block" }}/>
+                <button onClick={() => onAnswer(q.id, "photo", null)}
+                  style={{ position:"absolute", top:6, right:6, background:"rgba(0,0,0,0.6)", border:"none", borderRadius:6, padding:"3px 8px", color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                  ✕ Remove
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => fileRef.current?.click()}
+                style={{ width:"100%", padding:"9px", borderRadius:9, border:"2px dashed #d1d5db", background:"#fafafa", color:"#6b7280", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <i className="ri-camera-line"/>Attach Photo Evidence
+              </button>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display:"none" }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoFile(f); }}/>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function QuestionnaireSection({ branchName }: { branchName: string }) {
+  const initAnswers = () => Object.fromEntries(AUDIT_QUESTIONS.map(q => [q.id, { answer:"", remarks:"", photo:null }]));
+  const [answers, setAnswers]         = useState<Record<string, AuditAnswer>>(initAnswers);
+  const [openSections, setOpenSections] = useState<Record<string,boolean>>(Object.fromEntries(SECTION_ORDER.map(s => [s, true])));
+  const [saved, setSaved]             = useState(false);
+
+  const onAnswer = (id: string, field: keyof AuditAnswer, val: string | null) =>
+    setAnswers(prev => ({ ...prev, [id]: { ...prev[id], [field]: val } }));
+
+  const toggleSection = (s: string) => setOpenSections(prev => ({ ...prev, [s]: !prev[s] }));
+
+  const total     = AUDIT_QUESTIONS.length;
+  const answered  = Object.values(answers).filter(a => a.answer).length;
+  const pct       = Math.round((answered / total) * 100);
+
+  const bySection = SECTION_ORDER.map(sec => ({
+    section: sec,
+    questions: AUDIT_QUESTIONS.filter(q => q.section === sec),
+  })).filter(g => g.questions.length > 0);
+
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const cyan = "#0891b2";
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:"#ecfeff", border:"1px solid #a5f3fc", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:cyan, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:"#164e63" }}>Questionnaire saved successfully</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#0891b2,#0e7490)", borderRadius:14, padding:"16px 18px", marginBottom:16, boxShadow:"0 4px 12px rgba(8,145,178,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-questionnaire-line" style={{ color:"#fff", fontSize:20 }}/>
+            </div>
+            <div>
+              <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>All active audit questions — {total} questions across {bySection.length} sections</div>
+            </div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:24, fontWeight:900, color:"#fff", lineHeight:1 }}>{pct}%</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,0.7)", marginTop:2 }}>{answered}/{total} answered</div>
+          </div>
+        </div>
+        {/* Progress */}
+        <div style={{ marginTop:12, height:6, background:"rgba(255,255,255,0.2)", borderRadius:99, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${pct}%`, background:"#fff", borderRadius:99, transition:"width 0.3s ease" }}/>
+        </div>
+      </div>
+
+      {/* Section groups */}
+      {bySection.map(({ section, questions }) => {
+        const sc = SECTION_COLORS[section] || { color:"#374151", bg:"#f9fafb", border:"#e5e7eb" };
+        const secAnswered = questions.filter(q => answers[q.id]?.answer).length;
+        const isOpen = openSections[section] !== false;
+
+        return (
+          <div key={section} style={{ marginBottom:12 }}>
+            {/* Section header */}
+            <button
+              onClick={() => toggleSection(section)}
+              style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"11px 16px", background:sc.bg, border:`1px solid ${sc.border}`, borderRadius: isOpen ? "12px 12px 0 0" : "12px", cursor:"pointer", outline:"none" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ width:4, height:20, borderRadius:99, background:sc.color, flexShrink:0 }}/>
+                <span style={{ fontSize:13, fontWeight:800, color:sc.color }}>{section}</span>
+                <span style={{ fontSize:11, color:"#9ca3af" }}>{questions.length} questions</span>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:12, fontWeight:700, color: secAnswered === questions.length ? "#16a34a" : sc.color }}>
+                  {secAnswered}/{questions.length}
+                </span>
+                {secAnswered === questions.length && <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:16 }}/>}
+                <i className={`ri-arrow-${isOpen ? "up" : "down"}-s-line`} style={{ color:sc.color, fontSize:18 }}/>
+              </div>
+            </button>
+
+            {/* Questions */}
+            {isOpen && (
+              <div style={{ border:`1px solid ${sc.border}`, borderTop:"none", borderRadius:"0 0 12px 12px", padding:"12px", background:"#fff" }}>
+                {questions.map(q => (
+                  <QuestionCard key={q.id} q={q} ans={answers[q.id]} onAnswer={onAnswer}/>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8 }}>
+        <button onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#0891b2,#0e7490)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(8,145,178,0.35)" }}>
+          <i className="ri-save-line"/>Save Questionnaire
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 8 — Onsite ATM  (questions sourced from Question Library — "Onsite ATM" section)
+// ═══════════════════════════════════════════════════════════════════════════════
+const ATM_QUESTIONS = AUDIT_QUESTIONS.filter(q => q.section === "Onsite ATM");
+
+function OnsiteATMSection({ branchName }: { branchName: string }) {
+  const initAnswers = () => Object.fromEntries(ATM_QUESTIONS.map(q => [q.id, { answer:"", remarks:"", photo:null } as AuditAnswer]));
+  const [answers, setAnswers] = useState<Record<string, AuditAnswer>>(initAnswers);
+  const [saved, setSaved]     = useState(false);
+
+  const onAnswer = (id: string, field: keyof AuditAnswer, val: string | null) =>
+    setAnswers(prev => ({ ...prev, [id]: { ...prev[id], [field]: val } }));
+
+  const total    = ATM_QUESTIONS.length;
+  const answered = Object.values(answers).filter(a => a.answer).length;
+  const pct      = Math.round((answered / total) * 100);
+  const purple   = "#7c3aed";
+
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:purple, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:"#4c1d95" }}>Onsite ATM checklist saved successfully</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#7c3aed,#6d28d9)", borderRadius:14, padding:"16px 18px", marginBottom:16, boxShadow:"0 4px 12px rgba(124,58,237,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-bank-card-line" style={{ color:"#fff", fontSize:20 }}/>
+            </div>
+            <div>
+              <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>Onsite ATM — {total} questions from Question Library</div>
+            </div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:24, fontWeight:900, color:"#fff", lineHeight:1 }}>{pct}%</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,0.7)", marginTop:2 }}>{answered}/{total} answered</div>
+          </div>
+        </div>
+        <div style={{ marginTop:12, height:6, background:"rgba(255,255,255,0.2)", borderRadius:99, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${pct}%`, background:"#fff", borderRadius:99, transition:"width 0.3s ease" }}/>
+        </div>
+      </div>
+
+      {/* Question cards — same layout as Questionnaire section */}
+      {ATM_QUESTIONS.map(q => (
+        <QuestionCard key={q.id} q={q} ans={answers[q.id]} onAnswer={onAnswer} />
+      ))}
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8 }}>
+        <button onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#7c3aed,#6d28d9)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(124,58,237,0.35)" }}>
+          <i className="ri-save-line"/>Save ATM Checklist
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROOT PAGE — Multi-Step Audit Form
+// ═══════════════════════════════════════════════════════════════════════════════
+export default function AuditFormPage() {
+  const [currentStep, setCurrentStep] = useState<Step>("capture-branch");
+  const [branchData, setBranchData]   = useState<BranchData | null>(null);
+  const [completedSteps, setCompletedSteps] = useState<Set<Step>>(new Set());
+
+  const currentIdx = STEPS.findIndex(s => s.id === currentStep);
+
+  // ── TESTING MODE: all steps freely navigable ──────────────────────────────
+  const goToStep = (stepId: Step) => {
+    setCurrentStep(stepId);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const goNext = () => {
+    const next = STEPS[currentIdx + 1];
+    if (next) goToStep(next.id);
+  };
+
+  const handleBranchComplete = (data: BranchData) => {
+    setBranchData(data);
+    setCompletedSteps(prev => new Set([...prev, "capture-branch"]));
+    goToStep("branch-photo");
+  };
+
+  const branchDisplayName = branchData?.ifscData
+    ? `${BANK_LIST.find(b=>b.code===branchData.bankCode)?.name?.split(" ").slice(0,2).join(" ")} — ${branchData.ifscData.BRANCH}`
+    : "Branch not yet captured";
+
+  const active = STEPS.find(s => s.id === currentStep)!;
+
+  return (
+    <div style={{ padding:"24px 0" }}>
+
+      {/* Page header */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
+        <div>
+          <h4 style={{ fontSize:22, fontWeight:800, color:"#111827", margin:0 }}>Audit Form</h4>
+          <div style={{ fontSize:12, color:"#9ca3af", marginTop:3 }}>
+            Dashboard / Audits / <span style={{ color:active.color, fontWeight:600 }}>New Audit</span>
+          </div>
+        </div>
+        {branchData && (
+          <div style={{ fontSize:12, fontWeight:700, color:"#6b7280", background:"#f3f4f6", borderRadius:8, padding:"6px 14px", display:"flex", alignItems:"center", gap:6 }}>
+            <i className="ri-building-2-line"/>{branchDisplayName}
+          </div>
+        )}
+      </div>
+
+      {/* ── Step Indicator ──────────────────────────────────────────────────── */}
+      <div style={{ display:"flex", gap:0, marginBottom:28, position:"relative" }}>
+        {STEPS.map((step, idx) => {
+            const isDone    = completedSteps.has(step.id);
+          const isCurrent = step.id === currentStep;
+          const canClick  = true; // testing mode — all steps freely accessible
+
+          return (
+            <React.Fragment key={step.id}>
+              <button
+                onClick={() => canClick && goToStep(step.id)}
+                style={{
+                  flex:1, background:"#fff", border:"1px solid #e5e7eb",
+                  borderRadius: idx===0 ? "12px 0 0 12px" : idx===STEPS.length-1 ? "0 12px 12px 0" : "0",
+                  borderRight: idx<STEPS.length-1 ? "none" : "1px solid #e5e7eb",
+                  padding:"12px 10px", cursor: canClick ? "pointer" : "not-allowed",
+                  outline:"none", transition:"all 0.15s",
+                  background: isCurrent ? `${step.color}10` : isDone ? "#f0fdf4" : "#fff",
+                  borderTop: isCurrent ? `3px solid ${step.color}` : isDone ? "3px solid #16a34a" : "3px solid transparent",
+                  boxShadow: isCurrent ? "0 2px 8px rgba(0,0,0,0.08)" : "0 1px 3px rgba(0,0,0,0.04)",
+                  position:"relative",
+                }}
+              >
+                <div style={{ display:"flex", alignItems:"center", gap:8, justifyContent:"center" }}>
+                  <div style={{
+                    width:26, height:26, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+                    background: isDone ? "#16a34a" : isCurrent ? step.color : "#e5e7eb",
+                  }}>
+                    {isDone
+                      ? <i className="ri-check-line" style={{ color:"#fff", fontSize:13, fontWeight:900 }}/>
+                      : isCurrent
+                        ? <i className={step.icon} style={{ color:"#fff", fontSize:13 }}/>
+                        : <span style={{ fontSize:11, fontWeight:800, color:"#9ca3af" }}>{idx+1}</span>
+                    }
+                  </div>
+                  <div style={{ textAlign:"left", display:window.innerWidth < 600 ? "none" : "block" }}>
+                    <div style={{ fontSize:11, fontWeight:800, color: isCurrent ? step.color : isDone ? "#16a34a" : "#9ca3af", lineHeight:1.2 }}>{step.shortLabel}</div>
+                    <div style={{ fontSize:10, color:"#9ca3af", marginTop:1, display: isCurrent ? "block" : "none" }}>{step.desc}</div>
+                  </div>
+                </div>
+              </button>
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* ── Active Step Header ───────────────────────────────────────────────── */}
+      <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"16px 20px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 1px 3px rgba(0,0,0,0.05)", borderLeft:`4px solid ${active.color}` }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:10, background:`${active.color}15`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className={active.icon} style={{ fontSize:20, color:active.color }}/>
+          </div>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:9, fontWeight:800, color:active.color, background:`${active.color}15`, borderRadius:20, padding:"2px 9px", textTransform:"uppercase", letterSpacing:"0.06em" }}>Step {currentIdx+1} of {STEPS.length}</span>
+            </div>
+            <div style={{ fontSize:16, fontWeight:900, color:"#111827", marginTop:3 }}>{active.label}</div>
+            <div style={{ fontSize:12, color:"#9ca3af", marginTop:1 }}>{active.desc}</div>
+          </div>
+        </div>
+        {/* Back nav */}
+        {currentIdx > 0 && (
+          <button
+            onClick={() => goToStep(STEPS[currentIdx-1].id)}
+            style={{ fontSize:12, fontWeight:700, color:"#6b7280", background:"#f3f4f6", border:"none", borderRadius:8, padding:"7px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
+            <i className="ri-arrow-left-line"/>Back
+          </button>
+        )}
+      </div>
+
+      {/* ── Step Content ──────────────────────────────────────────────────────── */}
+      {currentStep === "capture-branch" && (
+        <CaptureBranchStep onComplete={handleBranchComplete} />
+      )}
+      {currentStep === "branch-photo" && (
+        <BranchPhotoSection
+          branchName={branchDisplayName}
+          onContinue={() => { setCompletedSteps(prev => new Set([...prev, "branch-photo"])); goNext(); }}
+        />
+      )}
+      {currentStep === "load-sheet" && (
+        <LoadSheetSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "meter-details" && (
+        <MeterDetailsSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "dg-set" && (
+        <DGSetSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "ups-parameters" && (
+        <UPSParametersSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "electrical-parameters" && (
+        <ElectricalParametersSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "questionnaire" && (
+        <QuestionnaireSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "onsite-atm" && (
+        <OnsiteATMSection branchName={branchDisplayName} />
+      )}
+
+      {/* ── Next Step Navigation (not capture-branch, branch-photo, or the final dg-set step) */}
+      {currentStep !== "capture-branch" && currentStep !== "branch-photo" && currentStep !== "dg-set" && (
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:20 }}>
+          <button
+            onClick={() => { setCompletedSteps(prev => new Set([...prev, currentStep])); goNext(); }}
+            style={{ padding:"12px 28px", borderRadius:10, border:"none", background:active.color, color:"#fff", fontSize:13, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:`0 4px 14px ${active.color}55` }}>
+            <i className="ri-arrow-right-line"/>Next — {STEPS[currentIdx+1]?.label}
+          </button>
+        </div>
+      )}
+
+      {/* Spin animation */}
       <style>{`
+        @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
         input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-        input[type=number]{-moz-appearance:textfield}
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0 }
+        input[type=number] { -moz-appearance:textfield }
       `}</style>
     </div>
   );

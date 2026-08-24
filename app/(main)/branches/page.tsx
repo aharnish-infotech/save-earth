@@ -113,8 +113,8 @@ export default function BranchesPage() {
   const [openingYear, setOpeningYear]   = useState("");
   const [floors, setFloors]             = useState("");
   const [success, setSuccess]           = useState(false);
-  const [payloadOpen, setPayloadOpen]   = useState(false);
-  const [sqlOpen, setSqlOpen]           = useState(false);
+  const [payloadOpen, setPayloadOpen]   = useState(true);
+  const [sqlOpen, setSqlOpen]           = useState(true);
   const [copiedPayload, setCopiedPayload] = useState(false);
   const [copiedSQL, setCopiedSQL]         = useState(false);
   const [submitting, setSubmitting]     = useState(false);

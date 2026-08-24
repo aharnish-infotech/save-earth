@@ -70,9 +70,10 @@ export const RAIL_ITEMS: RailItem[] = [
     sections: [{
       section: "AUDIT QUESTIONS",
       items: [
-        { label: "Question Library", href: "/questions", icon: "ri-questionnaire-line" },
-        { label: "Template Builder", href: "/templates",  icon: "ri-layout-3-line"     },
-        { label: "Bank-Zone Mapping",href: "/mappings",   icon: "ri-links-line"        },
+        { label: "Question Library", href: "/questions",   icon: "ri-questionnaire-line"  },
+        { label: "Audit Form",       href: "/audit-form", icon: "ri-file-text-line"      },
+        { label: "Template Builder", href: "/templates",  icon: "ri-layout-3-line"       },
+        { label: "Bank-Zone Mapping",href: "/mappings",   icon: "ri-links-line"          },
       ],
     }],
   },

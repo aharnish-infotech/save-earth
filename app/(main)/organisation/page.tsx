@@ -124,15 +124,10 @@ const SEED: OrgUnit[] = [
   { id:"s-ao3",  bankCode:"SBIN", bankName:"State Bank of India", level:"AO",    levelOrder:3, code:"AO-MUM1",   name:"Mumbai North",    parentId:"s-lho2",isActive:true  },
   { id:"s-rbo1", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO",   levelOrder:4, code:"RBO-LDH",   name:"Ludhiana",        parentId:"s-ao1", isActive:true  },
   { id:"s-rbo2", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO",   levelOrder:4, code:"RBO-JAL",   name:"Jalandhar",       parentId:"s-ao1", isActive:true  },
-  { id:"s-br1",  bankCode:"SBIN", bankName:"State Bank of India", level:"BRANCH",levelOrder:5, code:"BR-001",    name:"Model Town",      parentId:"s-rbo1",isActive:true  },
-  { id:"s-br2",  bankCode:"SBIN", bankName:"State Bank of India", level:"BRANCH",levelOrder:5, code:"BR-002",    name:"Civil Lines",     parentId:"s-rbo1",isActive:true  },
-  { id:"s-br3",  bankCode:"SBIN", bankName:"State Bank of India", level:"BRANCH",levelOrder:5, code:"BR-003",    name:"Sector 17",       parentId:"s-lho1",isActive:true, skipLevel:true },
   // PUNB — HO auto-created from Bank record
   { id:"p-zo1",  bankCode:"PUNB", bankName:"Punjab National Bank",level:"ZO",    levelOrder:2, code:"ZO-NORTH",  name:"North",           parentId:null,    isActive:true  },
   { id:"p-zo2",  bankCode:"PUNB", bankName:"Punjab National Bank",level:"ZO",    levelOrder:2, code:"ZO-WEST",   name:"West",            parentId:null,    isActive:false },
   { id:"p-rbo1", bankCode:"PUNB", bankName:"Punjab National Bank",level:"RO",    levelOrder:3, code:"RO-DEL",    name:"Delhi",           parentId:"p-zo1", isActive:true  },
-  { id:"p-br1",  bankCode:"PUNB", bankName:"Punjab National Bank",level:"BRANCH",levelOrder:4, code:"BR-CNP",    name:"Connaught Place", parentId:"p-rbo1",isActive:true  },
-  { id:"p-br2",  bankCode:"PUNB", bankName:"Punjab National Bank",level:"BRANCH",levelOrder:4, code:"BR-KBG",    name:"Karol Bagh",      parentId:"p-rbo1",isActive:true  },
 ];
 
 const EMPTY_FORM: FormData = {
@@ -268,7 +263,7 @@ export default function OrganisationPage() {
 
   // Stats
   const totalUnits    = rows.length;
-  const totalBranches = rows.filter(r => r.level === "BRANCH").length;
+  const totalActive   = rows.filter(r => r.isActive).length;
   const totalSkips    = rows.filter(r => r.skipLevel).length;
   const totalBanks    = new Set(rows.map(r => r.bankCode)).size;
 
@@ -350,7 +345,10 @@ export default function OrganisationPage() {
   const handleAddChild = (parentUnit: OrgUnit) => {
     const levels = BANK_CONFIGS[parentUnit.bankCode]?.levels ?? [];
     const parentLevelDef = levels.find(l => l.code === parentUnit.level);
-    const childLevel = parentLevelDef ? levels.find(l => l.order === parentLevelDef.order + 1) : undefined;
+    // Skip BRANCH — branches are managed separately via Branch Addition
+    const childLevel = parentLevelDef
+      ? levels.find(l => l.order === parentLevelDef.order + 1 && !l.isLeaf)
+      : undefined;
     setForm({
       bankCode: parentUnit.bankCode,
       level: childLevel?.code ?? "",
@@ -405,7 +403,7 @@ export default function OrganisationPage() {
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, margin:"16px 0 20px" }}>
         {[
           { label:"Total Units",      value:totalUnits,    color:"#2563eb", bg:"#eff6ff", icon:"ri-organization-chart",   border:"#2563eb" },
-          { label:"Branches",         value:totalBranches, color:"#16a34a", bg:"#f0fdf4", icon:"ri-building-2-line",      border:"#16a34a" },
+          { label:"Active Units",      value:totalActive,   color:"#16a34a", bg:"#f0fdf4", icon:"ri-checkbox-circle-line", border:"#16a34a" },
           { label:"Skip-level Links", value:totalSkips,    color:"#d97706", bg:"#fffbeb", icon:"ri-links-line",           border:"#d97706" },
           { label:"Banks Configured", value:totalBanks,    color:"#7c3aed", bg:"#f5f3ff", icon:"ri-bank-line",            border:"#7c3aed" },
         ].map(c => (
@@ -424,8 +422,8 @@ export default function OrganisationPage() {
       {/* ── Split layout ──────────────────────────────────────────────────────── */}
       <div style={{ display:"grid", gridTemplateColumns:"390px 1fr", gap:18, alignItems:"start" }}>
 
-        {/* ── LEFT: Form ────────────────────────────────────────────────────── */}
-        <div ref={formRef} style={{ position:"sticky", top:80 }}>
+        {/* ── LEFT: Form + Cards ────────────────────────────────────────────── */}
+        <div ref={formRef} style={{ display:"flex", flexDirection:"column", gap:16 }}>
           <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
 
             {/* Form header */}
@@ -514,20 +512,6 @@ export default function OrganisationPage() {
                   </select>
                 )}
 
-                {/* Skip-level hint — SBI branch to HO or LHO */}
-                {form.level === "BRANCH" && form.bankCode === "SBI" && (
-                  <div style={{ fontSize:10, color:"#9ca3af", marginTop:3 }}>
-                    <i className="ri-information-line"/> SBI branches may report to HO, LHO, AO, or RBO
-                  </div>
-                )}
-
-                {/* Skip-level warning */}
-                {isSkipLevel && (
-                  <div style={{ marginTop:8, background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8, padding:"9px 12px", fontSize:12, color:"#92400e", display:"flex", gap:8, alignItems:"flex-start" }}>
-                    <i className="ri-alert-line" style={{ fontSize:14, flexShrink:0, marginTop:1 }}/>
-                    <span>This is a <strong>skip-level link</strong> — the branch will bypass the normal {normalParentLevel} level. Valid in SBI and will be flagged in reports.</span>
-                  </div>
-                )}
               </div>
 
               {/* ── Section: Unit details ── */}
@@ -546,12 +530,9 @@ export default function OrganisationPage() {
                     RBO:    "e.g. Ludhiana",
                     ZO:     "e.g. North",
                     RO:     "e.g. Delhi",
-                    BRANCH: "e.g. Model Town",
                   };
-                  // "LHO name *", "AO name *", "Branch name *", etc.
                   const displayLabel = !effectiveLevel ? "Location / area name"
-                    : effectiveLevel === "HO"     ? "HO name"
-                    : effectiveLevel === "BRANCH" ? "Branch name"
+                    : effectiveLevel === "HO" ? "HO name"
                     : `${effectiveLevel} name`;
                   return (
                     <>
@@ -616,6 +597,80 @@ export default function OrganisationPage() {
 
             </div>
           </div>
+
+          {/* ── SQL Query Card ──────────────────────────────────────────────────── */}
+          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+            <div style={{ padding:"11px 16px", borderBottom:"1px solid #e5e7eb", background:"#f8fafc", display:"flex", alignItems:"center", gap:7 }}>
+              <i className="ri-database-2-line" style={{ fontSize:14, color:"#7c3aed" }}/>
+              <span style={{ fontSize:12, fontWeight:800, color:"#111827" }}>SQL Schema</span>
+              <span style={{ fontSize:10, color:"#9ca3af", marginLeft:2 }}>org_units table definition</span>
+            </div>
+            <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#1e1e2e", overflowX:"auto", overflowY:"auto", maxHeight:300, lineHeight:1.8, fontFamily:"'Courier New', Consolas, monospace", color:"#cdd6f4" }}>{
+`CREATE TABLE org_units (
+  id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  bank_code    VARCHAR(4)   NOT NULL,          -- IFSC prefix e.g. SBIN, HDFC
+  bank_name    VARCHAR(100) NOT NULL,
+  level        VARCHAR(10)  NOT NULL,          -- HO | LHO | AO | RBO | ZO | RO
+  level_order  SMALLINT     NOT NULL,          -- 1=HO, 2=LHO/ZO, 3=AO/RO, 4=RBO
+  code         VARCHAR(20)  NOT NULL UNIQUE,   -- e.g. LHO-CHD-001
+  name         VARCHAR(100) NOT NULL,          -- location name only e.g. "Chandigarh"
+  parent_id    UUID         REFERENCES org_units(id) ON DELETE RESTRICT,
+  is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
+  skip_level   BOOLEAN      NOT NULL DEFAULT FALSE,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_org_units_bank   ON org_units (bank_code);
+CREATE INDEX idx_org_units_parent ON org_units (parent_id);
+CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
+
+-- Hierarchy reference
+-- SBI  (SBIN): HO(1) → LHO(2) → AO/CO/MO(3) → RBO(4) → Branch (separate table)
+-- Others:      HO(1) → ZO(2)  → RO(3)         → Branch (separate table)`
+            }</pre>
+          </div>
+
+          {/* ── API Payload Card ───────────────────────────────────────────────── */}
+          {(() => {
+            const autoCode = form.bankCode && form.level && form.name.trim()
+              ? generateCode(form.bankCode, form.level, form.name, rows)
+              : "(auto-generated on save)";
+            const payload = {
+              id:          editId ?? "(uuid — auto-generated on save)",
+              bankCode:    form.bankCode    || "(select bank)",
+              bankName:    BANK_CONFIGS[form.bankCode]?.name ?? "",
+              level:       form.level       || "(select level)",
+              levelOrder:  form.bankCode && form.level
+                ? (BANK_CONFIGS[form.bankCode]?.levels.find(l => l.code === form.level)?.order ?? null)
+                : null,
+              code:        autoCode,
+              name:        form.name        || "(enter name)",
+              parentId:    form.parentId    || null,
+              isActive:    form.isActive,
+              skipLevel:   false,
+            };
+            const json = JSON.stringify(payload, null, 2);
+            return (
+              <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+                <div style={{ padding:"11px 16px", borderBottom:"1px solid #e5e7eb", background:"#f8fafc", display:"flex", alignItems:"center", gap:7 }}>
+                  <i className="ri-code-s-slash-line" style={{ fontSize:14, color:"#2563eb" }}/>
+                  <span style={{ fontSize:12, fontWeight:800, color:"#111827" }}>API Payload</span>
+                  <span style={{ fontSize:10, color:"#9ca3af", marginLeft:2 }}>POST /api/v1/org-units</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(json)}
+                    style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:6, border:"1px solid #e5e7eb", background:"#f3f4f6", color:"#374151", fontSize:10, fontWeight:700, cursor:"pointer" }}>
+                    <i className="ri-file-copy-line" style={{ fontSize:11 }}/>Copy
+                  </button>
+                </div>
+                <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:260, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace", color:"#e6edf3" }}>
+                  {json}
+                </pre>
+              </div>
+            );
+          })()}
+
         </div>
 
         {/* ── RIGHT: Tree table ─────────────────────────────────────────────── */}
