@@ -513,6 +513,9 @@ export default function QuestionLibraryPage() {
     </label>
   );
 
+  // API Payload panel toggle
+  const [apiOpen, setApiOpen] = useState(false);
+
   // ── Stats ─────────────────────────────────────────────────────────────────────
   const total    = questions.length;
   const active   = questions.filter(q=>q.status==="Active").length;
@@ -554,18 +557,18 @@ export default function QuestionLibraryPage() {
         ))}
       </div>
 
-      {/* ── MAIN SPLIT ─────────────────────────────────────────────────────────── */}
-      <div style={{ display:"flex", alignItems:"flex-start", gap:18 }}>
+      {/* ── MAIN: Form (top) → Table (bottom) ────────────────────────────────── */}
+      <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
-        {/* ── LEFT PANEL — Add / Edit (always visible) ─────────────────────────── */}
-          <div style={{ width:380, flexShrink:0, display:"flex", flexDirection:"column", gap:14, position:"sticky", top:80 }}>
-          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden" }}>
+        {/* ── FORM CARD — full width, 2-col grid internally ─────────────────── */}
+        <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden" }}>
 
-            {/* Panel header */}
-            <div style={{ padding:"14px 18px", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between", background: isEditMode ? "#fffbeb" : "#f0fdf4" }}>
+          {/* Panel header */}
+          <div style={{ padding:"14px 18px", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between", background: isEditMode ? "#fffbeb" : "#f0fdf4" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+              <i className={isEditMode ? "ri-edit-line" : "ri-add-circle-line"} style={{ fontSize:15, color: isEditMode ? "#d97706" : "#16a34a" }}/>
               <div>
-                <div style={{ fontSize:14, fontWeight:800, color:"#111827", display:"flex", alignItems:"center", gap:7 }}>
-                  <i className={isEditMode ? "ri-edit-line" : "ri-add-circle-line"} style={{ fontSize:15, color: isEditMode ? "#d97706" : "#16a34a" }}/>
+                <div style={{ fontSize:14, fontWeight:800, color:"#111827" }}>
                   {isEditMode ? `Edit — ${editRow?.questionCode}` : "New Question"}
                 </div>
                 <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>
@@ -573,90 +576,87 @@ export default function QuestionLibraryPage() {
                 </div>
               </div>
             </div>
+            <div style={{ padding:"6px 12px", background:"#eff6ff", borderLeft:"3px solid #2563eb", borderRadius:"0 8px 8px 0", fontSize:11, color:"#1d4ed8", lineHeight:1.5 }}>
+              <strong>Auto-translate on.</strong> Click Hindi field to auto-fill from English. Use <strong>↺</strong> to regenerate.
+            </div>
+          </div>
 
-            {/* Auto-translate notice */}
-            <div style={{ margin:"12px 16px 0", padding:"9px 13px", background:"#eff6ff", borderLeft:"3px solid #2563eb", borderRadius:"0 8px 8px 0", fontSize:11, color:"#1d4ed8", lineHeight:1.5 }}>
-              <strong>Auto-translation on.</strong> Type English → click Hindi field to auto-translate. Use <strong>↺</strong> to regenerate.
+          {/* Form body — 2-column grid */}
+          <div style={{ padding:"16px 18px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+
+            {/* English */}
+            <div>
+              <label style={LBL}>Question Text — English <span style={{ color:"#dc2626" }}>*</span></label>
+              <textarea value={form.textEn} onChange={e=>fp("textEn",e.target.value)} rows={3}
+                placeholder="Whether MCCBs/MCBs are provided with proper rating to cater the load"
+                style={{ ...INP, resize:"none", lineHeight:1.5 }}/>
             </div>
 
-            {/* Scrollable body */}
-            <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:11, maxHeight:"calc(100vh - 270px)", overflowY:"auto" }}>
-
-              {/* English */}
-              <div>
-                <label style={LBL}>Question Text — English <span style={{ color:"#dc2626" }}>*</span></label>
-                <textarea value={form.textEn} onChange={e=>fp("textEn",e.target.value)} rows={3}
-                  placeholder="Whether MCCBs/MCBs are provided with proper rating to cater the load"
-                  style={{ ...INP, resize:"none", lineHeight:1.5 }}/>
+            {/* Hindi */}
+            <div>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                <label style={{ ...LBL, marginBottom:0 }}>Question Text — Hindi <span style={{ color:"#dc2626" }}>*</span></label>
+                {form.textEn.trim() && (
+                  <button onClick={()=>translateToHindi(form.textEn,"textHi")} disabled={translating.textHi}
+                    style={{ fontSize:10, fontWeight:700, color:translating.textHi?"#9ca3af":"#2563eb", background:translating.textHi?"#f3f4f6":"#eff6ff", border:"none", borderRadius:5, padding:"3px 8px", cursor:translating.textHi?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:3 }}>
+                    <i className={translating.textHi?"ri-loader-4-line":"ri-translate-2"} style={{ fontSize:11 }}/>
+                    {translating.textHi ? "Translating…" : "↺ Re-translate"}
+                  </button>
+                )}
               </div>
+              <textarea value={translating.textHi ? "" : form.textHi}
+                onChange={e=>fp("textHi",e.target.value)}
+                onFocus={()=>onHindiFocus(form.textEn,"textHi",form.textHi)}
+                disabled={translating.textHi}
+                rows={3} placeholder={translating.textHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
+                style={{ ...INP, resize:"none", lineHeight:1.5, background:translating.textHi?"#f9fafb":"#fff", color:translating.textHi?"#9ca3af":"#374151", fontStyle:translating.textHi?"italic":"normal" }}/>
+            </div>
 
-              {/* Hindi */}
-              <div>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
-                  <label style={{ ...LBL, marginBottom:0 }}>Question Text — Hindi <span style={{ color:"#dc2626" }}>*</span></label>
-                  {form.textEn.trim() && (
-                    <button onClick={()=>translateToHindi(form.textEn,"textHi")} disabled={translating.textHi}
-                      style={{ fontSize:10, fontWeight:700, color:translating.textHi?"#9ca3af":"#2563eb", background:translating.textHi?"#f3f4f6":"#eff6ff", border:"none", borderRadius:5, padding:"3px 8px", cursor:translating.textHi?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:3 }}>
-                      <i className={translating.textHi?"ri-loader-4-line":"ri-translate-2"} style={{ fontSize:11 }}/>
-                      {translating.textHi ? "Translating…" : "↺ Re-translate"}
-                    </button>
-                  )}
-                </div>
-                <textarea value={translating.textHi ? "" : form.textHi}
-                  onChange={e=>fp("textHi",e.target.value)}
-                  onFocus={()=>onHindiFocus(form.textEn,"textHi",form.textHi)}
-                  disabled={translating.textHi}
-                  rows={3} placeholder={translating.textHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
-                  style={{ ...INP, resize:"none", lineHeight:1.5, background:translating.textHi?"#f9fafb":"#fff", color:translating.textHi?"#9ca3af":"#374151", fontStyle:translating.textHi?"italic":"normal" }}/>
-              </div>
-
-              {/* Section */}
+            {/* Section + Type + Weightage */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
               <div>
                 <label style={LBL}>Section <span style={{ color:"#dc2626" }}>*</span></label>
                 <select value={form.section} onChange={e=>fp("section",e.target.value)} style={{ ...INP, padding:"7px 10px" }}>
                   {SECTIONS.slice(1).map(s=><option key={s}>{s}</option>)}
                 </select>
               </div>
-
-              {/* Type + Weightage — read-only */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                <div>
-                  <label style={LBL}>Question Type</label>
-                  <div style={{ ...INP, padding:"8px 11px", background:"#f9fafb", display:"flex", alignItems:"center", gap:8, cursor:"default" }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:TYPE_STYLE[form.type].color, background:TYPE_STYLE[form.type].bg, borderRadius:6, padding:"2px 10px" }}>
-                      {TYPE_LABEL[form.type]}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label style={LBL}>Weightage</label>
-                  <div style={{ ...INP, padding:"8px 11px", background:"#f9fafb", display:"flex", alignItems:"center", gap:8, cursor:"default" }}>
-                    <i className="ri-lock-line" style={{ fontSize:12, color:"#9ca3af" }}/>
-                    <span style={{ fontWeight:700, color:"#374151" }}>5</span>
-                    <span style={{ fontSize:11, color:"#9ca3af", marginLeft:2 }}>/ 5 (fixed)</span>
-                  </div>
+              <div>
+                <label style={LBL}>Question Type</label>
+                <div style={{ ...INP, padding:"8px 11px", background:"#f9fafb", display:"flex", alignItems:"center", gap:8, cursor:"default" }}>
+                  <span style={{ fontSize:11, fontWeight:700, color:TYPE_STYLE[form.type].color, background:TYPE_STYLE[form.type].bg, borderRadius:6, padding:"2px 8px", whiteSpace:"nowrap" as const }}>
+                    {TYPE_LABEL[form.type]}
+                  </span>
                 </div>
               </div>
-
-              {/* Question Behaviour */}
-              <div style={{ border:"1px solid #e5e7eb", borderRadius:9, overflow:"hidden" }}>
-                <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6 }}>
-                  <i className="ri-settings-3-line" style={{ fontSize:13, color:"#6b7280" }}/>
-                  <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Question Behaviour</span>
+              <div>
+                <label style={LBL}>Weightage</label>
+                <div style={{ ...INP, padding:"8px 11px", background:"#f9fafb", display:"flex", alignItems:"center", gap:6, cursor:"default" }}>
+                  <i className="ri-lock-line" style={{ fontSize:12, color:"#9ca3af" }}/>
+                  <span style={{ fontWeight:700, color:"#374151" }}>5</span>
+                  <span style={{ fontSize:11, color:"#9ca3af" }}>/ 5 (fixed)</span>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px 6px", padding:"10px 12px", background:"#f9fafb" }}>
+              </div>
+            </div>
+
+            {/* Behaviour + Rec EN + Rec HI */}
+            <div style={{ display:"grid", gridTemplateColumns:"auto 1fr 1fr", gap:10, alignItems:"start" }}>
+              {/* Behaviour */}
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:9, overflow:"hidden" }}>
+                <div style={{ padding:"6px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ri-settings-3-line" style={{ fontSize:13, color:"#6b7280" }}/>
+                  <span style={{ fontSize:10, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Behaviour</span>
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:7, padding:"9px 12px", background:"#f9fafb" }}>
                   {(["mandatory","allowRemarks","allowPhoto"] as const).map(chk)}
                 </div>
               </div>
-
-              {/* Recommendation English */}
+              {/* Rec EN */}
               <div>
-                <label style={LBL}>Default Recommendation (English)</label>
+                <label style={LBL}>Default Recommendation (EN)</label>
                 <input value={form.recommendEn} onChange={e=>fp("recommendEn",e.target.value)}
                   placeholder="COMPLIED" style={INP}/>
               </div>
-
-              {/* Recommendation Hindi */}
+              {/* Rec HI */}
               <div>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
                   <label style={{ ...LBL, marginBottom:0 }}>Default Recommendation (Hindi)</label>
@@ -672,106 +672,74 @@ export default function QuestionLibraryPage() {
                   onChange={e=>fp("recommendHi",e.target.value)}
                   onFocus={()=>onHindiFocus(form.recommendEn,"recommendHi",form.recommendHi)}
                   disabled={translating.recommendHi}
-                  placeholder={translating.recommendHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
+                  placeholder={translating.recommendHi ? "Translating…" : "Click to auto-translate, or type manually"}
                   style={{ ...INP, background:translating.recommendHi?"#f9fafb":"#fff", color:translating.recommendHi?"#9ca3af":"#374151", fontStyle:translating.recommendHi?"italic":"normal" }}/>
               </div>
-
             </div>
 
-            {/* Status */}
-            <div style={{ padding:"12px 16px", borderTop:"1px solid #e5e7eb", background:"#fff" }}>
-              <label style={LBL}>Question Status</label>
-              <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
-                {(["Active","Inactive"] as QStatus[]).map((s, i) => {
-                  const active = form.status === s;
-                  const col = s==="Active" ? "#16a34a" : "#dc2626";
-                  return (
-                    <button key={s} onClick={() => fp("status", s)}
-                      style={{ flex:1, padding:"8px 4px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:active ? col : "#fff", color:active?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
-                      <i className={s==="Active"?"ri-checkbox-circle-line":"ri-close-circle-line"} style={{ fontSize:13 }}/>
-                      {s}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{ padding:"12px 16px", borderTop:"1px solid #e5e7eb", display:"flex", gap:8, background:"#fff" }}>
-              <button onClick={resetToAdd} style={{ flex:1, padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
-                Clear
-              </button>
-              <button onClick={handleSave} disabled={!form.textEn.trim()}
-                style={{ flex:2, padding:"9px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af": form.status==="Active"?(isEditMode?"#2563eb":"#16a34a"):"#dc2626", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                <i className={isEditMode ? "ri-save-line" : "ri-check-line"}/>
-                {isEditMode ? `UPDATE AS ${form.status.toUpperCase()}` : `SAVE AS ${form.status.toUpperCase()}`}
-              </button>
-            </div>
           </div>
 
-          {/* ── API Payload — separate card below form ─────────────────────────── */}
-          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
-            <div style={{ padding:"11px 16px", borderBottom:"1px solid #f0fdf4", background:"#f8fafc", display:"flex", alignItems:"center", gap:7 }}>
-              <i className="ri-code-s-slash-line" style={{ fontSize:14, color:"#2563eb" }}/>
-              <span style={{ fontSize:12, fontWeight:800, color:"#111827" }}>API Payload</span>
-              <span style={{ fontSize:10, color:"#9ca3af", marginLeft:2 }}>Live preview of what will be sent</span>
+          {/* Footer: Status + Actions */}
+          <div style={{ padding:"12px 18px", borderTop:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:12, background:"#fafafa", flexWrap:"wrap" }}>
+            <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Status:</span>
+            <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+              {(["Active","Inactive"] as QStatus[]).map((s, i) => {
+                const isOn = form.status === s;
+                const col  = s==="Active" ? "#16a34a" : "#dc2626";
+                return (
+                  <button key={s} onClick={() => fp("status", s)}
+                    style={{ padding:"7px 14px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background:isOn?col:"#fff", color:isOn?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", gap:5 }}>
+                    <i className={s==="Active"?"ri-checkbox-circle-line":"ri-close-circle-line"} style={{ fontSize:13 }}/>
+                    {s}
+                  </button>
+                );
+              })}
             </div>
+            {/* API Payload toggle */}
+            <button onClick={()=>setApiOpen(v=>!v)}
+              style={{ display:"flex", alignItems:"center", gap:5, padding:"7px 13px", border:"1px solid #e5e7eb", borderRadius:8, background:apiOpen?"#0d1117":"#fff", color:apiOpen?"#8b949e":"#374151", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+              <i className="ri-code-s-slash-line" style={{ fontSize:12 }}/>
+              {apiOpen ? "Hide Payload" : "API Payload"}
+            </button>
+            <div style={{ flex:1 }}/>
+            <button onClick={resetToAdd} style={{ padding:"8px 16px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12 }}>
+              Clear
+            </button>
+            <button onClick={handleSave} disabled={!form.textEn.trim()}
+              style={{ padding:"8px 24px", borderRadius:8, border:"none", background:!form.textEn.trim()?"#9ca3af":form.status==="Active"?(isEditMode?"#2563eb":"#16a34a"):"#dc2626", color:"#fff", cursor:!form.textEn.trim()?"not-allowed":"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", gap:6 }}>
+              <i className={isEditMode ? "ri-save-line" : "ri-check-line"}/>
+              {isEditMode ? `UPDATE AS ${form.status.toUpperCase()}` : `SAVE AS ${form.status.toUpperCase()}`}
+            </button>
+          </div>
+        </div>
 
-            {/* Toolbar */}
-            <div style={{ background:"#0d1117", padding:"6px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <span style={{ fontSize:10, color:"#3d444d", fontWeight:600, letterSpacing:"0.05em" }}>application/json</span>
+        {/* ── API Payload — collapsible ──────────────────────────────────────── */}
+        {apiOpen && (
+          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+            <div style={{ background:"#0d1117", padding:"8px 14px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <i className="ri-code-s-slash-line" style={{ fontSize:13, color:"#58a6ff" }}/>
+                <span style={{ fontSize:12, fontWeight:700, color:"#c9d1d9" }}>API Payload</span>
+                <span style={{ fontSize:10, color:"#3d444d", marginLeft:4 }}>application/json · live preview</span>
+              </div>
               <button
                 onClick={() => {
-                  const payload = JSON.stringify({
-                    id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
-                    questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",
-                    textEn:       form.textEn       || "(empty)",
-                    textHi:       form.textHi       || "(empty)",
-                    type:         form.type,
-                    section:      form.section,
-                    weightage:    form.weightage,
-                    mandatory:    form.mandatory,
-                    allowRemarks: form.allowRemarks,
-                    allowPhoto:   form.allowPhoto,
-                    recommendEn:  form.recommendEn,
-                    recommendHi:  form.recommendHi  || "(empty)",
-                    status:       form.status,
-                  }, null, 2);
-                  navigator.clipboard.writeText(payload).then(() => {
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  });
+                  const payload = JSON.stringify({ id: isEditMode?editRow?.id:"(uuid)", questionCode: isEditMode?editRow?.questionCode:"(e.g. Q-051)", textEn:form.textEn||"(empty)", textHi:form.textHi||"(empty)", type:form.type, section:form.section, weightage:form.weightage, mandatory:form.mandatory, allowRemarks:form.allowRemarks, allowPhoto:form.allowPhoto, recommendEn:form.recommendEn, recommendHi:form.recommendHi||"(empty)", status:form.status }, null, 2);
+                  navigator.clipboard.writeText(payload).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); });
                 }}
                 style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:6, border:"1px solid #30363d", background:copied?"#238636":"#21262d", color:copied?"#fff":"#8b949e", fontSize:10, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}>
-                <i className={copied ? "ri-check-line" : "ri-file-copy-line"} style={{ fontSize:11 }}/>
-                {copied ? "Copied!" : "Copy"}
+                <i className={copied?"ri-check-line":"ri-file-copy-line"} style={{ fontSize:11 }}/>
+                {copied?"Copied!":"Copy"}
               </button>
             </div>
-
-            {/* Highlighted JSON */}
-            <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:280, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
-{colorizeJson(JSON.stringify({
-  id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
-  questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",
-  textEn:       form.textEn       || "(empty)",
-  textHi:       form.textHi       || "(empty)",
-  type:         form.type,
-  section:      form.section,
-  weightage:    form.weightage,
-  mandatory:    form.mandatory,
-  allowRemarks: form.allowRemarks,
-  allowPhoto:   form.allowPhoto,
-  recommendEn:  form.recommendEn,
-  recommendHi:  form.recommendHi  || "(empty)",
-  status:       form.status,
-}, null, 2))}
+            <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
+{colorizeJson(JSON.stringify({ id:isEditMode?editRow?.id:"(uuid)", questionCode:isEditMode?editRow?.questionCode:"(e.g. Q-051)", textEn:form.textEn||"(empty)", textHi:form.textHi||"(empty)", type:form.type, section:form.section, weightage:form.weightage, mandatory:form.mandatory, allowRemarks:form.allowRemarks, allowPhoto:form.allowPhoto, recommendEn:form.recommendEn, recommendHi:form.recommendHi||"(empty)", status:form.status }, null, 2))}
             </pre>
           </div>
+        )}
 
-          </div>
-
-        {/* ── RIGHT — TABLE ─────────────────────────────────────────────────────── */}
-        <div style={{ flex:1, minWidth:0 }}>
+        {/* ── TABLE — full width below form ─────────────────────────────────── */}
+        <div>
 
           {/* Print-only Sr. No. styles */}
           <style>{`
@@ -903,7 +871,7 @@ export default function QuestionLibraryPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>{/* end MAIN column */}
     </div>
 
     {/* ── DELETE CONFIRMATION MODAL ──────────────────────────────────────────── */}
