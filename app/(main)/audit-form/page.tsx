@@ -2554,7 +2554,716 @@ function ElectricalParametersSection({ branchName }: { branchName: string }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STEP 6 — Questionnaire  (sourced from Question Library — Active questions only)
+// STEP 7 — Electrical Distribution Data for SLD (MDB Busbar)
+// ═══════════════════════════════════════════════════════════════════════════════
+interface SLDRepeatRow { id: string; amp: string; pole: string; nos: string; }
+const newSLDRow = (): SLDRepeatRow => ({ id: uid(), amp: "", pole: "1", nos: "" });
+
+interface ElecSLDPanel {
+  id: string; name: string;
+  supply: "3-phase" | "1-phase" | "";
+  distributionType: "MDB" | "VDB" | "DIRECT" | "";
+  busbar: "Yes" | "No" | "";
+  pfController: "APFC" | "FIXED CAPACITOR" | "NONE" | "";
+  incomerSqmm: string; incomerCore: string;
+  distCableSqmm: string; distCableCore: string;
+  cutoutA: string; cutoutNos: string;
+  rccbElcbA: string;
+  apfcVar: string;
+  cosA: string;
+  mainMccbA: string; mainMccbPole: string;
+  mainLightingDbA: string; mainLightingDbPole: string;
+  mainAcdbA: string; mainAcdbPole: string;
+  acdbRows: SLDRepeatRow[];
+  ldbRows: SLDRepeatRow[];
+  photos: (string | null)[];
+}
+
+const newElecSLDPanel = (idx: number): ElecSLDPanel => ({
+  id: uid(), name: idx === 0 ? "Default Panel 1" : `Panel ${idx + 1}`,
+  supply: "", distributionType: "", busbar: "", pfController: "",
+  incomerSqmm: "", incomerCore: "", distCableSqmm: "", distCableCore: "",
+  cutoutA: "", cutoutNos: "", rccbElcbA: "", apfcVar: "", cosA: "",
+  mainMccbA: "", mainMccbPole: "",
+  mainLightingDbA: "", mainLightingDbPole: "",
+  mainAcdbA: "", mainAcdbPole: "",
+  acdbRows: [newSLDRow()], ldbRows: [newSLDRow()],
+  photos: [null],
+});
+
+function ElecSLDPanelCard({
+  panel, panelIdx, totalPanels, green, greenMid,
+  onChange, onRemove,
+}: {
+  panel: ElecSLDPanel; panelIdx: number; totalPanels: number;
+  green: string; greenMid: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChange: (id: string, field: keyof ElecSLDPanel, val: any) => void;
+  onRemove: (id: string) => void;
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upd = (field: keyof ElecSLDPanel, val: any) => onChange(panel.id, field, val);
+
+  const greenBg = "#dcfce7";
+
+  /* ── Shared input style ── */
+  const fi = (w?: number | string) => ({
+    border:"1.5px solid #d1fae5", borderRadius:8, padding:"9px 11px",
+    fontSize:13, fontWeight:700, color:"#111827", outline:"none",
+    background:"#fff", width: w ?? "100%", boxSizing:"border-box" as const,
+  });
+
+  /* ── Repeatable rows (ACDB / LDB) ── */
+  const RepeatRows = ({ label, rows, field }: {
+    label: string; rows: SLDRepeatRow[]; field: "acdbRows" | "ldbRows";
+  }) => {
+    const addRow    = () => upd(field, [...rows, newSLDRow()]);
+    const removeRow = (rid: string) => upd(field, rows.filter(r => r.id !== rid));
+    const updRow    = (rid: string, f: keyof SLDRepeatRow, v: string) =>
+      upd(field, rows.map(r => r.id !== rid ? r : { ...r, [f]: v }));
+    return (
+      <div>
+        <label style={{ fontSize:12, fontWeight:900, color:green, textTransform:"uppercase", letterSpacing:"0.04em", display:"block", marginBottom:8 }}>{label}</label>
+        {rows.map(row => (
+          <div key={row.id} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, flexWrap:"wrap" }}>
+            <input type="number" value={row.amp} onChange={e => updRow(row.id,"amp",e.target.value)}
+              placeholder="Amp" style={{ ...fi(72) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>A</span>
+            <input type="number" value={row.pole} onChange={e => updRow(row.id,"pole",e.target.value)}
+              placeholder="1" style={{ ...fi(56) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>POLE ×</span>
+            <input type="number" value={row.nos} onChange={e => updRow(row.id,"nos",e.target.value)}
+              placeholder="NOS" style={{ ...fi(60) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>NOS</span>
+            {rows.length > 1 && (
+              <button onClick={() => removeRow(row.id)}
+                style={{ border:"none", background:"transparent", color:"#ef4444", cursor:"pointer", fontSize:18, padding:0, lineHeight:1 }}>
+                <i className="ri-close-circle-line"/>
+              </button>
+            )}
+          </div>
+        ))}
+        <button onClick={addRow}
+          style={{ fontSize:11, fontWeight:700, color:green, background:greenBg, border:`1.5px dashed ${greenMid}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+          <i className="ri-add-line"/>Add more
+        </button>
+      </div>
+    );
+  };
+
+  /* ── Photo slots (max 2, start with 1) ── */
+  const PhotoSlot2 = ({ idx, photo }: { idx: number; photo: string | null }) => {
+    const ref = useRef<HTMLInputElement>(null);
+    return (
+      <div>
+        {photo ? (
+          <div style={{ position:"relative", display:"inline-block" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo} alt={`Panel photo ${idx+1}`} style={{ width:110, height:75, objectFit:"cover", borderRadius:9, border:`2px solid ${greenMid}` }}/>
+            <button onClick={() => { const u=[...panel.photos]; u[idx]=null; upd("photos",u); }}
+              style={{ position:"absolute", top:-6, right:-6, width:20, height:20, borderRadius:"50%", border:"none", background:"#ef4444", color:"#fff", fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:0 }}>
+              <i className="ri-close-line"/>
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => ref.current?.click()}
+            style={{ width:110, height:75, borderRadius:9, border:`2px dashed ${greenMid}`, background:"#f0fdf4", color:green, fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+            <i className="ri-camera-line" style={{ fontSize:20 }}/>Photo {idx+1}
+          </button>
+        )}
+        <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display:"none" }}
+          onChange={e => {
+            const f = e.target.files?.[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = ev => { const u=[...panel.photos]; u[idx]=ev.target?.result as string; upd("photos",u); };
+            r.readAsDataURL(f);
+          }}/>
+      </div>
+    );
+  };
+
+  /* ── Helpers ── */
+  const Row2 = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div style={{ display:"flex", alignItems:"flex-start", gap:10, paddingBottom:12, borderBottom:"1px solid #f0fdf4" }}>
+      <span style={{ fontSize:12, fontWeight:900, color:green, minWidth:160, paddingTop:10 }}>{label}</span>
+      <div style={{ flex:1 }}>{children}</div>
+    </div>
+  );
+
+  const AmPole = (
+    aVal: string, aChange: (v:string)=>void, aLabel: string,
+    pVal: string, pChange: (v:string)=>void,
+  ) => (
+    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+      <input type="number" value={aVal} onChange={e=>aChange(e.target.value)} placeholder="—" style={{ ...fi(80) }}/>
+      <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>{aLabel}</span>
+      <input type="number" value={pVal} onChange={e=>pChange(e.target.value)} placeholder="—" style={{ ...fi(56) }}/>
+      <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>POLE</span>
+    </div>
+  );
+
+  return (
+    <div style={{ background:"#fff", borderRadius:14, border:"1.5px solid #bbf7d0", overflow:"hidden", boxShadow:"0 2px 8px rgba(22,101,52,0.08)", marginBottom:16 }}>
+
+      {/* Card header */}
+      <div style={{ background:"#f0fdf4", borderBottom:"2px solid #bbf7d0", padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontSize:13, fontWeight:900, color:green, background:greenBg, borderRadius:8, padding:"4px 12px", flexShrink:0, border:"1px solid #86efac" }}>
+          Panel {panelIdx + 1}
+        </span>
+        <input value={panel.name} onChange={e => upd("name", e.target.value)}
+          placeholder="Panel name"
+          style={{ flex:1, border:"1.5px solid #d1fae5", borderRadius:9, padding:"8px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fff", fontWeight:700 }}/>
+        {totalPanels > 1 && (
+          <button onClick={() => onRemove(panel.id)}
+            style={{ fontSize:12, fontWeight:700, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:7, padding:"6px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+            <i className="ri-delete-bin-line"/>Remove
+          </button>
+        )}
+      </div>
+
+      <div style={{ padding:"16px", display:"flex", flexDirection:"column", gap:12 }}>
+
+        {/* Supply & Distribution Type */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div>
+            <label style={LBL}>Supply</label>
+            <select value={panel.supply} onChange={e => upd("supply", e.target.value)} style={INP}>
+              <option value="">— Select —</option>
+              <option value="3-phase">3-Phase</option>
+              <option value="1-phase">1-Phase</option>
+            </select>
+          </div>
+          <div>
+            <label style={LBL}>Distribution Type</label>
+            <select value={panel.distributionType} onChange={e => upd("distributionType", e.target.value)} style={INP}>
+              <option value="">— Select —</option>
+              <option>MDB</option>
+              <option>VDB</option>
+              <option>DIRECT</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Bus-Bar & PF Controller */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div>
+            <label style={LBL}>Bus-Bar</label>
+            <div style={{ display:"flex", gap:8 }}>
+              {(["Yes","No"] as const).map(opt => (
+                <button key={opt} onClick={() => upd("busbar", panel.busbar === opt ? "" : opt)}
+                  style={{ flex:1, padding:"9px", borderRadius:8, fontSize:12, fontWeight:800, cursor:"pointer", border:"2px solid",
+                    borderColor: panel.busbar === opt ? (opt==="Yes" ? "#16a34a" : "#dc2626") : "#e5e7eb",
+                    background: panel.busbar === opt ? (opt==="Yes" ? "#dcfce7" : "#fee2e2") : "#fff",
+                    color: panel.busbar === opt ? (opt==="Yes" ? "#15803d" : "#b91c1c") : "#9ca3af" }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label style={LBL}>PF Controller</label>
+            <select value={panel.pfController} onChange={e => upd("pfController", e.target.value)} style={INP}>
+              <option value="">— Select —</option>
+              <option>APFC</option>
+              <option>FIXED CAPACITOR</option>
+              <option>NONE</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ height:1, background:"#f0fdf4" }}/>
+
+        {/* Incomer Cable Size */}
+        <div>
+          <label style={LBL}>Incomer Cable Size</label>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <input type="number" value={panel.incomerSqmm} onChange={e=>upd("incomerSqmm",e.target.value)} placeholder="—" style={{ ...fi(90) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>SqMM</span>
+            <input type="number" value={panel.incomerCore} onChange={e=>upd("incomerCore",e.target.value)} placeholder="—" style={{ ...fi(70) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>core</span>
+          </div>
+        </div>
+
+        {/* Distribution Cable Size */}
+        <div>
+          <label style={LBL}>Distribution Cable Size</label>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <input type="number" value={panel.distCableSqmm} onChange={e=>upd("distCableSqmm",e.target.value)} placeholder="—" style={{ ...fi(90) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>SqMM</span>
+            <input type="number" value={panel.distCableCore} onChange={e=>upd("distCableCore",e.target.value)} placeholder="—" style={{ ...fi(70) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>core</span>
+          </div>
+        </div>
+
+        {/* Cutout */}
+        <div>
+          <label style={LBL}>Cutout</label>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <input type="number" value={panel.cutoutA} onChange={e=>upd("cutoutA",e.target.value)} placeholder="—" style={{ ...fi(80) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>A ×</span>
+            <input type="number" value={panel.cutoutNos} onChange={e=>upd("cutoutNos",e.target.value)} placeholder="—" style={{ ...fi(70) }}/>
+            <span style={{ fontSize:12, fontWeight:700, color:"#6b7280" }}>NOS</span>
+          </div>
+        </div>
+
+        {/* RCCB/ELCB, APFC, COS */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+          <div>
+            <label style={LBL}>RCCB / ELCB</label>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <input type="number" value={panel.rccbElcbA} onChange={e=>upd("rccbElcbA",e.target.value)} placeholder="—" style={{ ...fi() }}/>
+              <span style={{ fontSize:12, fontWeight:700, color:"#6b7280", flexShrink:0 }}>A</span>
+            </div>
+          </div>
+          <div>
+            <label style={LBL}>APFC</label>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <input type="number" value={panel.apfcVar} onChange={e=>upd("apfcVar",e.target.value)} placeholder="—" style={{ ...fi() }}/>
+              <span style={{ fontSize:12, fontWeight:700, color:"#6b7280", flexShrink:0 }}>VAR</span>
+            </div>
+          </div>
+          <div>
+            <label style={LBL}>COS</label>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <input type="number" value={panel.cosA} onChange={e=>upd("cosA",e.target.value)} placeholder="—" style={{ ...fi() }}/>
+              <span style={{ fontSize:12, fontWeight:700, color:"#6b7280", flexShrink:0 }}>A</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ height:1, background:"#f0fdf4" }}/>
+
+        {/* Main MCCB */}
+        <div>
+          <label style={LBL}>Main MCCB</label>
+          {AmPole(panel.mainMccbA, v=>upd("mainMccbA",v), "A", panel.mainMccbPole, v=>upd("mainMccbPole",v))}
+        </div>
+
+        {/* Main Lighting DB */}
+        <div>
+          <label style={LBL}>Main Lighting DB</label>
+          {AmPole(panel.mainLightingDbA, v=>upd("mainLightingDbA",v), "A", panel.mainLightingDbPole, v=>upd("mainLightingDbPole",v))}
+        </div>
+
+        {/* Main ACDB */}
+        <div>
+          <label style={LBL}>Main ACDB</label>
+          {AmPole(panel.mainAcdbA, v=>upd("mainAcdbA",v), "A", panel.mainAcdbPole, v=>upd("mainAcdbPole",v))}
+        </div>
+
+        <div style={{ height:1, background:"#f0fdf4" }}/>
+
+        {/* Repeatable ACDB rows */}
+        <RepeatRows label="ACDB" rows={panel.acdbRows} field="acdbRows"/>
+
+        {/* Repeatable LDB rows */}
+        <RepeatRows label="LDB" rows={panel.ldbRows} field="ldbRows"/>
+
+        <div style={{ height:1, background:"#f0fdf4" }}/>
+
+        {/* Panel photos — max 2, start with 1 */}
+        <div>
+          <label style={{ ...LBL, display:"flex", alignItems:"center", gap:6, marginBottom:10 }}>
+            <i className="ri-camera-fill" style={{ color:green, fontSize:14 }}/>Panel Photos (max 2)
+          </label>
+          <div style={{ display:"flex", gap:10, alignItems:"flex-end", flexWrap:"wrap" }}>
+            {panel.photos.map((p, i) => (
+              <PhotoSlot2 key={i} idx={i} photo={p}/>
+            ))}
+            {panel.photos.length < 2 && (
+              <button onClick={() => upd("photos", [...panel.photos, null])}
+                style={{ fontSize:11, fontWeight:700, color:green, background:greenBg, border:`1.5px dashed ${greenMid}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6, alignSelf:"center" }}>
+                <i className="ri-add-line"/>Add Photo 2
+              </button>
+            )}
+            {panel.photos.length >= 2 && (
+              <span style={{ fontSize:11, color:"#9ca3af", fontStyle:"italic", alignSelf:"center" }}>Maximum 2 photos</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ElecSLDSection({ branchName }: { branchName: string }) {
+  const [panels, setPanels] = useState<ElecSLDPanel[]>([newElecSLDPanel(0)]);
+  const [earthingAl, setEarthingAl] = useState(false);
+  const [earthingCu, setEarthingCu] = useState(false);
+  const [earthingGi, setEarthingGi] = useState(false);
+  const [noOfEarthing, setNoOfEarthing] = useState("");
+  const [saved, setSaved] = useState(false);
+  const green = "#166534"; const greenMid = "#16a34a"; const greenBg = "#dcfce7";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onChange = (id: string, field: keyof ElecSLDPanel, val: any) =>
+    setPanels(ps => ps.map(p => p.id !== id ? p : { ...p, [field]: val }));
+  const addPanel    = () => setPanels(ps => [...ps, newElecSLDPanel(ps.length)]);
+  const removePanel = (id: string) => setPanels(ps => ps.filter(p => p.id !== id));
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:greenMid, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:green }}>Electrical SLD Data saved successfully</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ background:`linear-gradient(135deg,${green},#14532d)`, borderRadius:14, padding:"16px 18px", marginBottom:12, boxShadow:"0 4px 12px rgba(22,101,52,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-node-tree" style={{ color:"#fff", fontSize:20 }}/>
+            </div>
+            <div>
+              <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>Electrical Distribution Data for SLD</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.7)", marginTop:2 }}>{branchName} — MDB Busbar</div>
+            </div>
+          </div>
+          <div style={{ background:"rgba(255,255,255,0.18)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>Step 7</div>
+        </div>
+      </div>
+
+      {/* Note */}
+      <div style={{ background:"#fefce8", border:"1.5px solid #fde68a", borderRadius:10, padding:"10px 14px", marginBottom:14, display:"flex", alignItems:"flex-start", gap:8 }}>
+        <i className="ri-information-line" style={{ color:"#d97706", fontSize:15, flexShrink:0, marginTop:1 }}/>
+        <span style={{ fontSize:12, color:"#92400e", fontWeight:600 }}>Anything not filled to be considered not installed and left vacant in SLD.</span>
+      </div>
+
+      {/* Panel cards */}
+      {panels.map((p, idx) => (
+        <ElecSLDPanelCard key={p.id} panel={p} panelIdx={idx} totalPanels={panels.length}
+          green={green} greenMid={greenMid} onChange={onChange} onRemove={removePanel}/>
+      ))}
+
+      {/* Add Panel */}
+      <button onClick={addPanel}
+        style={{ width:"100%", padding:"14px", borderRadius:12, border:`2px dashed ${greenMid}`, background:"transparent", color:greenMid, fontSize:13, fontWeight:800, cursor:"pointer", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#f0fdf4"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+        <i className="ri-add-line" style={{ fontSize:16 }}/>+ Add New Panel
+      </button>
+
+      {/* Global Earthing Section */}
+      <div style={{ background:"#fff", borderRadius:14, border:"1.5px solid #bbf7d0", padding:"16px", marginBottom:16, boxShadow:"0 2px 8px rgba(22,101,52,0.08)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+          <div style={{ width:3, height:16, borderRadius:99, background:green }}/>
+          <span style={{ fontSize:13, fontWeight:900, color:green, textTransform:"uppercase", letterSpacing:"0.04em" }}>Earthing</span>
+        </div>
+
+        {/* Earthing Type checkboxes */}
+        <div style={{ marginBottom:14 }}>
+          <label style={LBL}>Earthing Type <span style={{ fontWeight:500, color:"#9ca3af" }}>(select all that apply)</span></label>
+          <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginTop:8 }}>
+            {([
+              { label:"Al (Aluminium)", val:earthingAl, set:setEarthingAl },
+              { label:"Cu (Copper)",    val:earthingCu, set:setEarthingCu },
+              { label:"GI (Galvanised Iron)", val:earthingGi, set:setEarthingGi },
+            ]).map(({ label, val, set }) => (
+              <label key={label} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", background: val ? greenBg : "#f9fafb", border:`2px solid ${val ? greenMid : "#e5e7eb"}`, borderRadius:9, padding:"8px 14px" }}>
+                <input type="checkbox" checked={val} onChange={() => set(!val)} style={{ width:16, height:16, accentColor:green, cursor:"pointer" }}/>
+                <span style={{ fontSize:13, fontWeight:700, color: val ? green : "#6b7280" }}>{label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* No. of Earthing */}
+        <div>
+          <label style={LBL}>No. of Earthing</label>
+          <select value={noOfEarthing} onChange={e => setNoOfEarthing(e.target.value)} style={{ ...INP, maxWidth:160 }}>
+            <option value="">— Select —</option>
+            {Array.from({length:50},(_,i)=>i+1).map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:20 }}>
+        <button onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${green},#14532d)`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(22,101,52,0.35)" }}>
+          <i className="ri-save-line"/>Save SLD Data
+        </button>
+      </div>
+
+      {/* ── DB Schema Panel ─────────────────────────────────────────────────── */}
+      {(() => {
+        const [schemaOpen, setSchemaOpen] = useState(false);
+        const schema = `-- ═══════════════════════════════════════════════════════════════════════
+-- ELECTRICAL DISTRIBUTION DATA FOR SLD (MDB BUSBAR)
+-- PostgreSQL Schema  —  Step 7 of the Audit Form
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- ENUMs
+CREATE TYPE elec_sld_supply        AS ENUM ('3-phase', '1-phase');
+CREATE TYPE elec_sld_dist_type     AS ENUM ('MDB', 'VDB', 'DIRECT');
+CREATE TYPE elec_sld_pf_controller AS ENUM ('APFC', 'FIXED_CAPACITOR', 'NONE');
+CREATE TYPE elec_sld_row_type      AS ENUM ('acdb', 'ldb');
+
+-- ─────────────────────────────────────────────────────────────────────
+-- TABLE: elec_sld_panels
+-- One row per panel per audit.  "Default Panel 1" is index 0.
+-- ─────────────────────────────────────────────────────────────────────
+CREATE TABLE elec_sld_panels (
+  id                     UUID                    PRIMARY KEY DEFAULT gen_random_uuid(),
+  audit_id               UUID                    NOT NULL REFERENCES audits(id) ON DELETE CASCADE,
+  branch_unique_id       VARCHAR(64)             NOT NULL,         -- denormalized for offline sync
+  panel_index            SMALLINT                NOT NULL DEFAULT 0,
+  panel_name             VARCHAR(128)            NOT NULL DEFAULT 'Default Panel 1',
+
+  -- Supply & distribution
+  supply                 elec_sld_supply,
+  distribution_type      elec_sld_dist_type,
+  busbar                 BOOLEAN,
+  pf_controller          elec_sld_pf_controller,
+
+  -- Cable sizes
+  incomer_sqmm           NUMERIC(8,2),
+  incomer_core           SMALLINT,
+  dist_cable_sqmm        NUMERIC(8,2),
+  dist_cable_core        SMALLINT,
+
+  -- Protection
+  cutout_a               NUMERIC(8,2),
+  cutout_nos             SMALLINT,
+  rccb_elcb_a            NUMERIC(8,2),
+  apfc_var               NUMERIC(10,2),
+  cos_a                  NUMERIC(8,2),
+
+  -- Main breakers
+  main_mccb_a            NUMERIC(8,2),
+  main_mccb_pole         SMALLINT,
+  main_lighting_db_a     NUMERIC(8,2),
+  main_lighting_db_pole  SMALLINT,
+  main_acdb_a            NUMERIC(8,2),
+  main_acdb_pole         SMALLINT,
+
+  -- Audit
+  created_at             TIMESTAMPTZ             NOT NULL DEFAULT now(),
+  updated_at             TIMESTAMPTZ             NOT NULL DEFAULT now(),
+  deleted_at             TIMESTAMPTZ,
+
+  CONSTRAINT uq_elec_sld_panel UNIQUE (audit_id, panel_index)
+);
+
+CREATE INDEX idx_elec_sld_panels_audit  ON elec_sld_panels(audit_id);
+CREATE INDEX idx_elec_sld_panels_branch ON elec_sld_panels(branch_unique_id);
+CREATE INDEX idx_elec_sld_panels_del    ON elec_sld_panels(deleted_at) WHERE deleted_at IS NULL;
+
+CREATE TRIGGER trg_elec_sld_panels_updated_at
+  BEFORE UPDATE ON elec_sld_panels
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────
+-- TABLE: elec_sld_repeat_rows
+-- Repeatable ACDB and LDB MCB entries per panel.
+-- pole defaults to 1 at the application layer.
+-- ─────────────────────────────────────────────────────────────────────
+CREATE TABLE elec_sld_repeat_rows (
+  id          UUID               PRIMARY KEY DEFAULT gen_random_uuid(),
+  panel_id    UUID               NOT NULL REFERENCES elec_sld_panels(id) ON DELETE CASCADE,
+  row_type    elec_sld_row_type  NOT NULL,    -- 'acdb' or 'ldb'
+  amp         NUMERIC(8,2),
+  pole        SMALLINT           NOT NULL DEFAULT 1,  -- default 1 if left blank
+  nos         SMALLINT,
+  sort_order  SMALLINT           NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ        NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_elec_sld_rows_panel ON elec_sld_repeat_rows(panel_id);
+CREATE INDEX idx_elec_sld_rows_type  ON elec_sld_repeat_rows(panel_id, row_type);
+
+-- ─────────────────────────────────────────────────────────────────────
+-- TABLE: elec_sld_photos
+-- Panel photos — max 2 per panel (sort_order 0 or 1).
+-- ─────────────────────────────────────────────────────────────────────
+CREATE TABLE elec_sld_photos (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  panel_id    UUID        NOT NULL REFERENCES elec_sld_panels(id) ON DELETE CASCADE,
+  object_key  TEXT        NOT NULL,   -- S3/MinIO: audits/{audit_id}/elec-sld/{panel_id}/panel_{sort_order}.jpg
+  sort_order  SMALLINT    NOT NULL DEFAULT 0,
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  CONSTRAINT uq_elec_sld_photo   UNIQUE (panel_id, sort_order),
+  CONSTRAINT chk_elec_sld_photos CHECK (sort_order BETWEEN 0 AND 1)  -- max 2 photos
+);
+
+CREATE INDEX idx_elec_sld_photos_panel ON elec_sld_photos(panel_id);
+
+-- ─────────────────────────────────────────────────────────────────────
+-- TABLE: elec_sld_earthing
+-- Global earthing data — one row per audit (not per panel).
+-- ─────────────────────────────────────────────────────────────────────
+CREATE TABLE elec_sld_earthing (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  audit_id         UUID        NOT NULL UNIQUE REFERENCES audits(id) ON DELETE CASCADE,
+  branch_unique_id VARCHAR(64) NOT NULL,
+  earthing_al      BOOLEAN     NOT NULL DEFAULT false,
+  earthing_cu      BOOLEAN     NOT NULL DEFAULT false,
+  earthing_gi      BOOLEAN     NOT NULL DEFAULT false,
+  no_of_earthing   SMALLINT    CHECK (no_of_earthing BETWEEN 1 AND 50),
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_elec_sld_earthing_branch ON elec_sld_earthing(branch_unique_id);
+
+CREATE TRIGGER trg_elec_sld_earthing_updated_at
+  BEFORE UPDATE ON elec_sld_earthing
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- PRISMA SCHEMA  (schema.prisma)
+-- ═══════════════════════════════════════════════════════════════════════
+
+enum ElecSldSupply       { three_phase @map("3-phase")  one_phase @map("1-phase") }
+enum ElecSldDistType     { MDB  VDB  DIRECT }
+enum ElecSldPfController { APFC  FIXED_CAPACITOR  NONE }
+enum ElecSldRowType      { acdb  ldb }
+
+model ElecSldPanel {
+  id                  String               @id @default(uuid())
+  auditId             String               @map("audit_id")
+  branchUniqueId      String               @map("branch_unique_id")  @db.VarChar(64)
+  panelIndex          Int                  @default(0)               @map("panel_index")  @db.SmallInt
+  panelName           String               @default("Default Panel 1") @map("panel_name") @db.VarChar(128)
+  supply              ElecSldSupply?
+  distributionType    ElecSldDistType?     @map("distribution_type")
+  busbar              Boolean?
+  pfController        ElecSldPfController? @map("pf_controller")
+  incomerSqmm         Decimal?             @map("incomer_sqmm")          @db.Decimal(8,2)
+  incomerCore         Int?                 @map("incomer_core")           @db.SmallInt
+  distCableSqmm       Decimal?             @map("dist_cable_sqmm")       @db.Decimal(8,2)
+  distCableCore       Int?                 @map("dist_cable_core")        @db.SmallInt
+  cutoutA             Decimal?             @map("cutout_a")               @db.Decimal(8,2)
+  cutoutNos           Int?                 @map("cutout_nos")             @db.SmallInt
+  rccbElcbA           Decimal?             @map("rccb_elcb_a")           @db.Decimal(8,2)
+  apfcVar             Decimal?             @map("apfc_var")               @db.Decimal(10,2)
+  cosA                Decimal?             @map("cos_a")                  @db.Decimal(8,2)
+  mainMccbA           Decimal?             @map("main_mccb_a")           @db.Decimal(8,2)
+  mainMccbPole        Int?                 @map("main_mccb_pole")         @db.SmallInt
+  mainLightingDbA     Decimal?             @map("main_lighting_db_a")    @db.Decimal(8,2)
+  mainLightingDbPole  Int?                 @map("main_lighting_db_pole")  @db.SmallInt
+  mainAcdbA           Decimal?             @map("main_acdb_a")           @db.Decimal(8,2)
+  mainAcdbPole        Int?                 @map("main_acdb_pole")         @db.SmallInt
+  createdAt           DateTime             @default(now())  @map("created_at")
+  updatedAt           DateTime             @updatedAt       @map("updated_at")
+  deletedAt           DateTime?                             @map("deleted_at")
+
+  audit               Audit                @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  repeatRows          ElecSldRepeatRow[]
+  photos              ElecSldPhoto[]
+
+  @@unique([auditId, panelIndex])
+  @@index([branchUniqueId])
+  @@map("elec_sld_panels")
+}
+
+model ElecSldRepeatRow {
+  id         String           @id @default(uuid())
+  panelId    String           @map("panel_id")
+  rowType    ElecSldRowType   @map("row_type")
+  amp        Decimal?         @db.Decimal(8,2)
+  pole       Int              @default(1)  @db.SmallInt
+  nos        Int?             @db.SmallInt
+  sortOrder  Int              @default(0)  @map("sort_order")  @db.SmallInt
+  createdAt  DateTime         @default(now())  @map("created_at")
+
+  panel      ElecSldPanel     @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId, rowType])
+  @@map("elec_sld_repeat_rows")
+}
+
+model ElecSldPhoto {
+  id          String       @id @default(uuid())
+  panelId     String       @map("panel_id")
+  objectKey   String       @map("object_key")
+  sortOrder   Int          @default(0)  @map("sort_order")  @db.SmallInt
+  uploadedAt  DateTime     @default(now())  @map("uploaded_at")
+
+  panel       ElecSldPanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@unique([panelId, sortOrder])
+  @@map("elec_sld_photos")
+}
+
+model ElecSldEarthing {
+  id               String   @id @default(uuid())
+  auditId          String   @unique  @map("audit_id")
+  branchUniqueId   String   @map("branch_unique_id")  @db.VarChar(64)
+  earthingAl       Boolean  @default(false)  @map("earthing_al")
+  earthingCu       Boolean  @default(false)  @map("earthing_cu")
+  earthingGi       Boolean  @default(false)  @map("earthing_gi")
+  noOfEarthing     Int?     @map("no_of_earthing")    @db.SmallInt
+  createdAt        DateTime @default(now())  @map("created_at")
+  updatedAt        DateTime @updatedAt       @map("updated_at")
+
+  audit            Audit    @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@index([branchUniqueId])
+  @@map("elec_sld_earthing")
+}
+
+
+-- ─────────────────────────────────────────────────────────────────────
+-- S3 / MinIO Object Key Pattern
+-- ─────────────────────────────────────────────────────────────────────
+-- audits/{audit_id}/elec-sld/{panel_id}/panel_0.jpg   ← Photo 1
+-- audits/{audit_id}/elec-sld/{panel_id}/panel_1.jpg   ← Photo 2 (max)
+
+-- ─────────────────────────────────────────────────────────────────────
+-- BUSINESS RULES
+-- ─────────────────────────────────────────────────────────────────────
+-- 1. Any field left NULL = "not installed" — left vacant in SLD diagram
+-- 2. elec_sld_repeat_rows.pole defaults to 1 at both app and DB layer
+-- 3. Max 2 photos per panel enforced by UNIQUE(panel_id, sort_order)
+--    and CHECK (sort_order BETWEEN 0 AND 1)
+-- 4. elec_sld_earthing is ONE row per audit (@@unique auditId) —
+--    earthing is global, not per-panel
+-- 5. branch_unique_id is denormalized on both tables for offline-first
+--    mobile sync without joining the branches table on-device
+-- 6. no_of_earthing is validated 1–50 at DB (CHECK) and app layer
+-- 7. Soft delete only on elec_sld_panels; repeat rows and photos are
+--    hard-deleted via ON DELETE CASCADE`;
+
+        return (
+          <div style={{ borderRadius:14, overflow:"hidden", border:"1.5px solid #14532d", marginTop:4 }}>
+            <button onClick={() => setSchemaOpen(o => !o)}
+              style={{ width:"100%", padding:"14px 18px", background:"linear-gradient(135deg,#052e16,#14532d)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <i className="ri-database-2-line" style={{ color:"#86efac", fontSize:18 }}/>
+                <span style={{ fontSize:13, fontWeight:800, color:"#dcfce7", textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                  DB Schema — Electrical SLD Step 7
+                </span>
+                <span style={{ fontSize:10, background:"rgba(134,239,172,0.2)", color:"#86efac", borderRadius:99, padding:"2px 8px", fontWeight:700 }}>
+                  PostgreSQL + Prisma
+                </span>
+              </div>
+              <i className={`ri-arrow-${schemaOpen?"up":"down"}-s-line`} style={{ color:"#86efac", fontSize:18 }}/>
+            </button>
+            {schemaOpen && (
+              <div style={{ background:"#0a0f0a", padding:"20px 18px", overflowX:"auto" }}>
+                <pre style={{ margin:0, fontSize:11.5, lineHeight:1.7, color:"#dcfce7", fontFamily:"'Fira Code','Cascadia Code','Consolas',monospace", whiteSpace:"pre" }}>
+                  {schema}
+                </pre>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 8 — Questionnaire  (sourced from Question Library — Active questions only)
 // ═══════════════════════════════════════════════════════════════════════════════
 type AuditQType = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "RATING_1_5" | "NUMERIC" | "TEXT";
 
@@ -3127,6 +3836,9 @@ export default function AuditFormPage() {
       )}
       {currentStep === "electrical-parameters" && (
         <ElectricalParametersSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "elec-sld" && (
+        <ElecSLDSection branchName={branchDisplayName} />
       )}
       {currentStep === "questionnaire" && (
         <QuestionnaireSection branchName={branchDisplayName} />

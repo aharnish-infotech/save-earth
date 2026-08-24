@@ -164,13 +164,16 @@ export default function AllAuditsPage() {
                   <th style={TH}>Bank / Branch / IFSC</th>
                   <th style={TH}>Audited By</th>
                   <th style={{ ...TH, textAlign:"center" }}>Audit Date</th>
+                  <th style={{ ...TH, textAlign:"center" }}>HT / LT</th>
+                  <th style={{ ...TH, textAlign:"center" }}>Photos</th>
+                  <th style={{ ...TH, textAlign:"center" }}>GPS</th>
                   <th style={{ ...TH, textAlign:"center" }}>Status</th>
                   <th className="no-print" style={{ ...TH, textAlign:"center" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {paged.length === 0 ? (
-                  <tr><td colSpan={8} style={{ padding:"60px 24px", textAlign:"center", color:"#9ca3af" }}>
+                  <tr><td colSpan={11} style={{ padding:"60px 24px", textAlign:"center", color:"#9ca3af" }}>
                     <i className="ri-file-search-line" style={{ fontSize:36, display:"block", marginBottom:8, opacity:0.3 }} />
                     No audits match your filters
                   </td></tr>
@@ -220,6 +223,42 @@ export default function AllAuditsPage() {
                       <td style={{ ...TD, textAlign:"center" }}>
                         <div style={{ fontSize:12, fontWeight:600, color:"#374151" }}>{a.startDate}</div>
                         <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>Due: {a.dueDate}</div>
+                      </td>
+
+                      {/* HT / LT */}
+                      <td style={{ ...TD, textAlign:"center" }}>
+                        <span style={{
+                          fontSize:11, fontWeight:700, borderRadius:6, padding:"3px 10px",
+                          color: a.htLt === "HT" ? "#9333ea" : "#0891b2",
+                          background: a.htLt === "HT" ? "#f3e8ff" : "#cffafe",
+                        }}>{a.htLt}</span>
+                      </td>
+
+                      {/* Photos */}
+                      <td style={{ ...TD, textAlign:"center" }}>
+                        <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:12, color:"#6b7280", fontWeight:600 }}>
+                          <i className="ri-camera-line" style={{ fontSize:13, color:"#9ca3af" }}/>{a.photos}
+                        </span>
+                      </td>
+
+                      {/* GPS */}
+                      <td style={{ ...TD, textAlign:"center" }}>
+                        {a.gps ? (
+                          <a
+                            href={`https://www.google.com/maps?q=${a.gps.lat},${a.gps.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Open in Google Maps (${a.gps.lat}, ${a.gps.lng})`}
+                            style={{ display:"inline-flex", alignItems:"center", gap:4, textDecoration:"none", color:"#16a34a", fontSize:12, fontWeight:600 }}>
+                            <span style={{ width:8, height:8, borderRadius:"50%", background:"#16a34a", display:"inline-block", boxShadow:"0 0 0 2px #bbf7d0" }} />
+                            <i className="ri-map-pin-line" style={{ fontSize:13 }}/>
+                          </a>
+                        ) : (
+                          <span title="GPS not captured" style={{ display:"inline-flex", alignItems:"center", gap:4, color:"#d1d5db", fontSize:12 }}>
+                            <span style={{ width:8, height:8, borderRadius:"50%", background:"#d1d5db", display:"inline-block" }} />
+                            <i className="ri-map-pin-line" style={{ fontSize:13 }}/>
+                          </span>
+                        )}
                       </td>
 
                       {/* Status */}
