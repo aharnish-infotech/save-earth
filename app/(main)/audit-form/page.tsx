@@ -2,13 +2,14 @@
 import React, { useState, useRef, useCallback } from "react";
 
 // ─── STEP DEFINITIONS ─────────────────────────────────────────────────────────
-type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "ups-sld" | "electrical-parameters" | "meter-details" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-set";
+type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "ups-sld" | "ups-questionnaire" | "electrical-parameters" | "meter-details" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-set";
 
 const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color: string; desc: string }[] = [
   { id: "capture-branch",  label: "Capture Branch",     shortLabel: "Branch",    icon: "ri-building-2-line",    color: "#2563eb", desc: "Bank, IFSC, GPS & Classification" },
   { id: "branch-photo",    label: "Branch Photo",        shortLabel: "Photo",     icon: "ri-camera-line",        color: "#0d9488", desc: "Location verification photo" },
   { id: "ups-parameters",        label: "UPS Parameters",        shortLabel: "UPS",       icon: "ri-battery-charge-line", color: "#6d28d9", desc: "Voltage, current & earthing readings" },
   { id: "ups-sld",               label: "UPS SLD Data",          shortLabel: "SLD",       icon: "ri-flow-chart",          color: "#4c1d95", desc: "MCBs, MCCB, RCCB & distribution boards" },
+  { id: "ups-questionnaire",     label: "UPS Questionnaire",     shortLabel: "UPS Q",     icon: "ri-questionnaire-line",  color: "#0e7490", desc: "UPS room safety & compliance checklist" },
   { id: "electrical-parameters", label: "Electrical Parameters", shortLabel: "Electrical",icon: "ri-plug-line",           color: "#166534", desc: "Panel-wise voltage, current, PF & earthing" },
   { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
   { id: "questionnaire",  label: "Questionnaire",   shortLabel: "Questions",     icon: "ri-questionnaire-line",    color: "#0891b2", desc: "All active audit questions" },
@@ -1058,7 +1059,7 @@ function MCBPhotoSlot({ idx, photo, violet, onSet }: {
 function MCBPhotoGrid({ photos, violet, onSet, onAdd }: {
   photos: (string | null)[]; violet: string;
   onSet: (idx: number, val: string | null) => void;
-  onAdd: () => void;
+  onAdd?: () => void;
 }) {
   return (
     <div>
@@ -1067,10 +1068,15 @@ function MCBPhotoGrid({ photos, violet, onSet, onAdd }: {
           <MCBPhotoSlot key={i} idx={i} photo={p} violet={violet} onSet={val => onSet(i, val)}/>
         ))}
       </div>
-      <button onClick={onAdd}
-        style={{ fontSize:11, fontWeight:700, color:violet, background:"#f5f3ff", border:`1.5px dashed ${violet}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
-        <i className="ri-add-line"/>Add Photo {photos.length + 1}
-      </button>
+      {onAdd && (
+        <button onClick={onAdd}
+          style={{ fontSize:11, fontWeight:700, color:violet, background:"#f5f3ff", border:`1.5px dashed ${violet}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+          <i className="ri-add-line"/>Add Photo {photos.length + 1}
+        </button>
+      )}
+      {!onAdd && photos.length >= 4 && (
+        <div style={{ fontSize:11, color:"#9ca3af", fontStyle:"italic", marginTop:4 }}>Maximum 4 photos reached</div>
+      )}
     </div>
   );
 }
@@ -1339,7 +1345,7 @@ const newSLD = (idx: number): SLDUnit => ({
   inputMCBs: [newMCB()], outputMCBs: [newMCB()],
   cdbMCBs: [newMCB()], securityDBMCBs: [newMCB()], eldbMCBs: [newMCB()],
   rccbA: "", rccbMA: "",
-  mcbPhotos: [null, null, null, null],
+  mcbPhotos: [null],
 });
 
 function SLDCard({ sld, onChange }: {
@@ -1462,11 +1468,11 @@ function SLDCard({ sld, onChange }: {
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <input type="number" value={sld.rccbA} onChange={e => upd("rccbA", e.target.value)}
               placeholder="—" style={{ width:90, border:"2px solid #7c3aed", borderRadius:9, padding:"10px", fontSize:15, fontWeight:900, color:"#111827", outline:"none", textAlign:"center", background:"#fff" }}/>
-            <span style={{ fontSize:15, fontWeight:900, color:violet }}>A</span>
+            <span style={{ fontSize:13, fontWeight:900, color:violet }}>Amp</span>
             <div style={{ width:1, height:28, background:"#ddd6fe" }}/>
             <input type="number" value={sld.rccbMA} onChange={e => upd("rccbMA", e.target.value)}
               placeholder="—" style={{ width:90, border:"2px solid #7c3aed", borderRadius:9, padding:"10px", fontSize:15, fontWeight:900, color:"#111827", outline:"none", textAlign:"center", background:"#fff" }}/>
-            <span style={{ fontSize:15, fontWeight:900, color:violet }}>mA</span>
+            <span style={{ fontSize:13, fontWeight:900, color:violet }}>mA</span>
           </div>
         </div>
 
@@ -1477,7 +1483,7 @@ function SLDCard({ sld, onChange }: {
           </label>
           <MCBPhotoGrid photos={sld.mcbPhotos} violet={violetLight}
             onSet={(pi, val) => { const u = [...sld.mcbPhotos]; u[pi] = val; upd("mcbPhotos", u); }}
-            onAdd={() => upd("mcbPhotos", [...sld.mcbPhotos, null])}/>
+            onAdd={sld.mcbPhotos.length < 4 ? () => upd("mcbPhotos", [...sld.mcbPhotos, null]) : undefined}/>
         </div>
       </div>
     </div>
@@ -2046,6 +2052,178 @@ function ElecPanelCard({
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 5 — UPS Questionnaire (14 Yes/No/NA questions with conditional photos)
+// ═══════════════════════════════════════════════════════════════════════════════
+type UPSQAnswer = "Yes" | "No" | "NA" | "";
+
+interface UPSQItem {
+  no: number;
+  question: string;
+  photoTrigger?: "Yes" | "No"; // show photo upload when this answer is selected
+  answer: UPSQAnswer;
+  photo: string | null;
+  remarks: string;
+}
+
+const UPS_Q_INITIAL: Omit<UPSQItem, "answer" | "photo" | "remarks">[] = [
+  { no:1,  question:"UPS kept in separate fire resistant wall enclosure?" },
+  { no:2,  question:"Whether proper Metal Body exhaust fan for Ventilation of electrical room/UPS room is provided" },
+  { no:3,  question:"2 Exhaust Fans/ACs run alternately via timer?", photoTrigger:"Yes" },
+  { no:4,  question:"Rubber Mat placed?", photoTrigger:"Yes" },
+  { no:5,  question:"Whether light and emergency light are provided for easy operation & maintenance works" },
+  { no:6,  question:"Are Stationery / records / old obsolete items stored / kept in the system / UPS room", photoTrigger:"Yes" },
+  { no:7,  question:"Whether UPS room maintained dry and in good condition and obsolete/hazardous/old items are not dumped there" },
+  { no:8,  question:"Whether water seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc.", photoTrigger:"Yes" },
+  { no:9,  question:"Whether Earthing DB is provided and connected to the equipment, Body of the connected equipment" },
+  { no:10, question:"Is General Condition OK of electrical control panels, wiring cables dressing etc. is good and all DBs, Panels, Switch boards are properly covered", photoTrigger:"No" },
+  { no:11, question:"Whether the contact numbers of AMC, persons, electricians, power distribution company, Generator service provider, Vendor UPS vendor, Ac's etc. are available with Accountant / Security guard and other staff and they are displayed in Electric Room / UPS room" },
+  { no:12, question:"Server room have dual AC units having timer circuit device with independent circuit" },
+  { no:13, question:"Battery Racks earthed?" },
+  { no:14, question:"Are FIRE EXTINGUISHERS available in the following work area and clearly marked and accessible IN Systems/UPS Room: CO2(3kg/4.5kg)×2", photoTrigger:"Yes" },
+];
+
+const makeUPSQItems = (): UPSQItem[] =>
+  UPS_Q_INITIAL.map(q => ({ ...q, answer: "", photo: null, remarks: "" }));
+
+function UPSQuestionnaireSection({ branchName }: { branchName: string }) {
+  const [items, setItems] = useState<UPSQItem[]>(makeUPSQItems());
+  const [saved, setSaved] = useState(false);
+  const teal = "#0e7490"; const tealLight = "#0891b2"; const tealBg = "#ecfeff";
+
+  const upd = (no: number, field: keyof UPSQItem, val: string | null) =>
+    setItems(prev => prev.map(i => i.no !== no ? i : { ...i, [field]: val }));
+
+  const answered = items.filter(i => i.answer !== "").length;
+  const pct = Math.round((answered / items.length) * 100);
+
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const PhotoSlot = ({ item }: { item: UPSQItem }) => {
+    const ref = useRef<HTMLInputElement>(null);
+    return (
+      <div style={{ marginTop:10 }}>
+        <div style={{ fontSize:11, fontWeight:800, color:"#b45309", background:"#fef3c7", border:"1.5px solid #fcd34d", borderRadius:6, padding:"5px 10px", display:"inline-flex", alignItems:"center", gap:5, marginBottom:8 }}>
+          <i className="ri-camera-fill" style={{ fontSize:13 }}/>
+          Photo required — answer is &quot;{item.photoTrigger}&quot;
+        </div>
+        {item.photo ? (
+          <div style={{ position:"relative", display:"inline-block" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={item.photo} alt="Q photo" style={{ width:120, height:80, objectFit:"cover", borderRadius:10, border:"2px solid #a5f3fc" }}/>
+            <button onClick={() => upd(item.no, "photo", null)}
+              style={{ position:"absolute", top:-6, right:-6, width:20, height:20, borderRadius:"50%", border:"none", background:"#ef4444", color:"#fff", fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:0 }}>
+              <i className="ri-close-line"/>
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => ref.current?.click()}
+            style={{ width:120, height:80, borderRadius:10, border:`2px dashed ${tealLight}`, background:tealBg, color:teal, fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+            <i className="ri-camera-line" style={{ fontSize:22 }}/>Capture
+          </button>
+        )}
+        <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display:"none" }}
+          onChange={e => {
+            const f = e.target.files?.[0]; if (!f) return;
+            const reader = new FileReader();
+            reader.onload = ev => upd(item.no, "photo", ev.target?.result as string);
+            reader.readAsDataURL(f);
+          }}/>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:tealBg, border:"1px solid #a5f3fc", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:teal, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:teal }}>UPS Questionnaire saved successfully</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#0e7490,#155e75)", borderRadius:14, padding:"16px 18px", marginBottom:14, boxShadow:"0 4px 12px rgba(14,116,144,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-questionnaire-line" style={{ color:"#fff", fontSize:20 }}/>
+            </div>
+            <div>
+              <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>UPS Questionnaire</div>
+              <div style={{ fontSize:11, color:"#a5f3fc", marginTop:2 }}>{branchName} — UPS Room Safety &amp; Compliance Checklist</div>
+            </div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:20, fontWeight:900, color:"#fff" }}>{pct}%</div>
+            <div style={{ fontSize:10, color:"#a5f3fc" }}>{answered}/{items.length} answered</div>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div style={{ marginTop:12, background:"rgba(255,255,255,0.2)", borderRadius:99, height:6 }}>
+          <div style={{ width:`${pct}%`, height:6, borderRadius:99, background:"#a5f3fc", transition:"width 0.4s ease" }}/>
+        </div>
+      </div>
+
+      {/* Question cards */}
+      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+        {items.map(item => {
+          const showPhoto = item.photoTrigger && item.answer === item.photoTrigger;
+          return (
+            <div key={item.no} style={{
+              background:"#fff", borderRadius:12,
+              border:`1.5px solid ${item.answer !== "" ? "#a5f3fc" : "#e5e7eb"}`,
+              padding:"14px 16px",
+              boxShadow: item.answer !== "" ? "0 2px 8px rgba(14,116,144,0.08)" : "none",
+            }}>
+              <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+                {/* Number badge */}
+                <div style={{ minWidth:28, height:28, borderRadius:8, background: item.answer !== "" ? teal : "#f3f4f6", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <span style={{ fontSize:12, fontWeight:900, color: item.answer !== "" ? "#fff" : "#6b7280" }}>{item.no}</span>
+                </div>
+                <div style={{ flex:1 }}>
+                  <p style={{ margin:"0 0 10px", fontSize:13, fontWeight:600, color:"#111827", lineHeight:1.5 }}>{item.question}</p>
+                  {/* YES / NO / NA toggle */}
+                  <div style={{ display:"flex", gap:8 }}>
+                    {(["Yes","No","NA"] as UPSQAnswer[]).map(opt => (
+                      <button key={opt} onClick={() => upd(item.no, "answer", item.answer === opt ? "" : opt)}
+                        style={{
+                          padding:"7px 18px", borderRadius:8, fontSize:12, fontWeight:800, cursor:"pointer", border:"2px solid",
+                          borderColor: item.answer === opt ? (opt === "Yes" ? "#16a34a" : opt === "No" ? "#dc2626" : "#9ca3af") : "#e5e7eb",
+                          background: item.answer === opt ? (opt === "Yes" ? "#dcfce7" : opt === "No" ? "#fee2e2" : "#f3f4f6") : "#fff",
+                          color: item.answer === opt ? (opt === "Yes" ? "#15803d" : opt === "No" ? "#b91c1c" : "#374151") : "#9ca3af",
+                        }}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Conditional photo prompt */}
+                  {showPhoto && <PhotoSlot item={item}/>}
+                  {/* Remarks */}
+                  <div style={{ marginTop:10 }}>
+                    <input type="text" value={item.remarks} onChange={e => upd(item.no, "remarks", e.target.value)}
+                      placeholder="Remarks (optional)"
+                      style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:8, padding:"8px 12px", fontSize:12, color:"#374151", outline:"none", background:"#f9fafb", boxSizing:"border-box" }}/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:16 }}>
+        <button onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#0e7490,#155e75)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(14,116,144,0.35)" }}>
+          <i className="ri-save-line"/>Save Questionnaire
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
 function ElectricalParametersSection({ branchName }: { branchName: string }) {
   const [panels, setPanels] = useState<ElecPanel[]>([makePanel(0)]);
   const [saved, setSaved]   = useState(false);
@@ -2711,6 +2889,9 @@ export default function AuditFormPage() {
       )}
       {currentStep === "ups-sld" && (
         <UPSSLDSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "ups-questionnaire" && (
+        <UPSQuestionnaireSection branchName={branchDisplayName} />
       )}
       {currentStep === "electrical-parameters" && (
         <ElectricalParametersSection branchName={branchDisplayName} />

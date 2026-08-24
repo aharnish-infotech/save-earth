@@ -61,29 +61,6 @@ export default function LoginPage() {
           border-color: #16a34a !important;
           box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
         }
-        @keyframes sunPose {
-          0%,30%  { transform: translateX(0px); }
-          33%     { transform: translateX(0px) scaleX(0.92); }
-          36%,63% { transform: translateX(-100px); }
-          66%     { transform: translateX(-100px) scaleX(0.92); }
-          69%,96% { transform: translateX(-200px); }
-          99%     { transform: translateX(-200px) scaleX(0.92); }
-          100%    { transform: translateX(0px); }
-        }
-        @keyframes sunFloat {
-          0%,100% { transform: translateY(0px) rotate(-3deg); }
-          25%     { transform: translateY(-10px) rotate(1deg); }
-          50%     { transform: translateY(-16px) rotate(3deg); }
-          75%     { transform: translateY(-8px) rotate(0deg); }
-        }
-        @keyframes sunGlow {
-          0%,100% { filter: drop-shadow(0 0 10px rgba(253,186,50,0.55)) drop-shadow(0 0 24px rgba(253,186,50,0.25)); }
-          50%     { filter: drop-shadow(0 0 18px rgba(253,186,50,0.85)) drop-shadow(0 0 40px rgba(253,186,50,0.4)); }
-        }
-        @keyframes sunRays {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
       `}</style>
 
       <div style={{
@@ -107,48 +84,6 @@ export default function LoginPage() {
         {/* Decorative blobs */}
         <div style={{ position: "absolute", top: "-8%", left: "-6%", width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(22,163,74,0.08) 0%, transparent 70%)", pointerEvents: "none" }}/>
         <div style={{ position: "absolute", bottom: "-10%", right: "-8%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(21,128,61,0.07) 0%, transparent 70%)", pointerEvents: "none" }}/>
-
-        {/* ── Sun mascot — top right ── */}
-        <div style={{
-          position: "fixed",
-          top: 20,
-          right: 28,
-          zIndex: 12,
-          pointerEvents: "none",
-          animation: "sunFloat 4s ease-in-out infinite, sunGlow 3s ease-in-out infinite",
-        }}>
-          {/* Rotating rays ring behind sun */}
-          <div style={{
-            position: "absolute",
-            top: "50%", left: "50%",
-            width: 160, height: 160,
-            marginTop: -80, marginLeft: -80,
-            borderRadius: "50%",
-            background: "conic-gradient(from 0deg, rgba(253,186,50,0.18) 0deg, transparent 30deg, rgba(253,186,50,0.12) 60deg, transparent 90deg, rgba(253,186,50,0.18) 120deg, transparent 150deg, rgba(253,186,50,0.12) 180deg, transparent 210deg, rgba(253,186,50,0.18) 240deg, transparent 270deg, rgba(253,186,50,0.12) 300deg, transparent 330deg, rgba(253,186,50,0.18) 360deg)",
-            animation: "sunRays 8s linear infinite",
-          }}/>
-          {/* Sun pose strip */}
-          <div style={{
-            width: 100,
-            height: 160,
-            overflow: "hidden",
-            borderRadius: 12,
-            position: "relative",
-          }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/media/sun-poses.svg"
-              alt="Sun mascot"
-              style={{
-                width: 300,
-                height: 160,
-                objectFit: "fill",
-                display: "block",
-                animation: "sunPose 3.6s steps(1, end) infinite",
-              }}
-            />
-          </div>
-        </div>
 
         {/* Windmill — bottom left */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
