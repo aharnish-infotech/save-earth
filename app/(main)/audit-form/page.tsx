@@ -2104,7 +2104,7 @@ CREATE TRIGGER trg_ups_ne_earthing_default
 // ═══════════════════════════════════════════════════════════════════════════════
 // STEP 4 — Electrical Parameters (multi-panel)
 // ═══════════════════════════════════════════════════════════════════════════════
-interface ElecRow  { id: string; testPt: string; reading: string; readingAcdb: string; unit: string; bold?: boolean; remarks: string; normRange?: string; }
+interface ElecRow  { id: string; testPt: string; reading: string; readingAcdb: string; unit: string; bold?: boolean; remarks: string; }
 interface ElecGroup { id: string; label: string; rows: ElecRow[]; }
 interface ElecPanel { id: string; name: string; groups: ElecGroup[]; }
 
@@ -2184,7 +2184,7 @@ function ElecPanelCard({
         )}
       </div>
 
-      {/* Column headers — 5 columns */}
+      {/* Column headers — 4 columns: Test Point | Panel/Meter | ACDB | Remarks */}
       <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1.4fr 1.4fr 1.6fr", background:"#f9fafb", borderBottom:"2px solid #e5e7eb" }}>
         {[
           "Test Point",

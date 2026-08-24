@@ -31,18 +31,9 @@ export const RAIL_ITEMS: RailItem[] = [
   {
     id: "audits",
     icon: "ri-file-list-3-line",
-    label: "Audit Operations",
-    sections: [{
-      section: "AUDIT OPERATIONS",
-      items: [
-        { label: "All Audits",     href: "/audits",                icon: "ri-file-list-3-line"    },
-        { label: "Delivered",      href: "/audits/delivered",      icon: "ri-send-plane-line"     },
-        { label: "Approved",       href: "/audits/approved",       icon: "ri-checkbox-circle-line"},
-        { label: "Completed",      href: "/audits/completed",      icon: "ri-check-line"          },
-        { label: "Pending Review", href: "/audits/pending",        icon: "ri-time-line"           },
-        { label: "In Progress",    href: "/audits/in-progress",    icon: "ri-loader-4-line"       },
-      ],
-    }],
+    label: "All Audits",
+    href: "/audits",
+    sections: [],
   },
   {
     id: "banking",
