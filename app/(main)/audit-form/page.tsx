@@ -2104,7 +2104,7 @@ CREATE TRIGGER trg_ups_ne_earthing_default
 // ═══════════════════════════════════════════════════════════════════════════════
 // STEP 4 — Electrical Parameters (multi-panel)
 // ═══════════════════════════════════════════════════════════════════════════════
-interface ElecRow  { id: string; testPt: string; reading: string; readingAcdb: string; unit: string; bold?: boolean; remarks: string; }
+interface ElecRow  { id: string; testPt: string; reading: string; readingAcdb: string; unit: string; bold?: boolean; remarks: string; normRange?: string; }
 interface ElecGroup { id: string; label: string; rows: ElecRow[]; }
 interface ElecPanel { id: string; name: string; groups: ElecGroup[]; }
 
@@ -2148,10 +2148,19 @@ function ElecPanelCard({
 }: {
   panel: ElecPanel; panelIdx: number; totalPanels: number;
   onNameChange: (id: string, name: string) => void;
-  onRowChange: (panelId: string, gid: string, rid: string, field: "reading" | "remarks", val: string) => void;
+  onRowChange: (panelId: string, gid: string, rid: string, field: "reading" | "readingAcdb" | "remarks", val: string) => void;
   onRemove: (id: string) => void;
 }) {
   const green = "#166534"; const greenBg = "#dcfce7"; const greenMid = "#16a34a";
+
+  // Shared input style factory
+  const inp = (val: string, accent?: string) => ({
+    width:"100%", border:`1.5px solid ${val ? (accent ?? green) : "#e5e7eb"}`,
+    borderRadius:7, padding:"6px 8px", fontSize:12, fontWeight:700,
+    color:"#111827", outline:"none",
+    background: val ? (accent ? "#eff6ff" : "#f0fdf4") : "#fff",
+    boxSizing:"border-box" as const, transition:"all 0.15s",
+  });
 
   return (
     <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.07)", marginBottom:16 }}>
@@ -2164,22 +2173,26 @@ function ElecPanelCard({
         <input
           value={panel.name}
           onChange={e => onNameChange(panel.id, e.target.value)}
-          placeholder="Enter panel name"
+          placeholder="Enter panel name / location"
           style={{ flex:1, border:"1.5px solid #d1fae5", borderRadius:9, padding:"8px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fff", fontWeight:600 }}
         />
         {totalPanels > 1 && (
-          <button
-            onClick={() => onRemove(panel.id)}
+          <button onClick={() => onRemove(panel.id)}
             style={{ fontSize:12, fontWeight:700, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:7, padding:"6px 12px", cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", gap:4 }}>
             <i className="ri-delete-bin-line"/>Remove
           </button>
         )}
       </div>
 
-      {/* Column headers */}
-      <div style={{ display:"grid", gridTemplateColumns:"1.2fr 1.1fr 1fr 1.1fr", background:"#f9fafb", borderBottom:"1px solid #e5e7eb" }}>
-        {["Test Pt.", "Reading", "Norm. Range", "Remarks"].map(h => (
-          <div key={h} style={{ padding:"8px 12px", fontSize:10, fontWeight:800, color:greenMid, letterSpacing:"0.06em", textTransform:"uppercase" }}>{h}</div>
+      {/* Column headers — 5 columns */}
+      <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1.4fr 1.4fr 1.6fr", background:"#f9fafb", borderBottom:"2px solid #e5e7eb" }}>
+        {[
+          "Test Point",
+          "Reading at Panel / Meter",
+          "Reading at ACDB",
+          "Observations / Remarks",
+        ].map(h => (
+          <div key={h} style={{ padding:"8px 10px", fontSize:9.5, fontWeight:800, color:greenMid, letterSpacing:"0.05em", textTransform:"uppercase", lineHeight:1.3 }}>{h}</div>
         ))}
       </div>
 
@@ -2187,60 +2200,78 @@ function ElecPanelCard({
       {panel.groups.map((group, gi) => (
         <div key={group.id}>
           {/* Group label */}
-          <div style={{ display:"grid", gridTemplateColumns:"1.2fr 1.1fr 1fr 1.1fr", background:"#f0fdf4", borderTop: gi > 0 ? "2px solid #d1fae5" : "none" }}>
-            <div style={{ padding:"8px 12px", gridColumn:"1 / -1", display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ width:3, height:15, borderRadius:99, background:green, flexShrink:0 }}/>
-              <span style={{ fontSize:11, fontWeight:900, color:green, letterSpacing:"0.05em" }}>{group.label}</span>
-            </div>
+          <div style={{ background:"#f0fdf4", borderTop: gi > 0 ? "2px solid #d1fae5" : "none", padding:"6px 12px", display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ width:3, height:14, borderRadius:99, background:green, flexShrink:0 }}/>
+            <span style={{ fontSize:11, fontWeight:900, color:green, letterSpacing:"0.05em" }}>{group.label}</span>
           </div>
 
           {/* Data rows */}
-          {group.rows.map(row => (
-            <div
-              key={row.id}
-              style={{ display:"grid", gridTemplateColumns:"1.2fr 1.1fr 1fr 1.1fr", borderTop:"1px solid #f3f4f6" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#fafffe")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              {/* Test point */}
-              <div style={{ padding:"10px 12px", fontSize:13, color:"#6b7280", display:"flex", alignItems:"center", fontWeight:500 }}>
-                {row.testPt}
-              </div>
+          {group.rows.map(row => {
+            const isPF = row.id === "pf";
+            const isEarth = group.id === "earthing";
+            return (
+              <div key={row.id}
+                style={{ display:"grid", gridTemplateColumns:"1.3fr 1.4fr 1.4fr 1.6fr", borderTop:"1px solid #f3f4f6" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#fafffe")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                {/* Test point */}
+                <div style={{ padding:"9px 10px", fontSize:12, color:"#374151", display:"flex", alignItems:"center", fontWeight: row.bold ? 800 : 500 }}>
+                  {row.testPt}
+                </div>
 
-              {/* Reading input */}
-              <div style={{ padding:"6px 8px", display:"flex", alignItems:"center" }}>
-                <input
-                  type="text"
-                  value={row.reading}
-                  onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
-                  placeholder="—"
-                  style={{
-                    width:"100%", border:`1.5px solid ${row.reading ? green : "#e5e7eb"}`,
-                    borderRadius:7, padding:"6px 10px", fontSize:13, fontWeight:700,
-                    color:"#111827", outline:"none",
-                    background: row.reading ? "#f0fdf4" : "#fff",
-                    boxSizing:"border-box", transition:"all 0.15s",
-                  }}
-                />
-              </div>
+                {/* Reading at Panel / Meter */}
+                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center", gap:5 }}>
+                  {isPF ? (
+                    <div style={{ width:"100%" }}>
+                      <input type="number" min="0" max="1" step="0.01"
+                        value={row.reading}
+                        onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
+                        placeholder="0.00"
+                        style={{ ...inp(row.reading), width:"100%" }}/>
+                      <div style={{ fontSize:9, color:"#dc2626", marginTop:2, lineHeight:1.3 }}>0.00 – 1.00 · 2 decimal digits</div>
+                    </div>
+                  ) : (
+                    <>
+                      <input type="number" value={row.reading}
+                        onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
+                        placeholder="—"
+                        style={inp(row.reading)}/>
+                      {row.unit && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
+                    </>
+                  )}
+                </div>
 
-              {/* Normal range */}
-              <div style={{ padding:"10px 12px", fontSize:12, color: row.normRange === "—" ? "#d1d5db" : "#6b7280", display:"flex", alignItems:"center", fontFamily:"monospace" }}>
-                {row.normRange}
-              </div>
+                {/* Reading at ACDB — auto-mirrors panel, editable */}
+                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center", gap:5, background:"#f8faff" }}>
+                  {isPF ? (
+                    <input type="number" min="0" max="1" step="0.01"
+                      value={row.readingAcdb}
+                      onChange={e => onRowChange(panel.id, group.id, row.id, "readingAcdb", e.target.value)}
+                      placeholder="0.00"
+                      style={inp(row.readingAcdb, "#2563eb")}/>
+                  ) : (
+                    <>
+                      <input type="number" value={row.readingAcdb}
+                        onChange={e => onRowChange(panel.id, group.id, row.id, "readingAcdb", e.target.value)}
+                        placeholder="—"
+                        style={inp(row.readingAcdb, "#2563eb")}/>
+                      {row.unit && !isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
+                      {isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>OHMS</span>}
+                    </>
+                  )}
+                </div>
 
-              {/* Remarks input */}
-              <div style={{ padding:"6px 8px", display:"flex", alignItems:"center" }}>
-                <input
-                  type="text"
-                  value={row.remarks}
-                  onChange={e => onRowChange(panel.id, group.id, row.id, "remarks", e.target.value)}
-                  placeholder="—"
-                  style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:7, padding:"6px 10px", fontSize:12, color:"#6b7280", outline:"none", background:"#fff", boxSizing:"border-box" }}
-                />
+                {/* Observations / Remarks */}
+                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center" }}>
+                  <input type="text" value={row.remarks}
+                    onChange={e => onRowChange(panel.id, group.id, row.id, "remarks", e.target.value)}
+                    placeholder="—"
+                    style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:7, padding:"6px 8px", fontSize:11, color:"#6b7280", outline:"none", background:"#fff", boxSizing:"border-box" }}/>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>
