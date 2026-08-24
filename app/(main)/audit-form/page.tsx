@@ -2,12 +2,13 @@
 import React, { useState, useRef, useCallback } from "react";
 
 // ─── STEP DEFINITIONS ─────────────────────────────────────────────────────────
-type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "electrical-parameters" | "meter-details" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-set";
+type Step = "capture-branch" | "branch-photo" | "ups-parameters" | "ups-sld" | "electrical-parameters" | "meter-details" | "questionnaire" | "load-sheet" | "onsite-atm" | "dg-set";
 
 const STEPS: { id: Step; label: string; shortLabel: string; icon: string; color: string; desc: string }[] = [
   { id: "capture-branch",  label: "Capture Branch",     shortLabel: "Branch",    icon: "ri-building-2-line",    color: "#2563eb", desc: "Bank, IFSC, GPS & Classification" },
   { id: "branch-photo",    label: "Branch Photo",        shortLabel: "Photo",     icon: "ri-camera-line",        color: "#0d9488", desc: "Location verification photo" },
   { id: "ups-parameters",        label: "UPS Parameters",        shortLabel: "UPS",       icon: "ri-battery-charge-line", color: "#6d28d9", desc: "Voltage, current & earthing readings" },
+  { id: "ups-sld",               label: "UPS SLD Data",          shortLabel: "SLD",       icon: "ri-flow-chart",          color: "#4c1d95", desc: "MCBs, MCCB, RCCB & distribution boards" },
   { id: "electrical-parameters", label: "Electrical Parameters", shortLabel: "Electrical",icon: "ri-plug-line",           color: "#166534", desc: "Panel-wise voltage, current, PF & earthing" },
   { id: "meter-details",   label: "Meter Details",    shortLabel: "Meters",        icon: "ri-flashlight-line",       color: "#b45309", desc: "Electricity meters & billing" },
   { id: "questionnaire",  label: "Questionnaire",   shortLabel: "Questions",     icon: "ri-questionnaire-line",    color: "#0891b2", desc: "All active audit questions" },
@@ -974,6 +975,9 @@ function BranchPhotoSection({ branchName, onContinue }: { branchName: string; on
 // ═══════════════════════════════════════════════════════════════════════════════
 // STEP 3 — UPS Parameters  (multi-UPS, phase-conditional readings)
 // ═══════════════════════════════════════════════════════════════════════════════
+interface MCBEntry { id: string; amp: string; pole: string; nos: string; }
+const newMCB = (): MCBEntry => ({ id: uid(), amp: "", pole: "", nos: "" });
+
 interface UPSUnit {
   id: string; name: string;
   type: "Branch" | "ATM" | "";
@@ -982,20 +986,22 @@ interface UPSUnit {
   make: string; kva: string; phase: "1-Phase" | "3-Phase" | "";
   batteryMake: string; batteryAh: string; batteryCount: string;
   specPhoto: string | null;
-  // Readings — shared keys; 1-phase uses subset
-  r_inputPN: string;       // 1-ph: Input P-N
-  r_inputRN: string;       // 3-ph: Input R-N
-  r_inputYN: string;       // 3-ph: Input Y-N
-  r_inputBN: string;       // 3-ph: Input B-N
-  r_inputNE: string;       // both: Input N-E Earthing (source for auto-fill)
-  r_outputPN: string;      // both: Output P-N
-  // Output N-E Earthing is auto-filled from r_inputNE
-  r_outputNEPhoto: string | null;
-  r_current: string;       // 1-ph: current
-  r_currentR: string;      // 3-ph
-  r_currentY: string;
-  r_currentB: string;
+  // Readings
+  r_inputPN: string; r_inputRN: string; r_inputYN: string; r_inputBN: string;
+  r_inputNE: string; r_outputPN: string; r_outputNEPhoto: string | null;
+  r_current: string; r_currentR: string; r_currentY: string; r_currentB: string;
   r_frequency: string;
+  // Distribution / SLD data
+  changeoverSwitch: "Yes" | "No" | "";
+  cosRating: string;
+  inputMCBs: MCBEntry[];
+  outputMCBs: MCBEntry[];
+  cdbMCBs: MCBEntry[];
+  securityDBMCBs: MCBEntry[];
+  eldbMCBs: MCBEntry[];
+  rccbA: string;
+  rccbMA: string;
+  mcbPhotos: (string | null)[];
 }
 
 const newUPS = (idx: number): UPSUnit => ({
@@ -1007,21 +1013,83 @@ const newUPS = (idx: number): UPSUnit => ({
   r_inputPN: "", r_inputRN: "", r_inputYN: "", r_inputBN: "", r_inputNE: "",
   r_outputPN: "", r_outputNEPhoto: null,
   r_current: "", r_currentR: "", r_currentY: "", r_currentB: "", r_frequency: "",
+  changeoverSwitch: "", cosRating: "",
+  inputMCBs:      [newMCB()],
+  outputMCBs:     [newMCB()],
+  cdbMCBs:        [newMCB()],
+  securityDBMCBs: [newMCB()],
+  eldbMCBs:       [newMCB()],
+  rccbA: "", rccbMA: "",
+  mcbPhotos: [null, null, null, null],
 });
+
+// ── MCB Photo Grid — 4 slots, each with its own ref (hooks-compliant) ────────
+function MCBPhotoSlot({ idx, photo, violet, onSet }: {
+  idx: number; photo: string | null; violet: string;
+  onSet: (val: string | null) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      {photo ? (
+        <div style={{ position:"relative", borderRadius:9, overflow:"hidden", border:"1.5px solid #ddd6fe" }}>
+          <img src={photo} alt={`MCB ${idx+1}`} style={{ width:"100%", height:100, objectFit:"cover", display:"block" }}/>
+          <button onClick={() => onSet(null)}
+            style={{ position:"absolute", top:4, right:4, background:"rgba(0,0,0,0.6)", border:"none", borderRadius:5, padding:"2px 7px", color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer" }}>✕</button>
+          <div style={{ position:"absolute", bottom:4, left:6, fontSize:10, fontWeight:800, color:"#fff", background:"rgba(0,0,0,0.5)", borderRadius:4, padding:"1px 6px" }}>Photo {idx+1}</div>
+        </div>
+      ) : (
+        <button onClick={() => ref.current?.click()}
+          style={{ width:"100%", height:100, borderRadius:9, border:"2px dashed #c4b5fd", background:"#faf9ff", color:"#9ca3af", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+          <i className="ri-camera-line" style={{ fontSize:20, color:violet }}/>
+          <span>Photo {idx+1}</span>
+        </button>
+      )}
+      <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display:"none" }}
+        onChange={e => {
+          const f = e.target.files?.[0]; if (!f) return;
+          const reader = new FileReader();
+          reader.onload = ev => onSet(ev.target?.result as string);
+          reader.readAsDataURL(f);
+        }}/>
+    </div>
+  );
+}
+function MCBPhotoGrid({ photos, violet, onSet, onAdd }: {
+  photos: (string | null)[]; violet: string;
+  onSet: (idx: number, val: string | null) => void;
+  onAdd: () => void;
+}) {
+  return (
+    <div>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+        {photos.map((p, i) => (
+          <MCBPhotoSlot key={i} idx={i} photo={p} violet={violet} onSet={val => onSet(i, val)}/>
+        ))}
+      </div>
+      <button onClick={onAdd}
+        style={{ fontSize:11, fontWeight:700, color:violet, background:"#f5f3ff", border:`1.5px dashed ${violet}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+        <i className="ri-add-line"/>Add Photo {photos.length + 1}
+      </button>
+    </div>
+  );
+}
 
 // ── Single UPS card ───────────────────────────────────────────────────────────
 function UPSCard({
   ups, idx, isFirst, onChange, onRemove,
 }: {
   ups: UPSUnit; idx: number; isFirst: boolean;
-  onChange: (id: string, field: keyof UPSUnit, val: string | null) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChange: (id: string, field: keyof UPSUnit, val: any) => void;
   onRemove: (id: string) => void;
 }) {
   const violet = "#6d28d9"; const violetBg = "#f5f3ff"; const violetDark = "#4c1d95";
   const specRef = useRef<HTMLInputElement>(null);
   const nePhotoRef = useRef<HTMLInputElement>(null);
 
-  const upd = (field: keyof UPSUnit, val: string | null) => onChange(ups.id, field, val);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upd = (field: keyof UPSUnit, val: any) => onChange(ups.id, field, val);
 
   const readFile = (file: File, field: keyof UPSUnit) => {
     const reader = new FileReader();
@@ -1252,6 +1320,236 @@ function UPSCard({
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 4 — UPS SLD Data  (standalone step, one card per UPS unit)
+// ═══════════════════════════════════════════════════════════════════════════════
+interface SLDUnit {
+  id: string; name: string;
+  changeoverSwitch: "Yes" | "No" | "";
+  cosRating: string;
+  inputMCBs: MCBEntry[]; outputMCBs: MCBEntry[];
+  cdbMCBs: MCBEntry[]; securityDBMCBs: MCBEntry[]; eldbMCBs: MCBEntry[];
+  rccbA: string; rccbMA: string;
+  mcbPhotos: (string | null)[];
+}
+
+const newSLD = (idx: number): SLDUnit => ({
+  id: uid(), name: `UPS ${idx + 1}`,
+  changeoverSwitch: "", cosRating: "",
+  inputMCBs: [newMCB()], outputMCBs: [newMCB()],
+  cdbMCBs: [newMCB()], securityDBMCBs: [newMCB()], eldbMCBs: [newMCB()],
+  rccbA: "", rccbMA: "",
+  mcbPhotos: [null, null, null, null],
+});
+
+function SLDCard({ sld, onChange }: {
+  sld: SLDUnit;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChange: (id: string, field: keyof SLDUnit, val: any) => void;
+}) {
+  const violet = "#4c1d95"; const violetLight = "#6d28d9";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upd = (field: keyof SLDUnit, val: any) => onChange(sld.id, field, val);
+
+  const MCBRows = ({ label, sublabel, withPole, entries, fieldKey }: {
+    label: string; sublabel: string; withPole: boolean;
+    entries: MCBEntry[]; fieldKey: keyof SLDUnit;
+  }) => {
+    const addRow    = () => upd(fieldKey, [...entries, newMCB()]);
+    const removeRow = (id: string) => upd(fieldKey, entries.filter(e => e.id !== id));
+    const updRow    = (id: string, f: keyof MCBEntry, v: string) =>
+      upd(fieldKey, entries.map(e => e.id !== id ? e : { ...e, [f]: v }));
+
+    return (
+      <div>
+        <div style={{ marginBottom:8 }}>
+          {label && <span style={{ fontSize:12, fontWeight:900, color:violet, fontStyle:"italic" }}>{label} </span>}
+          <span style={{ fontSize:13, fontWeight:800, color:"#1f2937" }}>{sublabel}</span>
+        </div>
+        {entries.map(entry => (
+          <div key={entry.id} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, flex:1, flexWrap:"wrap" }}>
+              <input type="number" value={entry.amp} onChange={e => updRow(entry.id,"amp",e.target.value)}
+                placeholder="Amp" style={{ width:72, border:"1.5px solid #e5e7eb", borderRadius:8, padding:"8px 9px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:"#fff" }}/>
+              <span style={{ fontSize:12, color:"#6b7280", fontWeight:700 }}>A</span>
+              {withPole && <>
+                <input type="number" value={entry.pole} onChange={e => updRow(entry.id,"pole",e.target.value)}
+                  placeholder="Pole" style={{ width:56, border:"1.5px solid #e5e7eb", borderRadius:8, padding:"8px 9px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:"#fff" }}/>
+                <span style={{ fontSize:12, color:"#6b7280", fontWeight:700 }}>pole ×</span>
+              </>}
+              {!withPole && <span style={{ fontSize:12, color:"#6b7280", fontWeight:700 }}>×</span>}
+              <input type="number" value={entry.nos} onChange={e => updRow(entry.id,"nos",e.target.value)}
+                placeholder="Nos." style={{ width:56, border:"1.5px solid #e5e7eb", borderRadius:8, padding:"8px 9px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:"#fff" }}/>
+              <span style={{ fontSize:12, color:"#6b7280", fontWeight:700 }}>nos.</span>
+            </div>
+            {entries.length > 1 && (
+              <button onClick={() => removeRow(entry.id)}
+                style={{ border:"none", background:"transparent", color:"#ef4444", cursor:"pointer", fontSize:18, padding:"2px", lineHeight:1, flexShrink:0 }}>
+                <i className="ri-close-circle-line"/>
+              </button>
+            )}
+          </div>
+        ))}
+        <button onClick={addRow}
+          style={{ fontSize:11, fontWeight:700, color:violetLight, background:"#f5f3ff", border:`1.5px dashed ${violetLight}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+          <i className="ri-add-line"/>Add more
+        </button>
+      </div>
+    );
+  };
+
+  const Divider = ({ label }: { label: string }) => (
+    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+      <div style={{ flex:1, height:1, background:"#ede9fe" }}/>
+      <span style={{ fontSize:10, fontWeight:800, color:violetLight, textTransform:"uppercase", letterSpacing:"0.07em" }}>{label}</span>
+      <div style={{ flex:1, height:1, background:"#ede9fe" }}/>
+    </div>
+  );
+
+  return (
+    <div style={{ background:"#fff", borderRadius:14, border:"1.5px solid #ddd6fe", overflow:"hidden", boxShadow:"0 2px 10px rgba(76,29,149,0.1)", marginBottom:16 }}>
+      {/* Card header */}
+      <div style={{ padding:"13px 18px", background:"linear-gradient(135deg,#4c1d95,#3b0764)", display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ width:34, height:34, borderRadius:10, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <i className="ri-flow-chart" style={{ color:"#c4b5fd", fontSize:17 }}/>
+        </div>
+        <div>
+          <div style={{ fontSize:14, fontWeight:900, color:"#fff" }}>{sld.name} — SLD Distribution Data</div>
+          <div style={{ fontSize:11, color:"#c4b5fd", marginTop:2 }}>MCBs, MCCB, RCCB &amp; Distribution Boards</div>
+        </div>
+      </div>
+
+      <div style={{ padding:"18px", display:"flex", flexDirection:"column", gap:14 }}>
+
+        {/* Changeover + COS */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div>
+            <label style={LBL}>Changeover / Switch</label>
+            <select value={sld.changeoverSwitch} onChange={e => upd("changeoverSwitch", e.target.value)} style={INP}>
+              <option value="">— Select —</option>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+          </div>
+          <div>
+            <label style={LBL}>COS Rating</label>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <input type="number" value={sld.cosRating} onChange={e => upd("cosRating", e.target.value)} placeholder="e.g. 63" style={{ ...INP, flex:1 }}/>
+              <span style={{ fontSize:13, fontWeight:800, color:"#374151" }}>AMP</span>
+            </div>
+          </div>
+        </div>
+
+        <Divider label="Input"/>
+        <MCBRows label="INPUT:" sublabel="UPS MAIN input MCB/MCCB" withPole entries={sld.inputMCBs} fieldKey="inputMCBs"/>
+
+        <Divider label="Output"/>
+        <MCBRows label="OUTPUT:" sublabel="UPS MAIN output MCB/MCCB" withPole entries={sld.outputMCBs} fieldKey="outputMCBs"/>
+
+        {/* DB group */}
+        <div style={{ background:"#faf9ff", borderRadius:12, padding:"14px", display:"flex", flexDirection:"column", gap:14, border:"1px solid #ede9fe" }}>
+          <MCBRows label="" sublabel="CDB:" withPole={false} entries={sld.cdbMCBs} fieldKey="cdbMCBs"/>
+          <div style={{ height:1, background:"#ede9fe" }}/>
+          <MCBRows label="" sublabel="SECURITY DB:" withPole={false} entries={sld.securityDBMCBs} fieldKey="securityDBMCBs"/>
+          <div style={{ height:1, background:"#ede9fe" }}/>
+          <MCBRows label="" sublabel="ELDB:" withPole={false} entries={sld.eldbMCBs} fieldKey="eldbMCBs"/>
+        </div>
+
+        {/* RCCB Rating */}
+        <div style={{ background:"#f5f3ff", borderRadius:12, padding:"14px 16px", border:"1.5px solid #ddd6fe" }}>
+          <label style={{ ...LBL, color:violet, marginBottom:10 }}>UPS MAIN INPUT / OUTPUT RCCB RATING</label>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <input type="number" value={sld.rccbA} onChange={e => upd("rccbA", e.target.value)}
+              placeholder="—" style={{ width:90, border:"2px solid #7c3aed", borderRadius:9, padding:"10px", fontSize:15, fontWeight:900, color:"#111827", outline:"none", textAlign:"center", background:"#fff" }}/>
+            <span style={{ fontSize:15, fontWeight:900, color:violet }}>A</span>
+            <div style={{ width:1, height:28, background:"#ddd6fe" }}/>
+            <input type="number" value={sld.rccbMA} onChange={e => upd("rccbMA", e.target.value)}
+              placeholder="—" style={{ width:90, border:"2px solid #7c3aed", borderRadius:9, padding:"10px", fontSize:15, fontWeight:900, color:"#111827", outline:"none", textAlign:"center", background:"#fff" }}/>
+            <span style={{ fontSize:15, fontWeight:900, color:violet }}>mA</span>
+          </div>
+        </div>
+
+        {/* MCB Photos */}
+        <div>
+          <label style={{ ...LBL, display:"flex", alignItems:"center", gap:6, marginBottom:10 }}>
+            <i className="ri-camera-fill" style={{ color:violetLight, fontSize:14 }}/>Photos of MCBs
+          </label>
+          <MCBPhotoGrid photos={sld.mcbPhotos} violet={violetLight}
+            onSet={(pi, val) => { const u = [...sld.mcbPhotos]; u[pi] = val; upd("mcbPhotos", u); }}
+            onAdd={() => upd("mcbPhotos", [...sld.mcbPhotos, null])}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UPSSLDSection({ branchName }: { branchName: string }) {
+  const [units, setUnits] = useState<SLDUnit[]>([newSLD(0)]);
+  const [saved, setSaved] = useState(false);
+  const violet = "#4c1d95"; const violetLight = "#6d28d9";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onChange = (id: string, field: keyof SLDUnit, val: any) =>
+    setUnits(us => us.map(u => u.id !== id ? u : { ...u, [field]: val }));
+  const addUnit    = () => setUnits(us => [...us, newSLD(us.length)]);
+  const removeUnit = (id: string) => setUnits(us => us.filter(u => u.id !== id));
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:"#f5f3ff", border:"1px solid #ddd6fe", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:violetLight, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:violet }}>UPS SLD data saved successfully</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#4c1d95,#3b0764)", borderRadius:14, padding:"16px 18px", marginBottom:16, boxShadow:"0 4px 12px rgba(76,29,149,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-flow-chart" style={{ color:"#fff", fontSize:20 }}/>
+            </div>
+            <div>
+              <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
+              <div style={{ fontSize:11, color:"#c4b5fd", marginTop:2 }}>UPS Distribution Data for SLD — {units.length} UPS unit{units.length > 1 ? "s" : ""}</div>
+            </div>
+          </div>
+          <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>Step 4</div>
+        </div>
+      </div>
+
+      {units.map((u, idx) => (
+        <div key={u.id} style={{ position:"relative" }}>
+          {units.length > 1 && (
+            <button onClick={() => removeUnit(u.id)}
+              style={{ position:"absolute", top:14, right:14, zIndex:10, background:"rgba(239,68,68,0.1)", border:"1px solid #fecaca", borderRadius:8, padding:"4px 10px", color:"#ef4444", fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+              <i className="ri-delete-bin-line"/>Remove
+            </button>
+          )}
+          <SLDCard sld={u} onChange={onChange}/>
+        </div>
+      ))}
+
+      {/* Add UPS SLD */}
+      <button onClick={addUnit}
+        style={{ width:"100%", padding:"14px", borderRadius:12, border:`2px dashed ${violetLight}`, background:"#faf9ff", color:violetLight, fontSize:13, fontWeight:800, cursor:"pointer", marginBottom:14, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+        <i className="ri-add-circle-line" style={{ fontSize:18 }}/>+ Add UPS {units.length + 1} SLD Data
+      </button>
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+        <button onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#4c1d95,#3b0764)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(76,29,149,0.35)" }}>
+          <i className="ri-save-line"/>Save SLD Data
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function UPSParametersSection({ branchName }: { branchName: string }) {
   const [units, setUnits]       = useState<UPSUnit[]>([newUPS(0)]);
   const [saved, setSaved]       = useState(false);
@@ -1259,7 +1557,8 @@ function UPSParametersSection({ branchName }: { branchName: string }) {
 
   const violet = "#6d28d9"; const violetDark = "#4c1d95";
 
-  const onChange = (id: string, field: keyof UPSUnit, val: string | null) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onChange = (id: string, field: keyof UPSUnit, val: any) =>
     setUnits(us => us.map(u => u.id !== id ? u : { ...u, [field]: val }));
 
   const addUPS   = () => setUnits(us => [...us, newUPS(us.length)]);
@@ -2409,6 +2708,9 @@ export default function AuditFormPage() {
       )}
       {currentStep === "ups-parameters" && (
         <UPSParametersSection branchName={branchDisplayName} />
+      )}
+      {currentStep === "ups-sld" && (
+        <UPSSLDSection branchName={branchDisplayName} />
       )}
       {currentStep === "electrical-parameters" && (
         <ElectricalParametersSection branchName={branchDisplayName} />
