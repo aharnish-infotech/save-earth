@@ -21,14 +21,13 @@ export interface RailItem {
 
 export const RAIL_ITEMS: RailItem[] = [
   {
-    id: "overview",
+    id: "dashboard",
     icon: "ri-dashboard-line",
-    label: "Overview",
+    label: "Dashboard",
     sections: [{
-      section: "OVERVIEW",
+      section: "DASHBOARD",
       items: [
-        { label: "Dashboard", href: "/dashboard",  icon: "ri-dashboard-line"  },
-        { label: "Analytics", href: "/analytics",  icon: "ri-line-chart-line" },
+        { label: "Dashboard", href: "/dashboard", icon: "ri-dashboard-line" },
       ],
     }],
   },

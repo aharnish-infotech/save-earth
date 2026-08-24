@@ -1546,12 +1546,205 @@ function UPSSLDSection({ branchName }: { branchName: string }) {
       </button>
 
       {/* Save */}
-      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:20 }}>
         <button onClick={save}
           style={{ padding:"13px 32px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#4c1d95,#3b0764)", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(76,29,149,0.35)" }}>
           <i className="ri-save-line"/>Save SLD Data
         </button>
       </div>
+
+      {/* ── DB Schema Panel ─────────────────────────────────────────────────── */}
+      {(() => {
+        const [schemaOpen, setSchemaOpen] = useState(false);
+        const schema = `-- ═══════════════════════════════════════════════════════════════════════
+-- UPS SLD DATA — PostgreSQL Schema
+-- Step 4 of the Audit Form
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- ENUM: MCB group types
+CREATE TYPE sld_mcb_group AS ENUM (
+  'input',        -- UPS MAIN input MCB/MCCB
+  'output',       -- UPS MAIN output MCB/MCCB
+  'cdb',          -- CDB distribution MCBs
+  'security_db',  -- Security DB MCBs
+  'eldb'          -- ELDB MCBs
+);
+
+-- ─────────────────────────────────────────────────────────────────────
+-- TABLE: ups_sld_entries
+-- One row per UPS unit per audit session.
+-- ─────────────────────────────────────────────────────────────────────
+CREATE TABLE ups_sld_entries (
+  id                  UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  audit_id            UUID          NOT NULL REFERENCES audits(id) ON DELETE CASCADE,
+  branch_unique_id    VARCHAR(64)   NOT NULL,          -- denormalized for fast lookup & offline sync
+  ups_unit_index      SMALLINT      NOT NULL DEFAULT 0, -- 0-based: UPS 1, UPS 2 …
+  ups_unit_name       VARCHAR(64)   NOT NULL DEFAULT 'UPS 1',
+  changeover_switch   BOOLEAN,                         -- NULL = not answered
+  cos_rating_amp      NUMERIC(8,2),                    -- COS Rating in Amps
+  rccb_amp            NUMERIC(8,2),                    -- RCCB current rating (Amp)
+  rccb_ma             NUMERIC(8,2),                    -- RCCB sensitivity (mA)
+  created_at          TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  deleted_at          TIMESTAMPTZ,                     -- soft delete
+
+  CONSTRAINT uq_sld_audit_ups UNIQUE (audit_id, ups_unit_index)
+);
+
+CREATE INDEX idx_sld_entries_audit       ON ups_sld_entries(audit_id);
+CREATE INDEX idx_sld_entries_branch      ON ups_sld_entries(branch_unique_id);
+CREATE INDEX idx_sld_entries_deleted_at  ON ups_sld_entries(deleted_at) WHERE deleted_at IS NULL;
+
+-- Auto-update updated_at
+CREATE TRIGGER trg_sld_entries_updated_at
+  BEFORE UPDATE ON ups_sld_entries
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────
+-- TABLE: ups_sld_mcb_rows
+-- Each MCB/MCCB entry per group (input, output, CDB, Security DB, ELDB)
+-- ─────────────────────────────────────────────────────────────────────
+CREATE TABLE ups_sld_mcb_rows (
+  id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  sld_entry_id    UUID          NOT NULL REFERENCES ups_sld_entries(id) ON DELETE CASCADE,
+  group_type      sld_mcb_group NOT NULL,
+  amp             NUMERIC(8,2),            -- MCB current rating in Amps
+  pole            SMALLINT,                -- pole count (1P, 2P, 3P, 4P) — only for input/output
+  nos             SMALLINT,                -- number of MCBs of this rating
+  sort_order      SMALLINT      NOT NULL DEFAULT 0,
+  created_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_sld_mcb_entry   ON ups_sld_mcb_rows(sld_entry_id);
+CREATE INDEX idx_sld_mcb_group   ON ups_sld_mcb_rows(sld_entry_id, group_type);
+
+-- ─────────────────────────────────────────────────────────────────────
+-- TABLE: ups_sld_photos
+-- MCB panel photos (max 4 per SLD unit)
+-- ─────────────────────────────────────────────────────────────────────
+CREATE TABLE ups_sld_photos (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  sld_entry_id    UUID        NOT NULL REFERENCES ups_sld_entries(id) ON DELETE CASCADE,
+  object_key      TEXT        NOT NULL,  -- S3/MinIO key: audits/{audit_id}/sld/{sld_entry_id}/mcb_{sort_order}.jpg
+  sort_order      SMALLINT    NOT NULL DEFAULT 0,
+  uploaded_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  CONSTRAINT uq_sld_photo_slot UNIQUE (sld_entry_id, sort_order),  -- enforce max-4 at app layer
+  CONSTRAINT chk_sld_photo_max CHECK (sort_order BETWEEN 0 AND 3)  -- 0..3 = max 4 photos
+);
+
+CREATE INDEX idx_sld_photos_entry ON ups_sld_photos(sld_entry_id);
+
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- PRISMA SCHEMA  (schema.prisma)
+-- ═══════════════════════════════════════════════════════════════════════
+
+enum SldMcbGroup {
+  input
+  output
+  cdb
+  security_db
+  eldb
+}
+
+model UpsSldEntry {
+  id               String         @id @default(uuid())
+  auditId          String         @map("audit_id")
+  branchUniqueId   String         @map("branch_unique_id") @db.VarChar(64)
+  upsUnitIndex     Int            @map("ups_unit_index") @db.SmallInt
+  upsUnitName      String         @map("ups_unit_name") @db.VarChar(64)
+  changeoverSwitch Boolean?       @map("changeover_switch")
+  cosRatingAmp     Decimal?       @map("cos_rating_amp") @db.Decimal(8, 2)
+  rccbAmp          Decimal?       @map("rccb_amp")       @db.Decimal(8, 2)
+  rccbMa           Decimal?       @map("rccb_ma")        @db.Decimal(8, 2)
+  createdAt        DateTime       @default(now())         @map("created_at")
+  updatedAt        DateTime       @updatedAt              @map("updated_at")
+  deletedAt        DateTime?                              @map("deleted_at")
+
+  audit            Audit          @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  mcbRows          UpsSldMcbRow[]
+  photos           UpsSldPhoto[]
+
+  @@unique([auditId, upsUnitIndex])
+  @@index([branchUniqueId])
+  @@map("ups_sld_entries")
+}
+
+model UpsSldMcbRow {
+  id           String        @id @default(uuid())
+  sldEntryId   String        @map("sld_entry_id")
+  groupType    SldMcbGroup   @map("group_type")
+  amp          Decimal?      @db.Decimal(8, 2)
+  pole         Int?          @db.SmallInt
+  nos          Int?          @db.SmallInt
+  sortOrder    Int           @default(0) @map("sort_order") @db.SmallInt
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  sldEntry     UpsSldEntry   @relation(fields: [sldEntryId], references: [id], onDelete: Cascade)
+
+  @@index([sldEntryId, groupType])
+  @@map("ups_sld_mcb_rows")
+}
+
+model UpsSldPhoto {
+  id           String      @id @default(uuid())
+  sldEntryId   String      @map("sld_entry_id")
+  objectKey    String      @map("object_key")
+  sortOrder    Int         @default(0) @map("sort_order") @db.SmallInt
+  uploadedAt   DateTime    @default(now()) @map("uploaded_at")
+
+  sldEntry     UpsSldEntry @relation(fields: [sldEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([sldEntryId, sortOrder])
+  @@map("ups_sld_photos")
+}
+
+
+-- ─────────────────────────────────────────────────────────────────────
+-- S3 / MinIO Object Key Pattern
+-- ─────────────────────────────────────────────────────────────────────
+-- audits/{audit_id}/sld/{sld_entry_id}/mcb_0.jpg   ← Photo 1
+-- audits/{audit_id}/sld/{sld_entry_id}/mcb_1.jpg   ← Photo 2
+-- audits/{audit_id}/sld/{sld_entry_id}/mcb_2.jpg   ← Photo 3
+-- audits/{audit_id}/sld/{sld_entry_id}/mcb_3.jpg   ← Photo 4 (max)
+
+-- ─────────────────────────────────────────────────────────────────────
+-- BUSINESS RULES
+-- ─────────────────────────────────────────────────────────────────────
+-- 1. max 4 photos per SLD unit (enforced by CHECK constraint + app layer)
+-- 2. pole column is only populated for group_type IN ('input','output')
+-- 3. soft delete on ups_sld_entries cascades logically — MCB rows and
+--    photos are hard-deleted via ON DELETE CASCADE (photos also purged from S3)
+-- 4. branch_unique_id is denormalized to support offline-first sync without
+--    joining to the branches table on the mobile device
+-- 5. @@unique([auditId, upsUnitIndex]) prevents duplicate UPS slots per audit`;
+
+        return (
+          <div style={{ borderRadius:14, overflow:"hidden", border:"1.5px solid #312e81" }}>
+            <button onClick={() => setSchemaOpen(o => !o)}
+              style={{ width:"100%", padding:"14px 18px", background:"linear-gradient(135deg,#1e1b4b,#312e81)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <i className="ri-database-2-line" style={{ color:"#a5b4fc", fontSize:18 }}/>
+                <span style={{ fontSize:13, fontWeight:800, color:"#e0e7ff", textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                  DB Schema — UPS SLD Step 4
+                </span>
+                <span style={{ fontSize:10, background:"rgba(165,180,252,0.2)", color:"#a5b4fc", borderRadius:99, padding:"2px 8px", fontWeight:700 }}>
+                  PostgreSQL + Prisma
+                </span>
+              </div>
+              <i className={`ri-arrow-${schemaOpen?"up":"down"}-s-line`} style={{ color:"#a5b4fc", fontSize:18 }}/>
+            </button>
+            {schemaOpen && (
+              <div style={{ background:"#0f0e17", padding:"20px 18px", overflowX:"auto" }}>
+                <pre style={{ margin:0, fontSize:11.5, lineHeight:1.7, color:"#e0e7ff", fontFamily:"'Fira Code','Cascadia Code','Consolas',monospace", whiteSpace:"pre" }}>
+                  {schema}
+                </pre>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

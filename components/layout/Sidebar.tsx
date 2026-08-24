@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { RAIL_ITEMS } from "@/lib/constants/navigation";
 
 const SECTION_ICONS: Record<string, React.ReactNode> = {
-  overview: (
+  dashboard: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" width="20" height="20">
       <path d="M104,40H40a8,8,0,0,0-8,8v64a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V48A8,8,0,0,0,104,40Z" opacity="0.2" fill="currentColor"/>
       <path d="M216,40H152a8,8,0,0,0-8,8v64a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V48A8,8,0,0,0,216,40Z" opacity="0.2" fill="currentColor"/>
@@ -71,7 +71,7 @@ function getActiveSectionId(pathname: string): string {
     );
     if (match) return item.id;
   }
-  return "overview";
+  return "dashboard";
 }
 
 export default function Sidebar() {
