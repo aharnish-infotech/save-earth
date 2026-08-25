@@ -239,7 +239,7 @@ export default function BanksPage() {
 
             {/* Bank Code */}
             <div>
-              <label style={LBL}>Bank Code (4 Characters) <span style={{ color:"#dc2626" }}>*</span></label>
+              <label style={LBL}>IFSC Bank Code (4 Characters) <span style={{ color:"#dc2626" }}>*</span></label>
               <input
                 value={form.code}
                 onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase().slice(0,4) }))}
@@ -380,7 +380,7 @@ export default function BanksPage() {
                 <thead><tr>
                   <th style={TH}>ID</th>
                   <th style={TH}>BANK NAME</th>
-                  <th style={{ ...TH, textAlign:"center" }}>IFSC CODE</th>
+                  <th style={{ ...TH, textAlign:"center" }}>IFSC BANK CODE</th>
                   <th style={TH}>HQ CITY</th>
                   <th style={TH}>STATE</th>
                   <th style={{ ...TH, textAlign:"center" }}>BRANCHES</th>
