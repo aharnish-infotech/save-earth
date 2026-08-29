@@ -29,25 +29,6 @@ const AUDIT_HISTORY = [
   { auditId:"AU-2024-101", bank:"SBI", branch:"SBI Satellite",   date:"12 Jul 2024", status:"Delivered",   template:"Electrical Safety v2.0" },
 ];
 
-// ── Activity log ──────────────────────────────────────────────────────────────
-const ACTIVITY_LOG = [
-  { id:"al1", action:"Audit submitted",   detail:"AU-2024-131 · SBI Maninagar",     time:"27 Jul 2024, 09:45 AM", icon:"ri-file-upload-line",    color:"#16a34a" },
-  { id:"al2", action:"Audit approved",    detail:"AU-2024-125 approved by Admin",   time:"25 Jul 2024, 02:10 PM", icon:"ri-checkbox-circle-line", color:"#16a34a" },
-  { id:"al3", action:"Login",             detail:"Web portal · Chrome / Windows",   time:"27 Jul 2024, 08:30 AM", icon:"ri-login-box-line",       color:"#2563eb" },
-  { id:"al4", action:"Profile updated",   detail:"Designation updated",             time:"20 Jul 2024, 11:00 AM", icon:"ri-edit-line",            color:"#ca8a04" },
-  { id:"al5", action:"Password changed",  detail:"Security update",                 time:"15 Jun 2024, 04:45 PM", icon:"ri-lock-line",            color:"#dc2626" },
-];
-
-// ── Permission matrix ─────────────────────────────────────────────────────────
-const PERM_MODULES = [
-  { module:"Dashboard",         view:true,  create:false, edit:false, delete:false },
-  { module:"Audit Operations",  view:true,  create:true,  edit:true,  delete:false },
-  { module:"Banking Structure", view:true,  create:false, edit:false, delete:false },
-  { module:"Audit Questions",   view:true,  create:false, edit:false, delete:false },
-  { module:"Reports / PDFs",    view:true,  create:false, edit:false, delete:false },
-  { module:"Users & Roles",     view:false, create:false, edit:false, delete:false },
-  { module:"Settings",          view:false, create:false, edit:false, delete:false },
-];
 
 const ROLE_COLORS: Record<string,{color:string;bg:string}> = {
   "Super Admin":   { color:"#15803d", bg:"#dcfce7" },
@@ -92,16 +73,14 @@ export default function UserProfilePage() {
   const params = useParams();
   const uid    = params?.id as string;
   const user   = USERS.find(u => u.id === uid) ?? USERS[0];
-  const [tab, setTab] = useState<"details"|"audits"|"permissions"|"activity">("details");
+  const [tab, setTab] = useState<"details"|"audits">("details");
 
   const rc = ROLE_COLORS[user.role] ?? { color:"#374151", bg:"#f3f4f6" };
   const initials = user.name.split(" ").filter(Boolean).map(w => w[0].toUpperCase()).filter((_, i, a) => i === 0 || i === a.length - 1).join("");
 
   const TABS = [
-    { id:"details",     label:"Employee Details", icon:"ri-user-3-line"         },
-    { id:"audits",      label:"Audit History",    icon:"ri-file-list-3-line"    },
-    { id:"permissions", label:"Permissions",      icon:"ri-shield-keyhole-line" },
-    { id:"activity",    label:"Activity Log",     icon:"ri-history-line"        },
+    { id:"details", label:"Employee Details", icon:"ri-user-3-line"      },
+    { id:"audits",  label:"Audit History",    icon:"ri-file-list-3-line" },
   ] as const;
 
   return (
@@ -287,66 +266,6 @@ export default function UserProfilePage() {
             </div>
           )}
 
-          {/* ── Permissions ───────────────────────────────────────────────── */}
-          {tab === "permissions" && (
-            <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 2px 8px rgba(22,163,74,0.04)" }}>
-              <div style={{ padding:"14px 20px", borderBottom:"1px solid var(--default-border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                <div>
-                  <h3 style={{ fontSize:14, fontWeight:800, color:"var(--default-text-color)", margin:"0 0 3px" }}>Permissions</h3>
-                  <p style={{ fontSize:12, color:"var(--text-muted)", margin:0 }}>Role: <strong>{user.role}</strong> — inherited from role</p>
-                </div>
-                <button style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"7px 14px", background:"transparent", color:"var(--primary-color)", border:"1px solid var(--primary-color)", borderRadius:8, fontWeight:700, fontSize:12, cursor:"pointer" }}>
-                  <i className="ri-settings-line"/>Edit Role Permissions
-                </button>
-              </div>
-              <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                <thead>
-                  <tr style={{ background:"#f9fafb" }}>
-                    {["Module","View","Create","Edit","Delete"].map(h => (
-                      <th key={h} style={{ padding:"10px 16px", fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.04em", textAlign:h==="Module"?"left":"center" as const, borderBottom:"2px solid #dcfce7" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {PERM_MODULES.map((p, i) => (
-                    <tr key={p.module} style={{ borderTop: i > 0 ? "1px solid var(--default-border)" : undefined }}>
-                      <td style={{ padding:"11px 16px", fontSize:13, fontWeight:600, color:"var(--default-text-color)" }}>{p.module}</td>
-                      {[p.view, p.create, p.edit, p.delete].map((v, j) => (
-                        <td key={j} style={{ padding:"11px 16px", textAlign:"center" }}>
-                          {v
-                            ? <i className="ri-checkbox-circle-fill" style={{ fontSize:16, color:"#16a34a" }}/>
-                            : <i className="ri-close-circle-fill"    style={{ fontSize:16, color:"#d1d5db" }}/>
-                          }
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* ── Activity Log ──────────────────────────────────────────────── */}
-          {tab === "activity" && (
-            <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", padding:"20px 24px", boxShadow:"0 2px 8px rgba(22,163,74,0.04)" }}>
-              <h3 style={{ fontSize:14, fontWeight:800, color:"var(--default-text-color)", margin:"0 0 20px" }}>Activity Log</h3>
-              <div style={{ position:"relative" }}>
-                <div style={{ position:"absolute", left:19, top:0, bottom:0, width:1, background:"var(--default-border)" }}/>
-                {ACTIVITY_LOG.map(a => (
-                  <div key={a.id} style={{ display:"flex", gap:14, marginBottom:20, alignItems:"flex-start" }}>
-                    <div style={{ width:38, height:38, borderRadius:10, background:`${a.color}18`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, position:"relative", zIndex:1 }}>
-                      <i className={a.icon} style={{ fontSize:15, color:a.color }}/>
-                    </div>
-                    <div style={{ flex:1, paddingTop:6 }}>
-                      <p style={{ fontSize:13, fontWeight:700, color:"var(--default-text-color)", margin:"0 0 2px" }}>{a.action}</p>
-                      <p style={{ fontSize:12, color:"var(--text-muted)", margin:"0 0 2px" }}>{a.detail}</p>
-                      <p style={{ fontSize:11, color:"var(--text-muted)", margin:0 }}><i className="ri-time-line" style={{ marginRight:4 }}/>{a.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
         </div>
       </div>
