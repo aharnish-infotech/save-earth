@@ -248,7 +248,7 @@ export default function UsersPage() {
             </div>
             <div>
               <label style={IL}>Employee ID <span style={{ color: "#dc2626" }}>*</span></label>
-              <input value={form.employeeId} onChange={F("employeeId")} placeholder="EMP-013" style={INP} />
+              <input value={form.employeeId} onChange={F("employeeId")} placeholder="e.g. 101" style={INP} />
             </div>
           </div>
 
