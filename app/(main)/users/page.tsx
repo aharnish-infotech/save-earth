@@ -12,6 +12,7 @@ interface User {
   role:                     "Super Admin" | "Admin" | "Coordinator" | "Field Auditor";
   designation:              string;
   dob:                      string;
+  education:                string;
   joiningDate:              string;
   bloodGroup:               string;
   emergencyContact:         string;
@@ -29,18 +30,18 @@ const uuid = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => 
 
 // ── Seed Data ──────────────────────────────────────────────────────────────────
 const USERS: User[] = [
-  { id:uuid(), employeeId:"EMP-001", name:"Mukteshwar Sharma",  email:"mukteshwar@saveearth.in",  phone:"9876543210", role:"Super Admin",   designation:"Platform Owner",       dob:"1990-05-15", joiningDate:"2019-03-01", bloodGroup:"B+",  emergencyContact:"9988776655", emergencyContactName:"Ravi Sharma",   emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#15803d" },
-  { id:uuid(), employeeId:"EMP-002", name:"Priya Sharma",       email:"priya@saveearth.in",        phone:"9876543211", role:"Admin",         designation:"Operations Manager",   dob:"1992-08-20", joiningDate:"2020-06-15", bloodGroup:"A+",  emergencyContact:"9988776601", emergencyContactName:"Amit Sharma",   emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"Today",       avatarColor:"#0284c7" },
-  { id:uuid(), employeeId:"EMP-003", name:"Amit Singh",         email:"amit@saveearth.in",         phone:"9876543212", role:"Coordinator",   designation:"Audit Coordinator",    dob:"1988-11-03", joiningDate:"2021-04-01", bloodGroup:"O+",  emergencyContact:"9988776602", emergencyContactName:"Neha Singh",    emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"Yesterday",   avatarColor:"#16a34a" },
-  { id:uuid(), employeeId:"EMP-004", name:"Rajesh Kumar",       email:"rajesh@saveearth.in",       phone:"9876543213", role:"Field Auditor", designation:"Senior Field Auditor", dob:"1986-07-22", joiningDate:"2021-07-15", bloodGroup:"AB+", emergencyContact:"9988776603", emergencyContactName:"Sita Kumar",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#059669" },
-  { id:uuid(), employeeId:"EMP-005", name:"Sneha Patel",        email:"sneha@saveearth.in",        phone:"9876543214", role:"Field Auditor", designation:"Field Auditor",        dob:"1995-02-14", joiningDate:"2022-01-01", bloodGroup:"A-",  emergencyContact:"9988776604", emergencyContactName:"Renu Patel",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#db2777" },
-  { id:uuid(), employeeId:"EMP-006", name:"Vikas Tiwari",       email:"vikas@saveearth.in",        phone:"9876543215", role:"Field Auditor", designation:"Field Auditor",        dob:"1993-09-30", joiningDate:"2022-03-15", bloodGroup:"B-",  emergencyContact:"9988776605", emergencyContactName:"Meena Tiwari",  emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"2 days ago",  avatarColor:"#ea580c" },
-  { id:uuid(), employeeId:"EMP-007", name:"Divya Mehta",        email:"divya@saveearth.in",        phone:"9876543216", role:"Field Auditor", designation:"Field Auditor",        dob:"1994-04-17", joiningDate:"2022-06-01", bloodGroup:"O-",  emergencyContact:"9988776606", emergencyContactName:"Kiran Mehta",   emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#0891b2" },
-  { id:uuid(), employeeId:"EMP-008", name:"Arjun Yadav",        email:"arjun@saveearth.in",        phone:"9876543217", role:"Field Auditor", designation:"Jr. Field Auditor",    dob:"1998-01-25", joiningDate:"2023-02-01", bloodGroup:"A+",  emergencyContact:"9988776607", emergencyContactName:"Prem Yadav",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#ca8a04" },
-  { id:uuid(), employeeId:"EMP-009", name:"Sunita Verma",       email:"sunita@saveearth.in",       phone:"9876543218", role:"Coordinator",   designation:"Audit Coordinator",    dob:"1988-11-03", joiningDate:"2021-09-15", bloodGroup:"B+",  emergencyContact:"9988776608", emergencyContactName:"Raj Verma",     emergencyContactRelation:"Spouse",  status:"On Leave", lastActive:"5 days ago",  avatarColor:"#8b5cf6" },
-  { id:uuid(), employeeId:"EMP-010", name:"Karan Joshi",        email:"karan@saveearth.in",        phone:"9876543219", role:"Field Auditor", designation:"Field Auditor",        dob:"1997-12-11", joiningDate:"2023-05-15", bloodGroup:"AB-", emergencyContact:"9988776609", emergencyContactName:"Asha Joshi",    emergencyContactRelation:"Parent",  status:"Inactive", lastActive:"3 weeks ago", avatarColor:"#374151" },
-  { id:uuid(), employeeId:"EMP-011", name:"Pooja Gupta",        email:"pooja@saveearth.in",        phone:"9876543220", role:"Admin",         designation:"Admin Officer",        dob:"1991-03-28", joiningDate:"2022-08-01", bloodGroup:"O+",  emergencyContact:"9988776610", emergencyContactName:"Manoj Gupta",   emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"Today",       avatarColor:"#16a34a" },
-  { id:uuid(), employeeId:"EMP-012", name:"Deepak Nair",        email:"deepak@saveearth.in",       phone:"9876543221", role:"Field Auditor", designation:"Sr. Field Auditor",    dob:"1985-10-05", joiningDate:"2020-11-01", bloodGroup:"A+",  emergencyContact:"9988776611", emergencyContactName:"Latha Nair",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Yesterday",   avatarColor:"#dc2626" },
+  { id:uuid(), employeeId:"EMP-001", name:"Mukteshwar Sharma",  email:"mukteshwar@saveearth.in",  phone:"9876543210", role:"Super Admin",   designation:"Platform Owner",       dob:"1990-05-15", education:"B.E. Electrical", joiningDate:"2019-03-01", bloodGroup:"B+",  emergencyContact:"9988776655", emergencyContactName:"Ravi Sharma",   emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#15803d" },
+  { id:uuid(), employeeId:"EMP-002", name:"Priya Sharma",       email:"priya@saveearth.in",        phone:"9876543211", role:"Admin",         designation:"Operations Manager",   dob:"1992-08-20", education:"MBA Operations", joiningDate:"2020-06-15", bloodGroup:"A+",  emergencyContact:"9988776601", emergencyContactName:"Amit Sharma",   emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"Today",       avatarColor:"#0284c7" },
+  { id:uuid(), employeeId:"EMP-003", name:"Amit Singh",         email:"amit@saveearth.in",         phone:"9876543212", role:"Coordinator",   designation:"Audit Coordinator",    dob:"1988-11-03", education:"B.Sc. Physics", joiningDate:"2021-04-01", bloodGroup:"O+",  emergencyContact:"9988776602", emergencyContactName:"Neha Singh",    emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"Yesterday",   avatarColor:"#16a34a" },
+  { id:uuid(), employeeId:"EMP-004", name:"Rajesh Kumar",       email:"rajesh@saveearth.in",       phone:"9876543213", role:"Field Auditor", designation:"Senior Field Auditor", dob:"1986-07-22", education:"Diploma Electrical", joiningDate:"2021-07-15", bloodGroup:"AB+", emergencyContact:"9988776603", emergencyContactName:"Sita Kumar",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#059669" },
+  { id:uuid(), employeeId:"EMP-005", name:"Sneha Patel",        email:"sneha@saveearth.in",        phone:"9876543214", role:"Field Auditor", designation:"Field Auditor",        dob:"1995-02-14", education:"B.E. Electrical", joiningDate:"2022-01-01", bloodGroup:"A-",  emergencyContact:"9988776604", emergencyContactName:"Renu Patel",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#db2777" },
+  { id:uuid(), employeeId:"EMP-006", name:"Vikas Tiwari",       email:"vikas@saveearth.in",        phone:"9876543215", role:"Field Auditor", designation:"Field Auditor",        dob:"1993-09-30", education:"ITI Electrician", joiningDate:"2022-03-15", bloodGroup:"B-",  emergencyContact:"9988776605", emergencyContactName:"Meena Tiwari",  emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"2 days ago",  avatarColor:"#ea580c" },
+  { id:uuid(), employeeId:"EMP-007", name:"Divya Mehta",        email:"divya@saveearth.in",        phone:"9876543216", role:"Field Auditor", designation:"Field Auditor",        dob:"1994-04-17", education:"B.Sc. Electronics", joiningDate:"2022-06-01", bloodGroup:"O-",  emergencyContact:"9988776606", emergencyContactName:"Kiran Mehta",   emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#0891b2" },
+  { id:uuid(), employeeId:"EMP-008", name:"Arjun Yadav",        email:"arjun@saveearth.in",        phone:"9876543217", role:"Field Auditor", designation:"Jr. Field Auditor",    dob:"1998-01-25", education:"Diploma Electrical", joiningDate:"2023-02-01", bloodGroup:"A+",  emergencyContact:"9988776607", emergencyContactName:"Prem Yadav",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#ca8a04" },
+  { id:uuid(), employeeId:"EMP-009", name:"Sunita Verma",       email:"sunita@saveearth.in",       phone:"9876543218", role:"Coordinator",   designation:"Audit Coordinator",    dob:"1988-11-03", education:"M.Sc. Physics", joiningDate:"2021-09-15", bloodGroup:"B+",  emergencyContact:"9988776608", emergencyContactName:"Raj Verma",     emergencyContactRelation:"Spouse",  status:"On Leave", lastActive:"5 days ago",  avatarColor:"#8b5cf6" },
+  { id:uuid(), employeeId:"EMP-010", name:"Karan Joshi",        email:"karan@saveearth.in",        phone:"9876543219", role:"Field Auditor", designation:"Field Auditor",        dob:"1997-12-11", education:"B.E. Electrical", joiningDate:"2023-05-15", bloodGroup:"AB-", emergencyContact:"9988776609", emergencyContactName:"Asha Joshi",    emergencyContactRelation:"Parent",  status:"Inactive", lastActive:"3 weeks ago", avatarColor:"#374151" },
+  { id:uuid(), employeeId:"EMP-011", name:"Pooja Gupta",        email:"pooja@saveearth.in",        phone:"9876543220", role:"Admin",         designation:"Admin Officer",        dob:"1991-03-28", education:"BCA", joiningDate:"2022-08-01", bloodGroup:"O+",  emergencyContact:"9988776610", emergencyContactName:"Manoj Gupta",   emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"Today",       avatarColor:"#16a34a" },
+  { id:uuid(), employeeId:"EMP-012", name:"Deepak Nair",        email:"deepak@saveearth.in",       phone:"9876543221", role:"Field Auditor", designation:"Sr. Field Auditor",    dob:"1985-10-05", education:"B.E. Electrical", joiningDate:"2020-11-01", bloodGroup:"A+",  emergencyContact:"9988776611", emergencyContactName:"Latha Nair",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Yesterday",   avatarColor:"#dc2626" },
 ];
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -66,14 +67,14 @@ const PAGE_SIZE     = 10;
 // ── Form ───────────────────────────────────────────────────────────────────────
 type FormData = {
   name: string; email: string; phone: string; role: string;
-  designation: string; employeeId: string; dob: string; joiningDate: string;
+  designation: string; employeeId: string; dob: string; education: string; joiningDate: string;
   bloodGroup: string; emergencyContact: string;
   emergencyContactName: string; emergencyContactRelation: string;
   status: string;
 };
 const EMPTY_FORM: FormData = {
   name: "", email: "", phone: "", role: "Field Auditor",
-  designation: "", employeeId: "", dob: "", joiningDate: "",
+  designation: "", employeeId: "", dob: "", education: "", joiningDate: "",
   bloodGroup: "A+", emergencyContact: "",
   emergencyContactName: "", emergencyContactRelation: "Parent",
   status: "Active",
@@ -146,7 +147,7 @@ export default function UsersPage() {
     setEditRow(u);
     setForm({
       name: u.name, email: u.email, phone: u.phone, role: u.role,
-      designation: u.designation, employeeId: u.employeeId, dob: u.dob, joiningDate: u.joiningDate,
+      designation: u.designation, employeeId: u.employeeId, dob: u.dob, education: u.education, joiningDate: u.joiningDate,
       bloodGroup: u.bloodGroup, emergencyContact: u.emergencyContact,
       emergencyContactName: u.emergencyContactName, emergencyContactRelation: u.emergencyContactRelation,
       status: u.status,
@@ -264,6 +265,12 @@ export default function UsersPage() {
               <label style={IL}>Designation</label>
               <input value={form.designation} onChange={F("designation")} placeholder="e.g. Sr. Field Auditor" style={INP} />
             </div>
+          </div>
+
+          {/* Education */}
+          <div>
+            <label style={IL}>Education</label>
+            <input value={form.education} onChange={F("education")} placeholder="e.g. B.E. Electrical, MBA" style={INP} />
           </div>
 
           {/* DOB + Joining Date */}
