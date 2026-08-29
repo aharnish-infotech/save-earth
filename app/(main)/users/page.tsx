@@ -18,7 +18,7 @@ interface User {
   emergencyContact:         string;
   emergencyContactName:     string;
   emergencyContactRelation: string;
-  status:                   "Active" | "Inactive" | "On Leave";
+  status:                   "Active" | "Inactive";
   lastActive:               string;
   avatarColor:              string;
 }
@@ -38,7 +38,7 @@ const USERS: User[] = [
   { id:uuid(), employeeId:"EMP-006", name:"Vikas Tiwari",       email:"vikas@saveearth.in",        phone:"9876543215", role:"Field Auditor", designation:"Field Auditor",        dob:"1993-09-30", education:"ITI Electrician", joiningDate:"2022-03-15", bloodGroup:"B-",  emergencyContact:"9988776605", emergencyContactName:"Meena Tiwari",  emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"2 days ago",  avatarColor:"#ea580c" },
   { id:uuid(), employeeId:"EMP-007", name:"Divya Mehta",        email:"divya@saveearth.in",        phone:"9876543216", role:"Field Auditor", designation:"Field Auditor",        dob:"1994-04-17", education:"B.Sc. Electronics", joiningDate:"2022-06-01", bloodGroup:"O-",  emergencyContact:"9988776606", emergencyContactName:"Kiran Mehta",   emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#0891b2" },
   { id:uuid(), employeeId:"EMP-008", name:"Arjun Yadav",        email:"arjun@saveearth.in",        phone:"9876543217", role:"Field Auditor", designation:"Jr. Field Auditor",    dob:"1998-01-25", education:"Diploma Electrical", joiningDate:"2023-02-01", bloodGroup:"A+",  emergencyContact:"9988776607", emergencyContactName:"Prem Yadav",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Today",       avatarColor:"#ca8a04" },
-  { id:uuid(), employeeId:"EMP-009", name:"Sunita Verma",       email:"sunita@saveearth.in",       phone:"9876543218", role:"Coordinator",   designation:"Audit Coordinator",    dob:"1988-11-03", education:"M.Sc. Physics", joiningDate:"2021-09-15", bloodGroup:"B+",  emergencyContact:"9988776608", emergencyContactName:"Raj Verma",     emergencyContactRelation:"Spouse",  status:"On Leave", lastActive:"5 days ago",  avatarColor:"#8b5cf6" },
+  { id:uuid(), employeeId:"EMP-009", name:"Sunita Verma",       email:"sunita@saveearth.in",       phone:"9876543218", role:"Coordinator",   designation:"Audit Coordinator",    dob:"1988-11-03", education:"M.Sc. Physics", joiningDate:"2021-09-15", bloodGroup:"B+",  emergencyContact:"9988776608", emergencyContactName:"Raj Verma",     emergencyContactRelation:"Spouse",  status:"Inactive", lastActive:"5 days ago",  avatarColor:"#8b5cf6" },
   { id:uuid(), employeeId:"EMP-010", name:"Karan Joshi",        email:"karan@saveearth.in",        phone:"9876543219", role:"Field Auditor", designation:"Field Auditor",        dob:"1997-12-11", education:"B.E. Electrical", joiningDate:"2023-05-15", bloodGroup:"AB-", emergencyContact:"9988776609", emergencyContactName:"Asha Joshi",    emergencyContactRelation:"Parent",  status:"Inactive", lastActive:"3 weeks ago", avatarColor:"#374151" },
   { id:uuid(), employeeId:"EMP-011", name:"Pooja Gupta",        email:"pooja@saveearth.in",        phone:"9876543220", role:"Admin",         designation:"Admin Officer",        dob:"1991-03-28", education:"BCA", joiningDate:"2022-08-01", bloodGroup:"O+",  emergencyContact:"9988776610", emergencyContactName:"Manoj Gupta",   emergencyContactRelation:"Spouse",  status:"Active",   lastActive:"Today",       avatarColor:"#16a34a" },
   { id:uuid(), employeeId:"EMP-012", name:"Deepak Nair",        email:"deepak@saveearth.in",       phone:"9876543221", role:"Field Auditor", designation:"Sr. Field Auditor",    dob:"1985-10-05", education:"B.E. Electrical", joiningDate:"2020-11-01", bloodGroup:"A+",  emergencyContact:"9988776611", emergencyContactName:"Latha Nair",    emergencyContactRelation:"Parent",  status:"Active",   lastActive:"Yesterday",   avatarColor:"#dc2626" },
@@ -58,10 +58,9 @@ const ROLE_COLORS: Record<string, { color: string; bg: string }> = {
 const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   "Active":   { color: "#16a34a", bg: "#dcfce7" },
   "Inactive": { color: "#dc2626", bg: "#fee2e2" },
-  "On Leave": { color: "#ca8a04", bg: "#fef9c3" },
 };
 const ROLES_FILTER  = ["All Roles",  ...ROLES];
-const STATUS_FILTER = ["All Status", "Active", "Inactive", "On Leave"];
+const STATUS_FILTER = ["All Status", "Active", "Inactive"];
 const PAGE_SIZE     = 10;
 
 // ── Form ───────────────────────────────────────────────────────────────────────
@@ -179,7 +178,7 @@ export default function UsersPage() {
   const total         = users.length;
   const active        = users.filter(u => u.status === "Active").length;
   const fieldAuditors = users.filter(u => u.role === "Field Auditor").length;
-  const onLeave       = users.filter(u => u.status === "On Leave").length;
+  const inactive      = users.filter(u => u.status === "Inactive").length;
 
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 20, padding: "1.5rem 0" }}>
@@ -323,12 +322,12 @@ export default function UsersPage() {
           <div>
             <label style={IL}>Status</label>
             <div style={{ display: "flex", border: "1px solid var(--default-border)", borderRadius: 8, overflow: "hidden" }}>
-              {(["Active", "Inactive", "On Leave"] as const).map((s, i) => {
+              {(["Active", "Inactive"] as const).map((s, i) => {
                 const isOn = form.status === s;
-                const col  = s === "Active" ? "#16a34a" : s === "Inactive" ? "#dc2626" : "#ca8a04";
+                const col  = s === "Active" ? "#16a34a" : "#dc2626";
                 return (
                   <button key={s} onClick={() => setForm(f => ({ ...f, status: s }))}
-                    style={{ flex: 1, padding: "6px 4px", border: "none", borderRight: i < 2 ? "1px solid var(--default-border)" : "none", cursor: "pointer", fontSize: 11, fontWeight: 700, background: isOn ? col : "transparent", color: isOn ? "#fff" : col, transition: "all 0.15s" }}>
+                    style={{ flex: 1, padding: "6px 4px", border: "none", borderRight: i < 1 ? "1px solid var(--default-border)" : "none", cursor: "pointer", fontSize: 11, fontWeight: 700, background: isOn ? col : "transparent", color: isOn ? "#fff" : col, transition: "all 0.15s" }}>
                     {s}
                   </button>
                 );
@@ -373,7 +372,7 @@ export default function UsersPage() {
             { label: "Total Users",    value: total,         icon: "ri-group-line",           color: "#15803d", bg: "#dcfce7" },
             { label: "Active",         value: active,        icon: "ri-checkbox-circle-line", color: "#16a34a", bg: "#f0fdf4" },
             { label: "Field Auditors", value: fieldAuditors, icon: "ri-walk-line",            color: "#0891b2", bg: "#dbeafe" },
-            { label: "On Leave",       value: onLeave,       icon: "ri-calendar-close-line",  color: "#ca8a04", bg: "#fef9c3" },
+            { label: "Inactive",       value: inactive,      icon: "ri-user-forbid-line",     color: "#dc2626", bg: "#fee2e2" },
           ].map(c => (
             <div key={c.label} style={{ background: "var(--custom-white)", borderRadius: 12, border: "1px solid var(--default-border)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(22,163,74,0.05)" }}>
               <div style={{ width: 42, height: 42, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
