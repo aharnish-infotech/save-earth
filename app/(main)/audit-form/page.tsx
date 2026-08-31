@@ -2602,7 +2602,7 @@ function ElecPanelCard({
                     <>
                       <input type="number" value={row.reading}
                         onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
-                        placeholder="—"
+                        placeholder={`${row.testPt} Panel`}
                         style={inp(row.reading)}/>
                       {row.unit && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
                     </>
@@ -2621,7 +2621,7 @@ function ElecPanelCard({
                     <>
                       <input type="number" value={row.readingAcdb}
                         onChange={e => onRowChange(panel.id, group.id, row.id, "readingAcdb", e.target.value)}
-                        placeholder="—"
+                        placeholder={`${row.testPt} ACDB`}
                         style={inp(row.readingAcdb, "#2563eb")}/>
                       {row.unit && !isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
                       {isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>OHMS</span>}
@@ -2633,7 +2633,7 @@ function ElecPanelCard({
                 <div style={{ padding:"5px 8px", display:"flex", alignItems:"center" }}>
                   <input type="text" value={row.remarks}
                     onChange={e => onRowChange(panel.id, group.id, row.id, "remarks", e.target.value)}
-                    placeholder="—"
+                    placeholder={`${row.testPt} remarks`}
                     style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:7, padding:"6px 8px", fontSize:11, color:"#6b7280", outline:"none", background:"#fff", boxSizing:"border-box" }}/>
                 </div>
               </div>
