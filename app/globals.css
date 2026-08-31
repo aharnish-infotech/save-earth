@@ -336,6 +336,9 @@ html, body { height: 100%; margin: 0; padding: 0; }
    Responsive sidebar — Tablet & Mobile
 ────────────────────────────────────────────────────────────── */
 
+/* ── Audit form reading inputs — lighter placeholder ── */
+.reading-inp::placeholder { color: #9ca3af; font-weight: 400; }
+
 /* ── Tablet (768px – 1024px): icon rail only, no panel ── */
 @media (max-width: 1024px) {
   :root { --zf-sidebar-w: 64px; }

@@ -2603,6 +2603,7 @@ function ElecPanelCard({
                       <input type="number" value={row.reading}
                         onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
                         placeholder={`${row.testPt} Panel`}
+                        className="reading-inp"
                         style={inp(row.reading)}/>
                       {row.unit && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
                     </>
@@ -2622,6 +2623,7 @@ function ElecPanelCard({
                       <input type="number" value={row.readingAcdb}
                         onChange={e => onRowChange(panel.id, group.id, row.id, "readingAcdb", e.target.value)}
                         placeholder={`${row.testPt} ACDB`}
+                        className="reading-inp"
                         style={inp(row.readingAcdb, "#2563eb")}/>
                       {row.unit && !isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
                       {isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>OHMS</span>}
