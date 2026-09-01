@@ -34,10 +34,10 @@ function DigitalClock() {
     }}>
       {/* Time */}
       <div style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-        <span style={{ fontFamily: "'Courier New', monospace", fontSize: 16, fontWeight: 800, color: "var(--primary-color)", letterSpacing: 1 }}>
+        <span style={{ fontFamily: ""Space Grotesk", sans-serif", fontSize: 16, fontWeight: 800, color: "var(--primary-color)", letterSpacing: 1 }}>
           {hh}:{mm}
         </span>
-        <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, fontWeight: 700, color: "#4ade80", marginLeft: 2 }}>
+        <span style={{ fontFamily: ""Space Grotesk", sans-serif", fontSize: 11, fontWeight: 700, color: "#4ade80", marginLeft: 2 }}>
           :{ss}
         </span>
       </div>

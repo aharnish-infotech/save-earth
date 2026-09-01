@@ -605,7 +605,7 @@ export default function OrganisationPage() {
               <span style={{ fontSize:12, fontWeight:800, color:"#111827" }}>SQL Schema</span>
               <span style={{ fontSize:10, color:"#9ca3af", marginLeft:2 }}>org_units table definition</span>
             </div>
-            <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#1e1e2e", overflowX:"auto", overflowY:"auto", maxHeight:300, lineHeight:1.8, fontFamily:"'Courier New', Consolas, monospace", color:"#cdd6f4" }}>{
+            <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#1e1e2e", overflowX:"auto", overflowY:"auto", maxHeight:300, lineHeight:1.8, fontFamily:""Space Grotesk", sans-serif", color:"#cdd6f4" }}>{
 `CREATE TABLE org_units (
   id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   bank_code    VARCHAR(4)   NOT NULL,          -- IFSC prefix e.g. SBIN, HDFC
@@ -664,7 +664,7 @@ CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
                     <i className="ri-file-copy-line" style={{ fontSize:11 }}/>Copy
                   </button>
                 </div>
-                <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:260, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace", color:"#e6edf3" }}>
+                <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:260, lineHeight:1.7, fontFamily:""Space Grotesk", sans-serif", color:"#e6edf3" }}>
                   {json}
                 </pre>
               </div>

@@ -749,7 +749,7 @@ export default function QuestionLibraryPage() {
             </div>
 
             {/* Highlighted JSON */}
-            <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:280, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
+            <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:280, lineHeight:1.7, fontFamily:""Space Grotesk", sans-serif" }}>
 {colorizeJson(JSON.stringify({
   id:           isEditMode ? editRow?.id : "(uuid — auto-generated on save)",
   questionCode: isEditMode ? editRow?.questionCode : "(e.g. Q-051 — auto-assigned)",

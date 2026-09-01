@@ -335,7 +335,7 @@ export default function BanksPage() {
           </div>
 
           {/* Highlighted JSON */}
-          <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:260, lineHeight:1.7, fontFamily:"'Courier New', Consolas, monospace" }}>
+          <pre style={{ margin:0, padding:"14px 16px", fontSize:11, background:"#0d1117", overflowX:"auto", overflowY:"auto", maxHeight:260, lineHeight:1.7, fontFamily:""Space Grotesk", sans-serif" }}>
 {colorizeJson(JSON.stringify({
   id:       editId ? editRow?.id        : "(uuid — auto-generated on save)",
   bankCode: editId ? editRow?.bankCode  : "(e.g. BNK-017 — auto-assigned)",
