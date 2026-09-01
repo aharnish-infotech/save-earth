@@ -122,10 +122,22 @@ export default function BranchesPage() {
   const [editRow, setEditRow]           = useState<Row | null>(null);
   const suffixRef = useRef<HTMLInputElement>(null);
 
+  // ── No-IFSC mode (admin/zonal offices) ──────────────────────────────────────
+  const [noIfsc, setNoIfsc]               = useState(false);
+  const [noIfscReason, setNoIfscReason]   = useState("Administrative Office");
+  const [manualBranch, setManualBranch]   = useState("");
+  const [manualAddress, setManualAddress] = useState("");
+  const [manualCity, setManualCity]       = useState("");
+  const [manualDistrict, setManualDistrict] = useState("");
+  const [manualState, setManualState]     = useState("");
+  const [manualMicr, setManualMicr]       = useState("");
+
+  const NO_IFSC_REASONS = ["Administrative Office","Zonal Office","Regional Office","Corporate Office","Other"];
+
   const isEditMode = !!editRow;
   const fullIFSC   = `${selectedBank.code}${ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}`;
-  const ifscReady  = isEditMode ? true : ifscSuffix.trim().length === 7;
-  const canSubmit  = ifscReady && ifscData && gps && htlt !== "" && (htlt === "LT" || (htlt === "HT" && sld !== ""));
+  const ifscReady  = isEditMode ? true : noIfsc ? manualBranch.trim().length > 0 : ifscSuffix.trim().length === 7;
+  const canSubmit  = ifscReady && (noIfsc || ifscData) && gps && htlt !== "" && (htlt === "LT" || (htlt === "HT" && sld !== ""));
 
   // ── IFSC API fetch ───────────────────────────────────────────
   const fetchIFSC = async (suffix: string) => {
@@ -482,59 +494,126 @@ export default function BranchesPage() {
               </div>
             ) : (
               <>
-              <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:8 }}>
-                {/* Bank code prefix pill */}
-                <div style={{ flexShrink:0, background:"#111827", color:"#fff", borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
-                  {selectedBank.code}
+              {/* ── No-IFSC toggle ── */}
+              <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", marginBottom:12, userSelect:"none" }}>
+                <div
+                  onClick={() => { setNoIfsc(p => !p); setIfscError(""); setIfscData(null); setIfscSuffix(""); }}
+                  style={{ width:36, height:20, borderRadius:10, background:noIfsc?"#dc2626":"#e5e7eb", position:"relative", flexShrink:0, transition:"background 0.2s", cursor:"pointer" }}>
+                  <div style={{ position:"absolute", top:2, left: noIfsc ? 18 : 2, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left 0.2s", boxShadow:"0 1px 3px rgba(0,0,0,0.2)" }}/>
                 </div>
-                {/* Suffix input */}
-                <input
-                  ref={suffixRef}
-                  value={ifscSuffix}
-                  onChange={e => handleSuffixChange(e.target.value)}
-                  placeholder="0000000"
-                  maxLength={7}
-                  style={{ flex:1, border:`1.5px solid ${ifscSuffix.length===7?(ifscData?"#16a34a":ifscError?"#dc2626":"#e5e7eb"):"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:15, color:"#111827", outline:"none", fontFamily:"monospace", letterSpacing:"0.1em", fontWeight:700, textTransform:"uppercase", background:"#fafafa" }}
-                />
-                {ifscLoading && <i className="ri-loader-4-line" style={{ color:"#9ca3af", fontSize:18, animation:"spin 1s linear infinite" }}/>}
-                {ifscData && !ifscLoading && <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:18 }}/>}
-              </div>
+                <span style={{ fontSize:12, fontWeight:600, color: noIfsc ? "#dc2626" : "#6b7280" }}>
+                  This location has no IFSC code
+                </span>
+              </label>
 
-              {/* Full IFSC preview */}
-              <div style={{ fontSize:12, color:"#6b7280", marginBottom:8 }}>
-                Full IFSC: <strong style={{ color:"#111827", fontFamily:"monospace", letterSpacing:"0.06em" }}>{selectedBank.code}{ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}</strong>
-                <span style={{ marginLeft:6, fontSize:10, color:"#9ca3af" }}>{ifscSuffix.length}/7 characters</span>
-              </div>
-
-            {/* Error */}
-            {ifscError && (
-              <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"8px 12px", fontSize:12, color:"#dc2626", display:"flex", gap:7, alignItems:"center" }}>
-                <i className="ri-error-warning-line"/>
-                {ifscError}
-              </div>
-            )}
-
-            {/* Fetched branch data */}
-            {ifscData && (
-              <div style={{ marginTop:10, background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:10, padding:"12px", display:"flex", flexDirection:"column", gap:8 }}>
-                <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:2 }}>Branch Details — Auto Populated</div>
-                {[
-                  { label:"Branch",   value: ifscData.BRANCH   },
-                  { label:"Address",  value: ifscData.ADDRESS  },
-                  { label:"City",     value: ifscData.CITY     },
-                  { label:"District", value: ifscData.DISTRICT },
-                  { label:"State",    value: ifscData.STATE    },
-                  { label:"MICR",     value: ifscData.MICR     },
-                  { label:"Contact",  value: ifscData.CONTACT  },
-                ].map(f => f.value ? (
-                  <div key={f.label} style={{ display:"flex", gap:8 }}>
-                    <span style={{ fontSize:10, fontWeight:700, color:"#6b7280", minWidth:60, textTransform:"uppercase", paddingTop:1 }}>{f.label}</span>
-                    <span style={{ fontSize:12, color:"#111827", fontWeight:500, flex:1 }}>{f.value}</span>
+              {noIfsc ? (
+                /* ── Manual entry mode ── */
+                <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                  <div style={{ background:"#fff5f5", border:"1px solid #fecaca", borderRadius:9, padding:"10px 13px", fontSize:12, color:"#dc2626", display:"flex", gap:7, alignItems:"flex-start" }}>
+                    <i className="ri-error-warning-line" style={{ flexShrink:0, marginTop:1 }}/>
+                    <span>Use only for administrative / zonal offices without banking operations. All fields below are mandatory.</span>
                   </div>
-                ) : null)}
-              </div>
-            )}
-            </>
+
+                  {/* Reason */}
+                  <div>
+                    <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Reason for No IFSC</label>
+                    <select value={noIfscReason} onChange={e => setNoIfscReason(e.target.value)}
+                      style={{ width:"100%", border:"1.5px solid #fecaca", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", background:"#fff", outline:"none", cursor:"pointer", fontWeight:600 }}>
+                      {NO_IFSC_REASONS.map(r => <option key={r}>{r}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Branch Name */}
+                  <div>
+                    <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch / Office Name <span style={{ color:"#dc2626" }}>*</span></label>
+                    <input value={manualBranch} onChange={e => setManualBranch(e.target.value)} placeholder="e.g. HET BHOPAL"
+                      style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Address</label>
+                    <input value={manualAddress} onChange={e => setManualAddress(e.target.value)} placeholder="e.g. H.E.T. BHOPAL, PIPLANI BHOPAL"
+                      style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
+                  </div>
+
+                  {/* City + District */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                    <div>
+                      <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>City</label>
+                      <input value={manualCity} onChange={e => setManualCity(e.target.value)} placeholder="e.g. BHOPAL"
+                        style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
+                    </div>
+                    <div>
+                      <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>District</label>
+                      <input value={manualDistrict} onChange={e => setManualDistrict(e.target.value)} placeholder="e.g. BHOPAL"
+                        style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
+                    </div>
+                  </div>
+
+                  {/* State + MICR */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                    <div>
+                      <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>State</label>
+                      <input value={manualState} onChange={e => setManualState(e.target.value)} placeholder="e.g. MADHYA PRADESH"
+                        style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
+                    </div>
+                    <div>
+                      <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>MICR</label>
+                      <input value={manualMicr} onChange={e => setManualMicr(e.target.value)} placeholder="e.g. 462002011"
+                        style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box", fontFamily:"monospace" }}/>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* ── Normal IFSC entry ── */
+                <>
+                <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:8 }}>
+                  <div style={{ flexShrink:0, background:"#111827", color:"#fff", borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
+                    {selectedBank.code}
+                  </div>
+                  <input
+                    ref={suffixRef}
+                    value={ifscSuffix}
+                    onChange={e => handleSuffixChange(e.target.value)}
+                    placeholder="0000000"
+                    maxLength={7}
+                    style={{ flex:1, border:`1.5px solid ${ifscSuffix.length===7?(ifscData?"#16a34a":ifscError?"#dc2626":"#e5e7eb"):"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:15, color:"#111827", outline:"none", fontFamily:"monospace", letterSpacing:"0.1em", fontWeight:700, textTransform:"uppercase", background:"#fafafa" }}
+                  />
+                  {ifscLoading && <i className="ri-loader-4-line" style={{ color:"#9ca3af", fontSize:18, animation:"spin 1s linear infinite" }}/>}
+                  {ifscData && !ifscLoading && <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:18 }}/>}
+                </div>
+                <div style={{ fontSize:12, color:"#6b7280", marginBottom:8 }}>
+                  Full IFSC: <strong style={{ color:"#111827", fontFamily:"monospace", letterSpacing:"0.06em" }}>{selectedBank.code}{ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}</strong>
+                  <span style={{ marginLeft:6, fontSize:10, color:"#9ca3af" }}>{ifscSuffix.length}/7 characters</span>
+                </div>
+                {ifscError && (
+                  <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"8px 12px", fontSize:12, color:"#dc2626", display:"flex", gap:7, alignItems:"center" }}>
+                    <i className="ri-error-warning-line"/>{ifscError}
+                  </div>
+                )}
+                {ifscData && (
+                  <div style={{ marginTop:10, background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:10, padding:"12px", display:"flex", flexDirection:"column", gap:8 }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:2 }}>Branch Details — Auto Populated</div>
+                    {[
+                      { label:"Branch",   value: ifscData.BRANCH   },
+                      { label:"Address",  value: ifscData.ADDRESS  },
+                      { label:"City",     value: ifscData.CITY     },
+                      { label:"District", value: ifscData.DISTRICT },
+                      { label:"State",    value: ifscData.STATE    },
+                      { label:"MICR",     value: ifscData.MICR     },
+                      { label:"Contact",  value: ifscData.CONTACT  },
+                    ].map(f => f.value ? (
+                      <div key={f.label} style={{ display:"flex", gap:8 }}>
+                        <span style={{ fontSize:10, fontWeight:700, color:"#6b7280", minWidth:60, textTransform:"uppercase", paddingTop:1 }}>{f.label}</span>
+                        <span style={{ fontSize:12, color:"#111827", fontWeight:500, flex:1 }}>{f.value}</span>
+                      </div>
+                    ) : null)}
+                  </div>
+                )}
+                </>
+              )}
+              </>
             )}
           </SectionCard>
 
@@ -767,14 +846,16 @@ export default function BranchesPage() {
             const payload = {
               bank: selectedBank.name,
               bankCode: selectedBank.code,
-              ifsc: ifscData?.IFSC || `${selectedBank.code}${ifscSuffix}`,
-              branchName: ifscData?.BRANCH || "",
-              address: ifscData?.ADDRESS || "",
-              city: ifscData?.CITY || "",
-              district: ifscData?.DISTRICT || "",
-              state: ifscData?.STATE || "",
-              micr: ifscData?.MICR || "",
-              contact: ifscData?.CONTACT || "",
+              ifsc: noIfsc ? null : (ifscData?.IFSC || `${selectedBank.code}${ifscSuffix}`),
+              ifscExempt: noIfsc || undefined,
+              ifscExemptReason: noIfsc ? noIfscReason : undefined,
+              branchName: noIfsc ? manualBranch : (ifscData?.BRANCH || ""),
+              address: noIfsc ? manualAddress : (ifscData?.ADDRESS || ""),
+              city: noIfsc ? manualCity : (ifscData?.CITY || ""),
+              district: noIfsc ? manualDistrict : (ifscData?.DISTRICT || ""),
+              state: noIfsc ? manualState : (ifscData?.STATE || ""),
+              micr: noIfsc ? manualMicr : (ifscData?.MICR || ""),
+              contact: noIfsc ? "" : (ifscData?.CONTACT || ""),
               latitude: gps?.lat ?? null,
               longitude: gps?.lng ?? null,
               htlt: htlt || null,
