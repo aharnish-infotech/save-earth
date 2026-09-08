@@ -197,11 +197,12 @@ const CSS = `
   @page{size:A4;margin:0}
   @media print{
     html,body{width:210mm}
-    .page{page-break-after:always;margin:0!important;box-shadow:none!important;min-height:0!important;padding-bottom:14mm!important}
+    .rp{page-break-after:always;margin:0!important;box-shadow:none!important;min-height:0!important;padding-bottom:14mm!important}
+    .rp.cover-page{min-height:297mm!important}
     .no-break{page-break-inside:avoid}
     .toolbar{display:none!important}
   }
-  .page{
+  .rp{
     width:210mm;min-height:297mm;
     margin:0 auto 4mm;
     padding:10mm 12mm 16mm;
@@ -345,7 +346,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 1 — COVER ══════════════════════════════════════════════════ */}
-      <div className="page">
+      <div className="rp cover-page">
         <div className="cover">
           <div className="report-title">ELECTRICAL AUDIT REPORT</div>
           <div className="year">2024–25</div>
@@ -387,7 +388,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 2 — ANNEXURE-I (Branch info + full Checklist) ══════════════ */}
-      <div className="page">
+      <div className="rp">
         <div className="section-title">ANNEXURE-I<br />FORMAT FOR ELECTRICAL SAFETY AUDIT</div>
 
         <table className="info-table">
@@ -427,7 +428,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 4 — UPS + ELECTRICAL PARAMETERS + METER ════════════════════ */}
-      <div className="page">
+      <div className="rp">
         <div className="sec-lbl">DETAILS OF UPS & BATTERIES IN THE BRANCH</div>
         <table className="data-table">
           <thead>
@@ -509,7 +510,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 5 — DG SET ══════════════════════════════════════════════════ */}
-      <div className="page">
+      <div className="rp">
         <div className="sec-lbl">DIESEL GENERATOR (DG) SET</div>
         <table className="dg-table">
           <thead>
@@ -537,7 +538,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 6 — BRANCH LOAD SHEET ══════════════════════════════════════ */}
-      <div className="page">
+      <div className="rp">
         <div className="section-title">BRANCH LOAD SHEET</div>
         <table className="load-table">
           <thead>
@@ -574,7 +575,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 7 — OVERVIEW OF AUDIT OBSERVATIONS ═════════════════════════ */}
-      <div className="page">
+      <div className="rp">
         <div className="section-title" style={{ fontSize: "10pt" }}>
           OVERVIEW OF AUDIT OBSERVATIONS AND PROPOSED RECTIFICATION WORKS IN PHOTOGRAPHIC FORM
         </div>
@@ -635,7 +636,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 8 — PHOTOGRAPHS ════════════════════════════════════════════ */}
-      <div className="page">
+      <div className="rp">
         <div className="section-title">PHOTOGRAPHS OF MAIN ELECTRIC PANELS, UPS ROOM & ELECTRIC WIRING</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5mm", marginBottom: "5mm" }}>
           {["Main Incoming Panel", "Distribution Board", "UPS Room", "Earthing Pit", "DG Set", "Cable Tray / Wiring"].map((label, i) => (
@@ -652,7 +653,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 9 — SPECIAL OBSERVATIONS + SLD ════════════════════════════ */}
-      <div className="page">
+      <div className="rp">
         <div className="section-title">SPECIAL OBSERVATIONS AND TENTATIVE ESTIMATED COST OF COMPLIANCE WORK</div>
         <table className="sobs-table">
           <thead>
