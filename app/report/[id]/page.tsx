@@ -193,7 +193,7 @@ const AUDIT_DATA: Record<string, AuditReport> = { "AU-2024-131": SAMPLE };
 // ── CSS — exact PALDI style ───────────────────────────────────────────────────
 const CSS = `
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{background:#fff;font-family:'Times New Roman',Times,serif;font-size:9pt;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{background:#fff;font-family:'Times New Roman',Times,serif;font-size:13pt;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{size:A4;margin:0}
   @media print{
     html,body{padding:0!important;margin:0!important;width:100%!important;background:#fff!important}
@@ -219,44 +219,44 @@ const CSS = `
 
   /* Cover */
   .cover{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;padding:14mm 16mm}
-  .cover .report-title{font-size:18pt;font-weight:bold;text-decoration:underline;margin-bottom:3mm}
-  .cover .year{font-size:14pt;font-weight:bold;margin-bottom:6mm}
+  .cover .report-title{font-size:26pt;font-weight:bold;text-decoration:underline;margin-bottom:3mm}
+  .cover .year{font-size:21pt;font-weight:bold;margin-bottom:6mm}
   .cover .circle-logo{width:38mm;height:38mm;border-radius:50%;border:3px solid #000;display:flex;align-items:center;justify-content:center;margin:0 auto 6mm;overflow:hidden}
   .cover .circle-logo svg{width:34mm;height:34mm}
-  .cover .rbo-info{font-size:10pt;font-weight:bold;margin-bottom:6mm;line-height:1.6}
-  .cover .branch-box{border:2px solid #000;padding:5mm 10mm;margin:4mm auto;width:100%;text-align:left;font-size:10pt;line-height:1.9}
+  .cover .rbo-info{font-size:15pt;font-weight:bold;margin-bottom:6mm;line-height:1.6}
+  .cover .branch-box{border:2px solid #000;padding:5mm 10mm;margin:4mm auto;width:100%;text-align:left;font-size:15pt;line-height:1.9}
   .cover .branch-box .label{font-weight:bold}
-  .cover .auditor-box{margin-top:8mm;border-top:1px solid #000;padding-top:5mm;font-size:9pt;text-align:center;line-height:1.7}
-  .cover .auditor-box .co-name{font-weight:bold;font-size:10pt}
+  .cover .auditor-box{margin-top:8mm;border-top:1px solid #000;padding-top:5mm;font-size:13pt;text-align:center;line-height:1.7}
+  .cover .auditor-box .co-name{font-weight:bold;font-size:15pt}
 
   /* Section headers */
-  .section-title{font-size:11pt;font-weight:bold;text-align:center;text-decoration:underline;margin-bottom:4mm}
-  .sub-title{font-size:9.5pt;font-weight:bold;text-align:center;margin-bottom:3mm}
-  .sec-lbl{font-weight:bold;font-size:9pt;margin:3mm 0 1.5mm}
+  .section-title{font-size:16pt;font-weight:bold;text-align:center;text-decoration:underline;margin-bottom:4mm}
+  .sub-title{font-size:14pt;font-weight:bold;text-align:center;margin-bottom:3mm}
+  .sec-lbl{font-weight:bold;font-size:13pt;margin:3mm 0 1.5mm}
 
   /* Info table */
-  .info-table{width:100%;border-collapse:collapse;margin-bottom:4mm;font-size:8.8pt}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:4mm;font-size:13pt}
   .info-table tr td{border:1px solid #000;padding:1.5mm 2.5mm;vertical-align:top}
   .info-table .lbl{font-weight:bold;width:44%}
 
   /* Checklist table */
-  .check-table{width:100%;border-collapse:collapse;font-size:8.2pt;margin-bottom:4mm}
+  .check-table{width:100%;border-collapse:collapse;font-size:12pt;margin-bottom:4mm}
   .check-table th{border:1px solid #000;padding:1.5mm 2mm;background:#d9d9d9;font-weight:bold;text-align:center;vertical-align:middle}
   .check-table td{border:1px solid #000;padding:1.5mm 2mm;vertical-align:top}
   .check-table .sno{width:6%;text-align:center;vertical-align:top}
   .check-table .desc{width:54%}
   .check-table .det{width:10%;text-align:center;vertical-align:middle}
   .check-table .rem{width:30%;text-align:center;vertical-align:middle}
-  .check-table .sub-hdr{background:#f0f0f0;font-weight:bold;font-size:8.2pt;text-align:center}
+  .check-table .sub-hdr{background:#f0f0f0;font-weight:bold;font-size:12pt;text-align:center}
 
   /* Data tables */
-  .data-table{width:100%;border-collapse:collapse;font-size:8.2pt;margin-bottom:3mm}
+  .data-table{width:100%;border-collapse:collapse;font-size:12pt;margin-bottom:3mm}
   .data-table th{border:1px solid #000;padding:1.5mm 2mm;background:#d9d9d9;font-weight:bold;text-align:center;vertical-align:middle}
   .data-table td{border:1px solid #000;padding:1.5mm 2mm;text-align:center;vertical-align:middle}
   .data-table td.l{text-align:left}
 
   /* DG table */
-  .dg-table{width:100%;border-collapse:collapse;font-size:8.2pt;margin-bottom:3mm}
+  .dg-table{width:100%;border-collapse:collapse;font-size:12pt;margin-bottom:3mm}
   .dg-table th{border:1px solid #000;padding:1.5mm 2mm;background:#d9d9d9;font-weight:bold;text-align:center}
   .dg-table td{border:1px solid #000;padding:1.5mm 2mm;vertical-align:top}
   .dg-table .sno{width:8%;text-align:center}
@@ -266,7 +266,7 @@ const CSS = `
   .dg-table .risk-col{width:10%;text-align:center;font-weight:bold}
 
   /* Load sheet */
-  .load-table{width:100%;border-collapse:collapse;font-size:7.6pt;margin-bottom:3mm}
+  .load-table{width:100%;border-collapse:collapse;font-size:11pt;margin-bottom:3mm}
   .load-table th{border:1px solid #000;padding:1.2mm 1.8mm;background:#d9d9d9;font-weight:bold;text-align:center;vertical-align:middle}
   .load-table td{border:1px solid #000;padding:1.2mm 1.8mm;text-align:center;vertical-align:middle}
   .load-table td.l{text-align:left}
@@ -274,7 +274,7 @@ const CSS = `
   .load-table .total-row{font-weight:bold;background:#e8e8e8}
 
   /* Observations */
-  .obs-table{width:100%;border-collapse:collapse;font-size:8.2pt;margin-bottom:3mm}
+  .obs-table{width:100%;border-collapse:collapse;font-size:12pt;margin-bottom:3mm}
   .obs-table th{border:1px solid #000;padding:1.8mm 2mm;background:#d9d9d9;font-weight:bold;text-align:center}
   .obs-table td{border:1px solid #000;padding:2mm;vertical-align:top}
   .obs-table .status-cell{width:26%;vertical-align:middle;text-align:center}
@@ -282,31 +282,31 @@ const CSS = `
   .obs-table .photo-cell{width:30%;text-align:center;vertical-align:middle}
 
   /* Risk boxes */
-  .risk-box{border:1.5px solid #000;padding:2mm 3mm;margin-bottom:2mm;font-size:8pt;font-weight:bold}
+  .risk-box{border:1.5px solid #000;padding:2mm 3mm;margin-bottom:2mm;font-size:12pt;font-weight:bold}
   .risk-box.low{background:#c6efce}
   .risk-box.medium{background:#ffeb9c}
   .risk-box.high{background:#ffc7ce}
   .risk-box.na{background:#f2f2f2}
 
   /* Special obs */
-  .sobs-table{width:100%;border-collapse:collapse;font-size:8.2pt;margin-bottom:3mm}
+  .sobs-table{width:100%;border-collapse:collapse;font-size:12pt;margin-bottom:3mm}
   .sobs-table th{border:1px solid #000;padding:1.5mm 2mm;background:#d9d9d9;font-weight:bold;text-align:center}
   .sobs-table td{border:1px solid #000;padding:1.5mm 2mm;vertical-align:top}
 
   /* SLD */
   .sld-box{border:1.5px solid #000;padding:3mm;margin-bottom:3mm}
-  .sld-table{width:100%;border-collapse:collapse;font-size:7.6pt;margin-bottom:2mm}
+  .sld-table{width:100%;border-collapse:collapse;font-size:11pt;margin-bottom:2mm}
   .sld-table th{border:1px solid #000;padding:1mm 1.5mm;background:#d9d9d9;font-weight:bold;text-align:center}
   .sld-table td{border:1px solid #000;padding:1mm 1.5mm;text-align:left;vertical-align:middle}
   .sld-table .c{text-align:center}
 
   /* Signatures */
-  .sig-row{display:flex;justify-content:space-between;margin-top:6mm;font-size:8.5pt}
+  .sig-row{display:flex;justify-content:space-between;margin-top:6mm;font-size:12pt}
   .sig-block{text-align:center;min-width:60mm}
   .sig-block .sig-line{border-top:1px solid #000;margin-top:8mm;padding-top:1mm;line-height:1.6}
 
   /* Page footer */
-  .page-footer{position:absolute;bottom:5mm;left:12mm;right:12mm;display:flex;justify-content:space-between;font-size:7pt;border-top:1px solid #ccc;padding-top:1.5mm;color:#555}
+  .page-footer{position:absolute;bottom:5mm;left:12mm;right:12mm;display:flex;justify-content:space-between;font-size:10pt;border-top:1px solid #ccc;padding-top:1.5mm;color:#555}
 `;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
