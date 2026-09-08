@@ -197,14 +197,14 @@ const CSS = `
   @page{size:A4;margin:0}
   @media print{
     html,body{width:210mm}
-    .page{page-break-after:always;margin:0!important;box-shadow:none!important}
+    .page{page-break-after:always;margin:0!important;box-shadow:none!important;min-height:0!important;padding-bottom:14mm!important}
     .no-break{page-break-inside:avoid}
     .toolbar{display:none!important}
   }
   .page{
     width:210mm;min-height:297mm;
     margin:0 auto 4mm;
-    padding:10mm 12mm 10mm;
+    padding:10mm 12mm 16mm;
     background:#fff;
     position:relative;
     box-shadow:0 0 8px rgba(0,0,0,.12);
@@ -243,9 +243,9 @@ const CSS = `
   .check-table th{border:1px solid #000;padding:1.5mm 2mm;background:#d9d9d9;font-weight:bold;text-align:center;vertical-align:middle}
   .check-table td{border:1px solid #000;padding:1.5mm 2mm;vertical-align:top}
   .check-table .sno{width:6%;text-align:center;vertical-align:top}
-  .check-table .desc{width:52%}
+  .check-table .desc{width:54%}
   .check-table .det{width:10%;text-align:center;vertical-align:middle}
-  .check-table .rem{width:22%;text-align:center;vertical-align:middle}
+  .check-table .rem{width:30%;text-align:center;vertical-align:middle}
   .check-table .sub-hdr{background:#f0f0f0;font-weight:bold;font-size:8.2pt;text-align:center}
 
   /* Data tables */
@@ -386,7 +386,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
         <PF d={d} />
       </div>
 
-      {/* ══ PAGE 2 — ANNEXURE-I (Branch info + Checklist part 1) ════════════ */}
+      {/* ══ PAGE 2 — ANNEXURE-I (Branch info + full Checklist) ══════════════ */}
       <div className="page">
         <div className="section-title">ANNEXURE-I<br />FORMAT FOR ELECTRICAL SAFETY AUDIT</div>
 
@@ -408,42 +408,12 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
             </tr>
           </thead>
           <tbody>
-            {d.checklist.slice(0, 18).map((row, i) => {
+            {d.checklist.map((row, i) => {
               if (row.type === "header") {
-                return <tr key={i}><td colSpan={4} className="sub-hdr">{row.label}</td></tr>;
+                return <tr key={i} className="no-break"><td colSpan={4} className="sub-hdr">{row.label}</td></tr>;
               }
               return (
-                <tr key={i}>
-                  <td className="sno">{row.sr}</td>
-                  <td className="desc">{row.item}</td>
-                  <td className="det" style={{ fontWeight: "bold", color: row.result === "YES" ? "#276221" : row.result === "NO" ? "#9c0006" : "#000" }}>{row.result}</td>
-                  <td className="rem">{row.remark}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <PF d={d} />
-      </div>
-
-      {/* ══ PAGE 3 — CHECKLIST CONTINUED ════════════════════════════════════ */}
-      <div className="page">
-        <table className="check-table">
-          <thead>
-            <tr>
-              <th className="sno">Sr. No.</th>
-              <th className="desc">Description</th>
-              <th className="det">Details</th>
-              <th className="rem">Remarks</th>
-            </tr>
-          </thead>
-          <tbody>
-            {d.checklist.slice(18).map((row, i) => {
-              if (row.type === "header") {
-                return <tr key={i}><td colSpan={4} className="sub-hdr">{row.label}</td></tr>;
-              }
-              return (
-                <tr key={i}>
+                <tr key={i} className="no-break">
                   <td className="sno">{row.sr}</td>
                   <td className="desc">{row.item}</td>
                   <td className="det" style={{ fontWeight: "bold", color: row.result === "YES" ? "#276221" : row.result === "NO" ? "#9c0006" : "#000" }}>{row.result}</td>
