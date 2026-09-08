@@ -416,7 +416,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 1 — COVER ══════════════════════════════════════════════════ */}
-      <div className="rp" style={{ padding: "6mm", height: "297mm", minHeight: "297mm", boxSizing: "border-box" }}>
+      <div className="rp" style={{ padding: "3mm", height: "297mm", minHeight: "297mm", boxSizing: "border-box" }}>
         <div className="cover-frame-outer">
           <div className="cover-frame-inner">
 
