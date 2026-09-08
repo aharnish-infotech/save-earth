@@ -196,8 +196,8 @@ const CSS = `
   html,body{background:#fff;font-family:'Times New Roman',Times,serif;font-size:9pt;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{size:A4;margin:0}
   @media print{
-    html,body{width:210mm!important;max-width:210mm!important;margin:0!important;padding:0!important;overflow:visible!important}
-    .rp{page-break-after:always;margin:0!important;padding-right:12mm!important;box-shadow:none!important;min-height:0!important;padding-bottom:14mm!important}
+    html,body{padding:0!important;margin:0!important;width:100%!important;background:#fff!important}
+    .rp{page-break-after:always;width:100%!important;margin:0!important;padding:10mm 12mm 14mm!important;box-shadow:none!important;min-height:0!important}
     .rp.cover-page{min-height:297mm!important}
     .no-break{page-break-inside:avoid}
     .toolbar{display:none!important}
