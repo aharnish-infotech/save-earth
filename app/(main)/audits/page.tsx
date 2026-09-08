@@ -324,10 +324,10 @@ export default function AllAuditsPage() {
                             style={{ width:30, height:30, borderRadius:7, border:"1px solid #dbeafe", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#2563eb", textDecoration:"none" }}>
                             <i className="ri-edit-line" style={{ fontSize:14 }}/>
                           </Link>
-                          <button title="Print" onClick={() => window.print()}
-                            style={{ width:30, height:30, borderRadius:7, border:"1px solid #e5e7eb", background:"#f9fafb", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#6b7280" }}>
+                          <Link href={`/report/${a.id}`} target="_blank" rel="noopener noreferrer" title="View / Print Report"
+                            style={{ width:30, height:30, borderRadius:7, border:"1px solid #fde68a", background:"#fffbeb", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#d97706", textDecoration:"none" }}>
                             <i className="ri-printer-line" style={{ fontSize:14 }}/>
-                          </button>
+                          </Link>
                           <button title="Delete"
                             style={{ width:30, height:30, borderRadius:7, border:"1px solid #fee2e2", background:"#fff5f5", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#dc2626" }}>
                             <i className="ri-delete-bin-line" style={{ fontSize:14 }}/>
