@@ -192,8 +192,9 @@ const AUDIT_DATA: Record<string, AuditReport> = { "AU-2024-131": SAMPLE };
 
 // ── CSS — exact PALDI style ───────────────────────────────────────────────────
 const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{background:#fff;font-family:'Times New Roman',Times,serif;font-size:13pt;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{background:#fff;font-family:'Inter',sans-serif;font-size:13pt;font-weight:400;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{size:A4;margin:0}
   @media print{
     html,body{padding:0!important;margin:0!important;width:100%!important;background:#fff!important}
