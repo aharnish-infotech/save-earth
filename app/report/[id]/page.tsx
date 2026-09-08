@@ -230,46 +230,29 @@ const AUDIT_DATA: Record<string, AuditReport> = {
 // ── CSS — exact PALDI style ───────────────────────────────────────────────────
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
   @page { size: A4; margin: 0; }
 
-  /* ── Scope everything under #rpt — targeted overrides only ── */
+  /* Only override what the Vyzor theme actually breaks — font & background */
   #rpt {
-    display: block;
+    display: block !important;
     font-family: 'Inter', Arial, sans-serif !important;
-    font-size: 13pt;
-    font-weight: 400;
-    color: #000;
+    font-size: 13pt !important;
+    font-weight: 400 !important;
+    color: #000 !important;
     background: #f1f5f9;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     padding: 10mm 0;
   }
-
-  /* Reset only what the theme breaks — no all:unset */
-  #rpt div, #rpt table, #rpt tr, #rpt td, #rpt th,
-  #rpt p, #rpt span, #rpt ol, #rpt li, #rpt hr {
-    font-family: 'Inter', Arial, sans-serif;
-    box-sizing: border-box;
-    margin: 0; padding: 0;
-    border: none;
-    background: transparent;
-    color: inherit;
-    font-size: inherit;
-    font-weight: inherit;
-    line-height: inherit;
-    text-align: left;
-    text-decoration: none;
-    list-style: none;
-    display: revert;
-  }
-  #rpt strong { font-weight: 700; }
-  #rpt ol { list-style: decimal; padding-left: 4mm; }
+  #rpt * { font-family: 'Inter', Arial, sans-serif !important; box-sizing: border-box; }
+  #rpt strong, #rpt b { font-weight: 700 !important; }
+  #rpt ol { list-style: decimal !important; padding-left: 4mm !important; }
+  #rpt ol li { display: list-item !important; }
 
   @media print {
     html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
     #rpt { background: #fff !important; padding: 0 !important; }
-    #rpt .rp { page-break-after: always; width: 210mm !important; margin: 0 !important; box-shadow: none !important; }
+    #rpt .rp { page-break-after: always !important; width: 210mm !important; margin: 0 !important; box-shadow: none !important; }
     .toolbar { display: none !important; }
     .no-break { page-break-inside: avoid; }
   }
@@ -281,7 +264,7 @@ const CSS = `
     min-height: 297mm;
     margin: 0 auto 6mm;
     padding: 10mm 12mm 16mm;
-    background: #fff;
+    background: #fff !important;
     position: relative;
     box-shadow: 0 0 8px rgba(0,0,0,.12);
   }
