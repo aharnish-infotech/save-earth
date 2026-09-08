@@ -231,34 +231,51 @@ const AUDIT_DATA: Record<string, AuditReport> = {
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-  /* ── Hard reset scoped to report — isolates from theme globals ── */
-  #rpt, #rpt * {
-    all: unset;
-    box-sizing: border-box;
-  }
+  @page { size: A4; margin: 0; }
+
+  /* ── Scope everything under #rpt — targeted overrides only ── */
   #rpt {
     display: block;
     font-family: 'Inter', Arial, sans-serif !important;
     font-size: 13pt;
     font-weight: 400;
     color: #000;
-    background: #fff;
+    background: #f1f5f9;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    padding: 10mm 0;
   }
 
-  @page { size: A4; margin: 0; }
+  /* Reset only what the theme breaks — no all:unset */
+  #rpt div, #rpt table, #rpt tr, #rpt td, #rpt th,
+  #rpt p, #rpt span, #rpt ol, #rpt li, #rpt hr {
+    font-family: 'Inter', Arial, sans-serif;
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    text-align: left;
+    text-decoration: none;
+    list-style: none;
+    display: revert;
+  }
+  #rpt strong { font-weight: 700; }
+  #rpt ol { list-style: decimal; padding-left: 4mm; }
 
   @media print {
     html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-    #rpt { background: #fff !important; }
-    .rp { page-break-after: always; width: 210mm !important; margin: 0 !important; box-shadow: none !important; }
+    #rpt { background: #fff !important; padding: 0 !important; }
+    #rpt .rp { page-break-after: always; width: 210mm !important; margin: 0 !important; box-shadow: none !important; }
     .toolbar { display: none !important; }
     .no-break { page-break-inside: avoid; }
   }
 
   /* ── Pages ── */
-  .rp {
+  #rpt .rp {
     display: block;
     width: 210mm;
     min-height: 297mm;
@@ -404,8 +421,9 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
   }, [d.branchName, d.branchCode]);
 
   return (
-    <div id="rpt">
+    <>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div id="rpt">
 
       {/* Toolbar */}
       <div className="toolbar">
@@ -803,6 +821,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
         <PF d={d} />
       </div>
 
-    </div>
+      </div>
+    </>
   );
 }
