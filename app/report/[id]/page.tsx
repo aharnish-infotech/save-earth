@@ -263,7 +263,7 @@ const CSS = `
     width: 210mm;
     min-height: 297mm;
     margin: 0 auto 6mm;
-    padding: 10mm 15mm 16mm 12mm;
+    padding: 10mm 12mm 16mm;
     background: #fff !important;
     position: relative;
     box-sizing: border-box;
