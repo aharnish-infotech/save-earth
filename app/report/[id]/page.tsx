@@ -263,7 +263,7 @@ const CSS = `
     width: 210mm;
     min-height: 297mm;
     margin: 0 auto 6mm;
-    padding: 10mm 12mm 16mm;
+    padding: 0;
     background: #fff !important;
     position: relative;
     box-sizing: border-box;
@@ -277,7 +277,7 @@ const CSS = `
   .btn-c{background:#374151}
 
   /* ── Cover (exact reference layout) ─────────────────────────────────── */
-  .cover-frame-outer{width:100%;height:calc(297mm - 4mm);border:3px solid #000;padding:2.5mm;box-sizing:border-box;display:block}
+  .cover-frame-outer{width:100%;height:297mm;border:3px solid #000;padding:2.5mm;box-sizing:border-box;display:block}
   .cover-frame-inner{width:100%;height:100%;border:1px solid #000;display:flex;flex-direction:row;position:relative;box-sizing:border-box;overflow:hidden}
   .cover-divider{position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:#c0392b;transform:translateX(-50%)}
   .cover-left{width:50%;padding:14mm 10mm 10mm 12mm;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center}
@@ -416,7 +416,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 1 — COVER ══════════════════════════════════════════════════ */}
-      <div className="rp" style={{ padding: "2mm", height: "297mm", minHeight: "297mm", boxSizing: "border-box" }}>
+      <div className="rp" style={{ padding: "0", height: "297mm", minHeight: "297mm", boxSizing: "border-box" }}>
         <div className="cover-frame-outer">
           <div className="cover-frame-inner">
 
