@@ -240,8 +240,9 @@ body{padding:18px 0}
 `;
 
 // ── Page Component ─────────────────────────────────────────────────────────────
-export default function AuditReportPage({ params }: { params: { id: string } }) {
-  const d = AUDIT_DATA[params.id] ?? FALLBACK;
+export default function AuditReportPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
+  const d = AUDIT_DATA[id] ?? FALLBACK;
 
   const riskClass = d.riskLevel === "HIGH" ? "risk-high" : d.riskLevel === "MEDIUM" ? "risk-medium" : "risk-low";
 
