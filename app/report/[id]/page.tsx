@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 
 // ── Audit data shape (will come from API/DB in production) ────────────────────
 const AUDIT_DATA: Record<string, AuditReport> = {
@@ -183,10 +183,10 @@ const PhotoPlaceholder = ({ label }: { label: string }) => (
 const CSS = `
 :root{--brand:#078da7;--brand-dark:#075d70;--brand-light:#eaf5f7;--ink:#17252d;--line:#cdd9dd;--success:#17845b}
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:#eef2f4;color:var(--ink);font-family:Arial,Helvetica,sans-serif;font-size:11px}
-body{padding:18px 0}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--ink)}
+.report-wrap{background:#eef2f4;min-height:100vh;padding:24px 0}
 .print-toolbar{position:fixed;right:22px;top:18px;z-index:9999;display:flex;gap:8px}
-.print-toolbar button{border:0;border-radius:8px;padding:11px 18px;color:#fff;font-size:13px;font-weight:800;cursor:pointer}
+.print-toolbar button{border:0;border-radius:8px;padding:11px 20px;color:#fff;font-size:14px;font-weight:800;cursor:pointer}
 .btn-print{background:linear-gradient(135deg,var(--brand-dark),var(--brand));box-shadow:0 6px 18px rgba(0,65,80,.2)}
 .btn-close{background:#374151}
 .report{width:210mm;margin:auto;background:#fff;box-shadow:0 8px 35px rgba(20,50,60,.12)}
@@ -194,48 +194,47 @@ body{padding:18px 0}
 .cover{min-height:257mm;break-after:page;page-break-after:always;padding:0;display:flex;align-items:stretch}
 .cover .cover-box{width:100%;min-height:257mm;border:1px solid #17272e;position:relative;background:linear-gradient(145deg,#fff 0%,#fbfdfe 100%)}
 .cover .cover-box:before{content:"";position:absolute;left:0;top:0;width:4px;height:100%;background:linear-gradient(#ffd35a,var(--brand),#ffd35a)}
-.cover .cover-left{position:absolute;left:11mm;top:126mm;line-height:1.9;border-left:3px solid var(--brand);padding-left:7mm;width:78mm}
-.cover .cover-right{position:absolute;left:108mm;top:72mm;line-height:1.65;width:82mm}
+.cover .cover-left{position:absolute;left:11mm;top:126mm;line-height:2;border-left:3px solid var(--brand);padding-left:7mm;width:78mm;font-size:13px}
+.cover .cover-right{position:absolute;left:108mm;top:72mm;line-height:1.8;width:82mm;font-size:13px}
 .cover .divider{position:absolute;left:101mm;top:20mm;height:215mm;border-left:1px solid #26343a}
-.cover .cover-right:before{content:"AUDIT CERTIFICATE";display:block;font-size:8.5px;letter-spacing:2px;color:var(--brand);font-weight:800;margin-bottom:5mm}
+.cover .cover-right:before{content:"AUDIT CERTIFICATE";display:block;font-size:9px;letter-spacing:2px;color:var(--brand);font-weight:800;margin-bottom:5mm}
 .label{color:var(--brand);font-weight:800}
 .ok{color:var(--success);font-weight:800}
 .notok{color:#dc2626;font-weight:800}
-.report-flow-block{position:relative;width:180mm;max-width:100%;padding-top:2mm;margin:0 auto 8mm;break-inside:auto;page-break-inside:auto}
-.report-flow-block:not(.block-1){break-before:page;page-break-before:always;padding-top:2mm}
+.report-flow-block{position:relative;width:186mm;max-width:100%;padding-top:3mm;margin:0 auto 8mm;break-inside:auto;page-break-inside:auto}
+.report-flow-block:not(.block-1){break-before:page;page-break-before:always;padding-top:3mm}
 .report-flow-block:after{content:"";display:block;position:absolute;left:-4mm;right:-4mm;top:0;bottom:0;border-left:1px solid #edf2f3;border-right:1px solid #edf2f3;pointer-events:none;z-index:0}
 .report-flow-block > *{position:relative;z-index:1}
-.section-title{font-size:13.5px;font-weight:900;text-transform:uppercase;text-align:left;color:#fff;background:linear-gradient(90deg,var(--brand-dark),var(--brand));padding:9px 12px;margin:0 0 4.5mm;border-radius:4px;letter-spacing:.55px;box-shadow:0 2px 7px rgba(0,75,90,.13);break-after:avoid-page;page-break-after:avoid}
-.section-title.small{font-size:10.5px;padding:7px 10px}
-.report-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;margin:0 0 4mm;border:1px solid var(--line);border-radius:4px;overflow:hidden;break-inside:auto;page-break-inside:auto}
+.section-title{font-size:13px;font-weight:900;text-transform:uppercase;text-align:left;color:#fff;background:linear-gradient(90deg,var(--brand-dark),var(--brand));padding:9px 14px;margin:0 0 4mm;border-radius:4px;letter-spacing:.6px;box-shadow:0 2px 7px rgba(0,75,90,.13);break-after:avoid-page;page-break-after:avoid}
+.section-title.small{font-size:11px;padding:7px 10px}
+.report-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;margin:0 0 5mm;border:1px solid var(--line);border-radius:4px;overflow:hidden;break-inside:auto;page-break-inside:auto}
 .report-table thead{display:table-header-group}
 .report-table tr{break-inside:avoid;page-break-inside:avoid}
-.report-table th,.report-table td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5.5px 6px;vertical-align:top;line-height:1.3;word-wrap:break-word;overflow-wrap:anywhere}
-.report-table th{font-weight:900;text-align:left;color:#164f60;background:var(--brand-light);font-size:10.2px}
-.report-table td{font-size:10.2px}
+.report-table th,.report-table td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 9px;vertical-align:middle;line-height:1.45;word-wrap:break-word;overflow-wrap:anywhere;font-size:12px}
+.report-table th{font-weight:900;text-align:left;color:#164f60;background:var(--brand-light);font-size:11.5px}
 .report-table tr:last-child td{border-bottom:0}
 .report-table th:last-child,.report-table td:last-child{border-right:0}
-.report-table tbody tr:nth-child(even) td{background:#fbfcfd}
-.report-table td:first-child{font-weight:600}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin-bottom:4mm}
+.report-table tbody tr:nth-child(even) td{background:#f8fbfc}
+.report-table td:first-child{font-weight:700;color:#17252d}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-bottom:5mm}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4mm;margin-bottom:4mm}
-.risk-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:800;font-size:10px}
+.risk-badge{display:inline-block;padding:3px 11px;border-radius:12px;font-weight:800;font-size:12px}
 .risk-high{background:#fee2e2;color:#dc2626}
 .risk-medium{background:#fef9c3;color:#ca8a04}
 .risk-low{background:#dcfce7;color:#16a34a}
 .prio-high{color:#dc2626;font-weight:800}
 .prio-medium{color:#ca8a04;font-weight:800}
-.cover-watermark{position:absolute;right:8mm;bottom:12mm;font-size:7px;color:#9ca3af;letter-spacing:1px;text-transform:uppercase}
-.footer-line{margin-top:6mm;border-top:1px solid #cdd9dd;padding-top:4mm;font-size:8.5px;color:#9ca3af;display:flex;justify-content:space-between}
+.cover-watermark{position:absolute;right:8mm;bottom:12mm;font-size:8px;color:#9ca3af;letter-spacing:1px;text-transform:uppercase}
+.footer-line{margin-top:6mm;border-top:1px solid #cdd9dd;padding-top:4mm;font-size:10px;color:#9ca3af;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
 @page{size:A4;margin:14mm 10mm 13mm 10mm}
 .print-header,.print-footer{display:none}
 @media print{
-  html,body{background:#fff;padding:0;margin:0}
+  html,body,.report-wrap{background:#fff;padding:0;margin:0}
   .print-toolbar{display:none}
   .report{width:auto;margin:0;box-shadow:none}
   .sheet{width:auto;min-height:0;padding:0}
-  .report-flow-block{width:auto;margin:0 0 0;padding-top:1mm}
-  .report-flow-block:not(.block-1){break-before:page;page-break-before:always;padding-top:1mm}
+  .report-flow-block{width:auto;margin:0;padding-top:2mm}
+  .report-flow-block:not(.block-1){break-before:page;page-break-before:always;padding-top:2mm}
   .cover{min-height:0;padding:0}
   .print-header{display:flex;position:fixed;z-index:9999;left:0;right:0;top:0;height:10mm;align-items:center;justify-content:center;border-bottom:1px solid #dce5e8;background:#fff;font-weight:800;font-size:10px;color:var(--brand-dark)}
   .print-footer{display:block;position:fixed;z-index:9999;left:0;right:0;bottom:0;height:9mm;border-top:1px solid #dce5e8;background:#fff;font-size:7.5px;color:#9ca3af;padding-top:2mm;text-align:center}
@@ -247,28 +246,27 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
   const { id } = React.use(params);
   const d = AUDIT_DATA[id] ?? FALLBACK;
 
+  useEffect(() => {
+    document.title = `Electrical Audit Report — ${d.branchName} | ${d.bank}`;
+  }, [d.branchName, d.bank]);
+
   const riskClass = d.riskLevel === "HIGH" ? "risk-high" : d.riskLevel === "MEDIUM" ? "risk-medium" : "risk-low";
 
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <title>Electrical Audit Report — {d.branchName} | {d.bank}</title>
-        <style dangerouslySetInnerHTML={{ __html: CSS }}/>
-      </head>
-      <body>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: CSS }}/>
 
-        {/* Print header/footer (print only) */}
-        <div className="print-header">ORBIT Compliance ERP — Electrical Audit Report — {d.bank} · {d.branchName}</div>
-        <div className="print-footer">Save Earth Energy Pvt. Ltd. | Audit ID: {d.auditId} | Generated by ORBIT Compliance ERP | Confidential</div>
+      {/* Print header/footer (print only) */}
+      <div className="print-header">ORBIT Compliance ERP — Electrical Audit Report — {d.bank} · {d.branchName}</div>
+      <div className="print-footer">Save Earth Energy Pvt. Ltd. | Audit ID: {d.auditId} | Generated by ORBIT Compliance ERP | Confidential</div>
 
-        {/* Toolbar */}
-        <div className="print-toolbar">
-          <button className="btn-print" onClick={() => window.print()}>🖨 Print / Download PDF</button>
-          <button className="btn-close" onClick={() => window.close()}>✕ Close</button>
-        </div>
+      {/* Toolbar */}
+      <div className="print-toolbar">
+        <button className="btn-print" onClick={() => window.print()}>🖨 Print / Download PDF</button>
+        <button className="btn-close" onClick={() => window.close()}>✕ Close</button>
+      </div>
 
+      <div className="report-wrap">
         <div className="report">
 
           {/* ══ COVER PAGE ════════════════════════════════════════════════════ */}
@@ -490,20 +488,20 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
           </div>
 
           {/* ══ FOOTER ═══════════════════════════════════════════════════════ */}
-          <div style={{ width: "180mm", margin: "0 auto", padding: "4mm 0 8mm" }}>
+          <div style={{ width: "186mm", margin: "0 auto", padding: "4mm 0 8mm" }}>
             <div className="footer-line">
               <span>Audit ID: <strong>{d.auditId}</strong></span>
               <span>Branch: <strong>{d.branchName}</strong></span>
               <span>Audited by: <strong>{d.auditorName}</strong></span>
               <span>Date: <strong>{d.auditDate}</strong></span>
             </div>
-            <div style={{ fontSize: 8, color: "#b0bfc5", textAlign: "center", marginTop: 3 }}>
+            <div style={{ fontSize: 9, color: "#b0bfc5", textAlign: "center", marginTop: 4 }}>
               This report is generated by ORBIT Compliance ERP — Save Earth Energy Pvt. Ltd. | Confidential — For Authorised Use Only
             </div>
           </div>
 
         </div>
-      </body>
-    </html>
+      </div>
+    </>
   );
 }
