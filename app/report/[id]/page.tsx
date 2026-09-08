@@ -188,28 +188,85 @@ const SAMPLE: AuditReport = {
   ],
 };
 
-const AUDIT_DATA: Record<string, AuditReport> = { "AU-2024-131": SAMPLE };
+const PALDI: AuditReport = {
+  auditId: "AU-2024-132", auditDate: "10/11/2025", auditorName: "Save Earth Energy",
+  bank: "SBI", branchName: "PALDI", branchCode: "5306", ifsc: "SBIN0005306",
+  address: "OPP, KOCHRAB, ASHRAM, NR. BONY TRAVELS, PALDI AHMEDABAD, GUJRAT PINCODE - 380006",
+  city: "Ahmedabad", district: "Ahmedabad", state: "Gujarat", micr: "",
+  circle: "AO- AHMEDABAD", region: "RBO-3 AHMEDABAD", rbo: "RBO-3 AHMEDABAD", lho: "LHO- AHMEDABAD",
+  riskLevel: "MEDIUM", htlt: "LT", score: 46.1,
+  beeReg: "BEE EA-613", elecSup: "Elec. Sup. No. 3096",
+  bmName: "Branch Manager",
+  sanctionedLoad: "21.780 KW", connectedLoad: "15.795 KW",
+  avgBill: "Rs. 20–40 K / Month",
+  acTonnage: "6.5 TR", acAge: "8 Years", area: "Approx. 2000 Sq. Feet",
+  infoRows: [
+    ["Branch Code and Name", "5306 – PALDI"],
+    ["Address", "OPP, KOCHRAB, ASHRAM, NR. BONY TRAVELS, PALDI AHMEDABAD, GUJARAT PINCODE – 380006"],
+    ["BM PF No. and Name", "BRANCH MANAGER"],
+    ["Sanctioned load", "21.780 KW"],
+    ["Connected load", "15.795 KW"],
+    ["Average Monthly amount of energy bill (Approx.)", "Rs- 20-40 K /- per Month"],
+    ["Total tonnage of Air Conditioners in branch", "6.5 TR (Tonnage of Refrigeration)   How many years old?: 8 Years"],
+    ["Area of the Branch", "Approx. 2000 Sq. Feet"],
+  ],
+  checklist: SAMPLE.checklist,
+  upsDetails: SAMPLE.upsDetails,
+  upsParams: SAMPLE.upsParams,
+  meterDetails: SAMPLE.meterDetails,
+  electricalParams: SAMPLE.electricalParams,
+  dgSet: SAMPLE.dgSet,
+  loadSheet: SAMPLE.loadSheet,
+  loadTotals: { totalLoad: "15,795 W (15.795 KW)", totalTonnage: "6.5 TR" },
+  riskObservations: SAMPLE.riskObservations,
+  observations: SAMPLE.observations,
+};
+
+const AUDIT_DATA: Record<string, AuditReport> = {
+  "AU-2024-131": SAMPLE,
+  "AU-2024-132": PALDI,
+};
 
 // ── CSS — exact PALDI style ───────────────────────────────────────────────────
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{background:#fff;font-family:'Inter',sans-serif;font-size:13pt;font-weight:400;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  @page{size:A4;margin:0}
-  @media print{
-    html,body{padding:0!important;margin:0!important;width:100%!important;background:#fff!important}
-    .rp{page-break-after:always;width:100%!important;margin:0!important;padding:10mm 12mm 14mm!important;box-shadow:none!important;min-height:0!important}
-    .rp.cover-page{min-height:297mm!important}
-    .no-break{page-break-inside:avoid}
-    .toolbar{display:none!important}
+
+  /* ── Hard reset scoped to report — isolates from theme globals ── */
+  #rpt, #rpt * {
+    all: unset;
+    box-sizing: border-box;
   }
-  .rp{
-    width:210mm;min-height:297mm;
-    margin:0 auto 4mm;
-    padding:10mm 12mm 16mm;
-    background:#fff;
-    position:relative;
-    box-shadow:0 0 8px rgba(0,0,0,.12);
+  #rpt {
+    display: block;
+    font-family: 'Inter', Arial, sans-serif !important;
+    font-size: 13pt;
+    font-weight: 400;
+    color: #000;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page { size: A4; margin: 0; }
+
+  @media print {
+    html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    #rpt { background: #fff !important; }
+    .rp { page-break-after: always; width: 210mm !important; margin: 0 !important; box-shadow: none !important; }
+    .toolbar { display: none !important; }
+    .no-break { page-break-inside: avoid; }
+  }
+
+  /* ── Pages ── */
+  .rp {
+    display: block;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 6mm;
+    padding: 10mm 12mm 16mm;
+    background: #fff;
+    position: relative;
+    box-shadow: 0 0 8px rgba(0,0,0,.12);
   }
 
   /* Toolbar */
@@ -218,17 +275,27 @@ const CSS = `
   .btn-p{background:#075d70}
   .btn-c{background:#374151}
 
-  /* Cover */
-  .cover{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;padding:14mm 16mm}
-  .cover .report-title{font-size:26pt;font-weight:bold;text-decoration:underline;margin-bottom:3mm}
-  .cover .year{font-size:21pt;font-weight:bold;margin-bottom:6mm}
-  .cover .circle-logo{width:38mm;height:38mm;border-radius:50%;border:3px solid #000;display:flex;align-items:center;justify-content:center;margin:0 auto 6mm;overflow:hidden}
-  .cover .circle-logo svg{width:34mm;height:34mm}
-  .cover .rbo-info{font-size:15pt;font-weight:bold;margin-bottom:6mm;line-height:1.6}
-  .cover .branch-box{border:2px solid #000;padding:5mm 10mm;margin:4mm auto;width:100%;text-align:left;font-size:15pt;line-height:1.9}
-  .cover .branch-box .label{font-weight:bold}
-  .cover .auditor-box{margin-top:8mm;border-top:1px solid #000;padding-top:5mm;font-size:13pt;text-align:center;line-height:1.7}
-  .cover .auditor-box .co-name{font-weight:bold;font-size:15pt}
+  /* ── Cover (exact reference layout) ─────────────────────────────────── */
+  .cover-frame-outer{width:100%;height:calc(297mm - 12mm);border:3px solid #000;padding:2.5mm;box-sizing:border-box;display:block}
+  .cover-frame-inner{width:100%;height:100%;border:1px solid #000;display:flex;flex-direction:row;position:relative;box-sizing:border-box;overflow:hidden}
+  .cover-divider{position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:#c0392b;transform:translateX(-50%)}
+  .cover-left{width:50%;padding:14mm 10mm 10mm 12mm;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center}
+  .sbi-logo-wrap{width:68mm;background:#1a237e;border-radius:2px;padding:4mm 6mm;margin-bottom:7mm;display:flex;align-items:center;justify-content:center;gap:4mm}
+  .sbi-text{color:#fff;font-size:22pt;font-weight:700;letter-spacing:3px;font-family:'Inter',sans-serif}
+  .cover-report-title{font-size:14pt;font-weight:700;color:#000;margin-bottom:2mm;line-height:1.3;text-align:center}
+  .cover-year{font-size:13pt;font-weight:700;color:#000;margin-bottom:12mm}
+  .cover-rbo{font-size:11pt;font-weight:700;color:#000;line-height:2.4;text-align:center}
+  .cover-right{width:50%;padding:20mm 12mm 10mm 16mm;display:flex;flex-direction:column;justify-content:space-between}
+  .cover-field{font-size:12pt;font-weight:700;color:#1a237e;margin-bottom:6mm;line-height:1.5}
+  .cover-address{font-size:12pt;font-weight:700;color:#1a237e;line-height:1.6;margin-bottom:0}
+  .cover-auditor{margin-top:auto;padding-top:6mm}
+  .cover-audited-by{font-style:italic;font-size:10pt;color:#2e7d32;margin-bottom:2mm}
+  .cover-co-name{font-size:11pt;font-weight:700;font-style:italic;color:#2e7d32;line-height:1.4;margin-bottom:3mm}
+  .cover-co-sub{font-size:8pt;color:#333;line-height:1.6;margin-bottom:2mm}
+  .cover-dashes{border:none;border-top:1px dashed #999;margin:2.5mm 0}
+  .cover-co-addr{font-size:8pt;color:#333;line-height:1.7}
+  .cover-bottom{position:absolute;bottom:8mm;right:12mm;display:flex;align-items:flex-end;gap:4mm}
+  .cover-stamp{width:20mm;height:20mm;border-radius:50%;border:2px solid #2e7d32;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#2e7d32;text-align:center;font-weight:700;line-height:1.4;padding:2mm}
 
   /* Section headers */
   .section-title{font-size:16pt;font-weight:bold;text-align:center;text-decoration:underline;margin-bottom:4mm}
@@ -337,7 +404,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
   }, [d.branchName, d.branchCode]);
 
   return (
-    <>
+    <div id="rpt">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       {/* Toolbar */}
@@ -347,45 +414,77 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 1 — COVER ══════════════════════════════════════════════════ */}
-      <div className="rp cover-page">
-        <div className="cover">
-          <div className="report-title">ELECTRICAL AUDIT REPORT</div>
-          <div className="year">2024–25</div>
-          <div className="circle-logo"><SaveEarthLogo /></div>
-          <div className="rbo-info">
-            {d.rbo}; &nbsp; {d.circle}; &nbsp; {d.lho}
-          </div>
-          <div className="branch-box">
-            <div><span className="label">BRANCH: -</span> &nbsp; {d.branchName}</div>
-            <div><span className="label">BRANCH CODE: -</span> &nbsp; {d.branchCode}</div>
-            <div><span className="label">IFSC: -</span> &nbsp; {d.ifsc}</div>
-            <div style={{ marginTop: "2mm" }}>
-              <span className="label">ADDRESS: -</span> &nbsp; {d.address}
+      <div className="rp" style={{ padding: "6mm", height: "297mm", minHeight: "297mm" }}>
+        <div className="cover-frame-outer">
+          <div className="cover-frame-inner">
+
+            {/* Red vertical divider */}
+            <div className="cover-divider" />
+
+            {/* LEFT COLUMN */}
+            <div className="cover-left">
+              {/* Bank logo */}
+              <div className="sbi-logo-wrap">
+                <svg width="30" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="16" cy="16" r="14" fill="#1a237e"/>
+                  <ellipse cx="16" cy="16" rx="9" ry="5" fill="none" stroke="#90caf9" strokeWidth="2.2"/>
+                  <circle cx="16" cy="16" r="4" fill="#fff"/>
+                </svg>
+                <span className="sbi-text">SBI</span>
+              </div>
+
+              <div className="cover-report-title">ELECTRICAL AUDIT REPORT</div>
+              <div className="cover-year">2025-26</div>
+
+              <div className="cover-rbo">
+                {d.rbo};<br />
+                {d.circle};<br />
+                {d.lho}
+              </div>
             </div>
-            <div style={{ marginTop: "2mm" }}>
-              <span className="label">RISK LEVEL: -</span> &nbsp;
-              <span style={{
-                background: d.riskLevel === "HIGH" ? "#ffc7ce" : d.riskLevel === "MEDIUM" ? "#ffeb9c" : "#c6efce",
-                padding: "0 8px", fontWeight: "bold",
-                color: d.riskLevel === "HIGH" ? "#9c0006" : d.riskLevel === "MEDIUM" ? "#7d5a00" : "#276221",
-              }}>{d.riskLevel}</span>
-              &nbsp;&nbsp;&nbsp;
-              <span className="label">AUDIT SCORE: -</span> &nbsp; {d.score} / 100
+
+            {/* RIGHT COLUMN */}
+            <div className="cover-right">
+              <div>
+                <div className="cover-field"><strong>BRANCH: -</strong> {d.branchName}</div>
+                <div className="cover-field"><strong>BRANCH CODE:-</strong> {d.branchCode}</div>
+                <div className="cover-address">
+                  <strong>ADDRESS: -</strong> OPP,<br />
+                  KOCHRAB, ASHRAM,<br />
+                  NR. BONY TRAVELS,<br />
+                  PALDI AHMEDABAD,<br />
+                  GUJRAT PINCODE - 380006
+                </div>
+              </div>
+
+              <div className="cover-auditor">
+                <div className="cover-audited-by">Audited by:</div>
+                <div className="cover-co-name">SAVE EARTH ENERGY PRIVATE<br />LIMITED</div>
+                <div className="cover-co-sub">
+                  BEE CERTIFIED ENERGY AUDITOR,<br />
+                  CONSULTANT FOR NRE, ELECTRICAL PROJECTS
+                </div>
+                <hr className="cover-dashes" />
+                <div className="cover-co-addr">
+                  B-66 Kasturba Nagar, Bhopal - 462023<br />
+                  PH: 0755-4206768,9644174447<br />
+                  E: savearthenergy@gmail.com
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="auditor-box">
-            <div style={{ marginBottom: "2mm" }}>Audited by:</div>
-            <div className="co-name">SAVE EARTH ENERGY PRIVATE LIMITED</div>
-            <div>BEE CERTIFIED ENERGY AUDITOR,</div>
-            <div>CONSULTANT FOR NRE, ELECTRICAL PROJECTS</div>
-            <div style={{ marginTop: "2mm", borderTop: "1px solid #888", width: "70%", marginLeft: "auto", marginRight: "auto", paddingTop: "2mm" }}>
-              B-66 Kasturba Nagar, Bhopal – 462023<br />
-              PH: 0755-4206768, 9644174447<br />
-              E: savearthenergy@gmail.com
+
+            {/* Signature + Stamp — bottom right */}
+            <div className="cover-bottom">
+              <svg width="48" height="48" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.7 }}>
+                <path d="M6,42 Q12,20 18,32 Q24,44 30,24 Q34,12 42,28 Q46,36 50,30" fill="none" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <div className="cover-stamp">
+                SAVE<br />EARTH<br />ENERGY<br />PVT. LTD.<br />BHOPAL
+              </div>
             </div>
+
           </div>
         </div>
-        <PF d={d} />
       </div>
 
       {/* ══ PAGE 2 — ANNEXURE-I (Branch info + full Checklist) ══════════════ */}
@@ -704,6 +803,6 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
         <PF d={d} />
       </div>
 
-    </>
+    </div>
   );
 }
