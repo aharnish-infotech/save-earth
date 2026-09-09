@@ -115,6 +115,61 @@ function ToggleRow({ label, desc, on, onChange }: Toggle & { onChange:(v:boolean
 
 // ── Content panels ─────────────────────────────────────────────────────────────
 function CompanyPanel() {
+  const [schemaOpen, setSchemaOpen] = useState(false);
+
+  const COMPANY_SQL = `CREATE TABLE companies (
+  id               UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_name     VARCHAR(255)  NOT NULL,
+  short_name       VARCHAR(100),
+  description      TEXT,
+  gstin            VARCHAR(20)   UNIQUE,
+  pan              VARCHAR(15)   UNIQUE,
+  cin              VARCHAR(25)   UNIQUE,
+  address          TEXT,
+  city             VARCHAR(100),
+  state            VARCHAR(100),
+  pincode          VARCHAR(10),
+  website          VARCHAR(255),
+  email            VARCHAR(150),
+  support_email    VARCHAR(150),
+  phone            VARCHAR(20),
+  created_at       TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+-- Indexes
+CREATE INDEX idx_companies_gstin ON companies (gstin);
+CREATE INDEX idx_companies_pan   ON companies (pan);`;
+
+  const SQL_KW   = /\b(CREATE|TABLE|PRIMARY|KEY|DEFAULT|NOT|NULL|UNIQUE|INDEX|ON|AND)\b/g;
+  const SQL_TYPE = /\b(UUID|VARCHAR|TEXT|TIMESTAMPTZ|BOOLEAN|INT)\b/g;
+  const SQL_FN   = /\b(gen_random_uuid|now)\b/g;
+  const SQL_CMT  = /(--[^\n]*)/g;
+
+  function colorizeSqlCompany(sql: string): React.ReactNode[] {
+    const parts: React.ReactNode[] = [];
+    let last = 0;
+    const tokens: { index: number; end: number; type: string; text: string }[] = [];
+    const scan = (rx: RegExp, type: string) => {
+      rx.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = rx.exec(sql)) !== null) tokens.push({ index: m.index, end: m.index + m[0].length, type, text: m[0] });
+    };
+    scan(SQL_CMT, "cmt"); scan(SQL_KW, "kw"); scan(SQL_TYPE, "type"); scan(SQL_FN, "fn");
+    tokens.sort((a, b) => a.index - b.index);
+    const seen = new Set<number>();
+    for (const t of tokens) {
+      if (seen.has(t.index)) continue;
+      seen.add(t.index);
+      if (t.index > last) parts.push(sql.slice(last, t.index));
+      const color = t.type === "kw" ? "#569cd6" : t.type === "type" ? "#4ec9b0" : t.type === "fn" ? "#dcdcaa" : "#6a9955";
+      parts.push(<span key={t.index} style={{ color }}>{t.text}</span>);
+      last = t.end;
+    }
+    if (last < sql.length) parts.push(sql.slice(last));
+    return parts;
+  }
+
   const [f, setF] = useState({
     companyName:"Save Earth Energy Services Pvt. Ltd.",
     shortName:"Save Earth Energy",
@@ -165,6 +220,28 @@ function CompanyPanel() {
           <div><label style={FS12}>Phone</label><input value={f.phone} onChange={F("phone")} style={INP}/></div>
         </div>
       </div>
+      {/* DB Schema card */}
+      <div style={{ ...CARD, padding:0, overflow:"hidden" }}>
+        <div onClick={() => setSchemaOpen(o => !o)}
+          style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", cursor:"pointer", userSelect:"none" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:30, height:30, borderRadius:8, background:"#faf5ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-database-2-line" style={{ fontSize:16, color:"#9333ea" }}/>
+            </div>
+            <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>Database Schema</span>
+            <span style={{ fontSize:10, color:"#9333ea", background:"#faf5ff", borderRadius:20, padding:"1px 8px", fontWeight:700 }}>companies</span>
+          </div>
+          <i className={`ri-arrow-${schemaOpen ? "up" : "down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
+        </div>
+        {schemaOpen && (
+          <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:260, overflowY:"auto" }}>
+            <pre style={{ margin:0, fontSize:11, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.6, whiteSpace:"pre", color:"#d4d4d4" }}>
+              {colorizeSqlCompany(COMPANY_SQL)}
+            </pre>
+          </div>
+        )}
+      </div>
+
       <div style={{ display:"flex", gap:10 }}>
         <button style={SB}><i className="ri-save-line"/>Save Company Profile</button>
       </div>
