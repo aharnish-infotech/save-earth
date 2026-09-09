@@ -119,6 +119,7 @@ function CompanyPanel() {
   const [f, setF] = useState({
     companyName:"Save Earth Energy Services Pvt. Ltd.",
     shortName:"Save Earth Energy",
+    description:"",
     gstin:"27AACES1234P1ZK",
     pan:"AACES1234P",
     cin:"U40100GJ2019PTC109876",
@@ -129,7 +130,7 @@ function CompanyPanel() {
     phone:"+91 79 4560 1234",
     supportEmail:"support@saveearth.in",
   });
-  const F = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({...f, [k]:e.target.value});
+  const F = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({...f, [k]:e.target.value});
   return (
     <div>
       <div style={CARD}>
@@ -141,6 +142,11 @@ function CompanyPanel() {
           <div><label style={FS12}>PAN Number</label><input value={f.pan} onChange={F("pan")} style={{ ...INP, fontFamily:"monospace" }}/></div>
           <div><label style={FS12}>CIN</label><input value={f.cin} onChange={F("cin")} style={{ ...INP, fontFamily:"monospace" }}/></div>
           <div><label style={FS12}>Website</label><input value={f.website} onChange={F("website")} style={INP}/></div>
+        </div>
+        <div style={{ marginTop:14 }}>
+          <label style={FS12}>Description</label>
+          <textarea value={f.description} onChange={F("description")} placeholder="Write a short description." rows={3}
+            style={{ ...INP, resize:"vertical", lineHeight:1.5, paddingTop:8, paddingBottom:8 }}/>
         </div>
       </div>
       <div style={CARD}>
