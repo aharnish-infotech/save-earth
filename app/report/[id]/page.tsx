@@ -490,7 +490,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 2 — ANNEXURE-I (Branch info + full Checklist) ══════════════ */}
-      <div className="rp">
+      <div className="rp" style={{ padding: "5mm" }}>
         <div className="section-title">ANNEXURE-I<br />FORMAT FOR ELECTRICAL SAFETY AUDIT</div>
 
         <table className="info-table">
@@ -530,7 +530,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 4 — UPS + ELECTRICAL PARAMETERS + METER ════════════════════ */}
-      <div className="rp">
+      <div className="rp" style={{ padding: "5mm" }}>
         <div className="sec-lbl">DETAILS OF UPS & BATTERIES IN THE BRANCH</div>
         <table className="data-table">
           <thead>
@@ -612,7 +612,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 5 — DG SET ══════════════════════════════════════════════════ */}
-      <div className="rp">
+      <div className="rp" style={{ padding: "5mm" }}>
         <div className="sec-lbl">DIESEL GENERATOR (DG) SET</div>
         <table className="dg-table">
           <thead>
@@ -640,7 +640,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 6 — BRANCH LOAD SHEET ══════════════════════════════════════ */}
-      <div className="rp">
+      <div className="rp" style={{ padding: "5mm" }}>
         <div className="section-title">BRANCH LOAD SHEET</div>
         <table className="load-table">
           <thead>
@@ -677,7 +677,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 7 — OVERVIEW OF AUDIT OBSERVATIONS ═════════════════════════ */}
-      <div className="rp">
+      <div className="rp" style={{ padding: "5mm" }}>
         <div className="section-title" style={{ fontSize: "10pt" }}>
           OVERVIEW OF AUDIT OBSERVATIONS AND PROPOSED RECTIFICATION WORKS IN PHOTOGRAPHIC FORM
         </div>
@@ -738,7 +738,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 8 — PHOTOGRAPHS ════════════════════════════════════════════ */}
-      <div className="rp">
+      <div className="rp" style={{ padding: "5mm" }}>
         <div className="section-title">PHOTOGRAPHS OF MAIN ELECTRIC PANELS, UPS ROOM & ELECTRIC WIRING</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5mm", marginBottom: "5mm" }}>
           {["Main Incoming Panel", "Distribution Board", "UPS Room", "Earthing Pit", "DG Set", "Cable Tray / Wiring"].map((label, i) => (
@@ -755,7 +755,7 @@ export default function AuditReportPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* ══ PAGE 9 — SPECIAL OBSERVATIONS + SLD ════════════════════════════ */}
-      <div className="rp">
+      <div className="rp" style={{ padding: "5mm" }}>
         <div className="section-title">SPECIAL OBSERVATIONS AND TENTATIVE ESTIMATED COST OF COMPLIANCE WORK</div>
         <table className="sobs-table">
           <thead>
