@@ -23,9 +23,7 @@ const SECTIONS = [
     items: [
       { key:"audit-general", label:"Audit Settings",       icon:"ri-settings-3-line"      },
       { key:"load-type",     label:"Load Type",            icon:"ri-flashlight-line"      },
-      { key:"templates",     label:"Checklist Templates",  icon:"ri-layout-3-line"        },
       { key:"scoring",       label:"Scoring & Grading",    icon:"ri-bar-chart-2-line"     },
-      { key:"due-dates",     label:"Due Date Rules",       icon:"ri-calendar-check-line"  },
     ],
   },
   {
@@ -34,7 +32,6 @@ const SECTIONS = [
     color: "#0891b2",
     items: [
       { key:"report-config", label:"Report Configuration", icon:"ri-file-pdf-line"        },
-      { key:"pdf-template",  label:"PDF Template",         icon:"ri-layout-column-line"   },
     ],
   },
   {
@@ -43,7 +40,6 @@ const SECTIONS = [
     color: "#ca8a04",
     items: [
       { key:"email-smtp",    label:"Email / SMTP",         icon:"ri-mail-settings-line"   },
-      { key:"alerts",        label:"Alert Rules",          icon:"ri-alarm-line"           },
       { key:"sms",           label:"SMS / WhatsApp",       icon:"ri-message-3-line"       },
     ],
   },
@@ -53,8 +49,6 @@ const SECTIONS = [
     color: "#dc2626",
     items: [
       { key:"password",      label:"Password Policy",      icon:"ri-lock-password-line"   },
-      { key:"session",       label:"Session & 2FA",        icon:"ri-key-2-line"           },
-      { key:"ip-allowlist",  label:"IP Allowlist",         icon:"ri-global-line"          },
     ],
   },
   {
@@ -71,7 +65,6 @@ const SECTIONS = [
     color: "#374151",
     items: [
       { key:"backup",        label:"Backup & Export",      icon:"ri-save-3-line"          },
-      { key:"retention",     label:"Data Retention",       icon:"ri-archive-line"         },
       { key:"integrations",  label:"Integrations / API",   icon:"ri-plug-line"            },
     ],
   },
@@ -561,8 +554,6 @@ function IntegrationsPanel() {
     { name:"AWS S3",           desc:"Cloud storage for photos and PDF reports",        status:"Active",   icon:"ri-cloud-line",        color:"#ca8a04", bg:"#fef9c3" },
     { name:"Firebase (FCM)",   desc:"Push notifications to mobile app (Flutter)",     status:"Active",   icon:"ri-notification-4-line",color:"#0891b2", bg:"#dbeafe" },
     { name:"Google Maps API",  desc:"Branch location mapping and GPS validation",      status:"Inactive", icon:"ri-map-pin-line",      color:"#374151", bg:"#f3f4f6" },
-    { name:"Twilio (SMS)",     desc:"SMS alerts and OTP delivery",                    status:"Inactive", icon:"ri-message-3-line",    color:"#374151", bg:"#f3f4f6" },
-    { name:"Razorpay",         desc:"Payment processing for invoices",                status:"Inactive", icon:"ri-bank-card-line",    color:"#374151", bg:"#f3f4f6" },
   ];
   return (
     <div>
@@ -1008,19 +999,12 @@ function RenderPanel({ activeKey }: { activeKey: string }) {
     case "branding":      return <ComingSoonPanel label="Branding & Logo"/>;
     case "audit-general": return <AuditSettingsPanel/>;
     case "load-type":     return <LoadTypePanel/>;
-    case "templates":     return <ComingSoonPanel label="Checklist Templates"/>;
     case "scoring":       return <ScoringPanel/>;
-    case "due-dates":     return <ComingSoonPanel label="Due Date Rules"/>;
     case "report-config": return <ReportConfigPanel/>;
-    case "pdf-template":  return <ComingSoonPanel label="PDF Template Builder"/>;
     case "email-smtp":    return <EmailSMTPPanel/>;
-    case "alerts":        return <ComingSoonPanel label="Alert Rules"/>;
     case "sms":           return <ComingSoonPanel label="SMS / WhatsApp"/>;
     case "password":      return <PasswordPolicyPanel/>;
-    case "session":       return <PasswordPolicyPanel/>;
-    case "ip-allowlist":  return <ComingSoonPanel label="IP Allowlist"/>;
     case "backup":        return <BackupPanel/>;
-    case "retention":     return <ComingSoonPanel label="Data Retention"/>;
     case "integrations":   return <IntegrationsPanel/>;
     case "status-master":  return <StatusMasterPanel/>;
     default:               return <CompanyPanel/>;
@@ -1033,19 +1017,12 @@ const META: Record<string, { title:string; description:string }> = {
   branding:      { title:"Branding & Logo",       description:"Upload logos and configure the visual identity of the platform and reports" },
   "audit-general":{ title:"Audit Settings",       description:"Default templates, photo requirements, GPS capture, and submission rules" },
   "load-type":    { title:"Load Type",            description:"Define load categories, equipment types, and wattage ratings for audit load sheets" },
-  templates:     { title:"Checklist Templates",   description:"Manage and version electrical safety audit checklist templates" },
   scoring:       { title:"Scoring & Grading",     description:"Configure passing scores, section weights, and audit grade bands" },
-  "due-dates":   { title:"Due Date Rules",        description:"Auto-assign due dates based on branch type and audit frequency" },
   "report-config":{ title:"Report Configuration", description:"Header, footer, logo placement, and content inclusions in generated PDF reports" },
-  "pdf-template":{ title:"PDF Template",          description:"Visual layout and section order of the audit PDF report" },
   "email-smtp":  { title:"Email / SMTP",          description:"Configure email server and define which events trigger email notifications" },
-  alerts:        { title:"Alert Rules",           description:"Define escalation rules and alert thresholds for overdue and critical audits" },
   sms:           { title:"SMS / WhatsApp",        description:"Set up SMS gateway for field auditor notifications and OTP delivery" },
   password:      { title:"Password Policy",       description:"Complexity rules, expiry, lockout settings, and 2FA configuration" },
-  session:       { title:"Session & 2FA",         description:"Session timeout, trusted devices, and two-factor authentication" },
-  "ip-allowlist":{ title:"IP Allowlist",          description:"Restrict admin access to specific IP addresses or CIDR ranges" },
   backup:        { title:"Backup & Export",       description:"Automatic backup schedule, retention period, and manual export options" },
-  retention:     { title:"Data Retention",        description:"Set how long audit records, logs, and photos are retained" },
   integrations:     { title:"Integrations / API",    description:"Connect third-party services and manage API keys" },
   "status-master":  { title:"Status Master",          description:"Manage audit lifecycle statuses, their descriptions, and flow order" },
 };
