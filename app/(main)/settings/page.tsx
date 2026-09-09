@@ -22,8 +22,9 @@ const SECTIONS = [
     color: "#2563eb",
     items: [
       { key:"audit-general", label:"Audit Settings",       icon:"ri-settings-3-line"      },
-      { key:"load-type",     label:"Load Type",            icon:"ri-flashlight-line"      },
-      { key:"templates",     label:"Checklist Templates",  icon:"ri-layout-3-line"        },
+      { key:"load-type",      label:"Load Type",            icon:"ri-flashlight-line"      },
+      { key:"wattage-rating", label:"Wattage Rating",      icon:"ri-battery-charge-line"  },
+      { key:"templates",      label:"Checklist Templates",  icon:"ri-layout-3-line"        },
       { key:"scoring",       label:"Scoring & Grading",    icon:"ri-bar-chart-2-line"     },
       { key:"due-dates",     label:"Due Date Rules",       icon:"ri-calendar-check-line"  },
     ],
@@ -786,14 +787,215 @@ function LoadTypePanel() {
   );
 }
 
+// ── Wattage Rating Panel ──────────────────────────────────────────────────────
+interface WattageEntry {
+  id: number; name: string; wattage: string; unit: "W" | "KW"; status: "Active" | "Inactive";
+}
+
+const WATTAGE_SEED: WattageEntry[] = [
+  { id:1,  name:"Flush Lights 2×2 LED",         wattage:"36",   unit:"W",  status:"Active"   },
+  { id:2,  name:"Down Lights LED",               wattage:"12",   unit:"W",  status:"Active"   },
+  { id:3,  name:"LED Batten / T-Bar",            wattage:"22",   unit:"W",  status:"Active"   },
+  { id:4,  name:"Ceiling Fan",                   wattage:"100",  unit:"W",  status:"Active"   },
+  { id:5,  name:"Exhaust Fan",                   wattage:"150",  unit:"W",  status:"Active"   },
+  { id:6,  name:"Split AC 1.5 TR",               wattage:"1450", unit:"W",  status:"Active"   },
+  { id:7,  name:"Split AC 1 TR",                 wattage:"943",  unit:"W",  status:"Active"   },
+  { id:8,  name:"Desktop Computer / PC",         wattage:"150",  unit:"W",  status:"Active"   },
+  { id:9,  name:"Laser Printer",                 wattage:"100",  unit:"W",  status:"Active"   },
+  { id:10, name:"Water Cooler / Purifier",       wattage:"200",  unit:"W",  status:"Inactive" },
+];
+
+const BLANK_W: Omit<WattageEntry, "id"> = { name:"", wattage:"", unit:"W", status:"Active" };
+
+function WattageRatingPanel() {
+  const [rows, setRows]     = useState<WattageEntry[]>(WATTAGE_SEED);
+  const [form, setForm]     = useState<Omit<WattageEntry,"id">>(BLANK_W);
+  const [editId, setEditId] = useState<number|null>(null);
+  const [search, setSearch] = useState("");
+
+  const F = (k: keyof typeof form, v: string) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const handleSave = () => {
+    if (!form.name.trim() || !form.wattage.trim()) return;
+    if (editId !== null) {
+      setRows(prev => prev.map(r => r.id === editId ? { ...r, ...form } : r));
+      setEditId(null);
+    } else {
+      setRows(prev => [...prev, { id: Date.now(), ...form }]);
+    }
+    setForm(BLANK_W);
+  };
+
+  const handleEdit = (r: WattageEntry) => {
+    setForm({ name: r.name, wattage: r.wattage, unit: r.unit, status: r.status });
+    setEditId(r.id);
+  };
+
+  const handleDelete = (id: number) => setRows(prev => prev.filter(r => r.id !== id));
+
+  const filtered = rows.filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
+
+  const TH: React.CSSProperties = {
+    padding:"10px 14px", fontSize:11, fontWeight:700, color:"#6b7280",
+    textTransform:"uppercase", letterSpacing:"0.05em", background:"#f9fafb",
+    borderBottom:"1px solid #e5e7eb", textAlign:"left", whiteSpace:"nowrap",
+  };
+  const TD: React.CSSProperties = {
+    padding:"12px 14px", fontSize:13, color:"#374151",
+    borderBottom:"1px solid #f3f4f6", verticalAlign:"middle",
+  };
+
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"320px 1fr", gap:16, alignItems:"start" }}>
+
+      {/* ── Left: Form ── */}
+      <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", padding:"20px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+          <i className="ri-flashlight-line" style={{ fontSize:16, color:"#2563eb" }}/>
+          <span style={{ fontSize:14, fontWeight:800, color:"var(--default-text-color)" }}>
+            {editId !== null ? "Edit Wattage Rating" : "Add Wattage Rating"}
+          </span>
+        </div>
+        <p style={{ fontSize:12, color:"var(--text-muted)", margin:"0 0 18px" }}>
+          {editId !== null ? "Update the selected entry below." : "Fill details and save to register."}
+        </p>
+
+        {/* Equipment Name */}
+        <div style={{ marginBottom:14 }}>
+          <label style={FS12}>EQUIPMENT NAME <span style={{ color:"#dc2626" }}>*</span></label>
+          <input value={form.name} onChange={e => F("name", e.target.value)}
+            placeholder="e.g. Ceiling Fan" style={INP}/>
+        </div>
+
+        {/* Wattage */}
+        <div style={{ marginBottom:14 }}>
+          <label style={FS12}>WATTAGE <span style={{ color:"#dc2626" }}>*</span></label>
+          <div style={{ display:"flex", gap:8 }}>
+            <input type="number" value={form.wattage} onChange={e => F("wattage", e.target.value)}
+              placeholder="e.g. 150" style={{ ...INP, flex:1 }}/>
+            <select value={form.unit} onChange={e => F("unit", e.target.value as "W"|"KW")} style={{ ...SEL, width:70 }}>
+              <option value="W">W</option>
+              <option value="KW">KW</option>
+            </select>
+          </div>
+          <span style={{ fontSize:11, color:"var(--text-muted)", marginTop:4, display:"block" }}>
+            {form.wattage ? `${form.wattage} ${form.unit}` : "0/— characters"}
+          </span>
+        </div>
+
+        {/* Status capsule */}
+        <div style={{ marginBottom:20 }}>
+          <label style={FS12}>STATUS</label>
+          <div style={{ display:"flex", gap:8 }}>
+            <button onClick={() => F("status","Active")} style={{
+              flex:1, padding:"9px 0", borderRadius:24, border:"none", cursor:"pointer", fontWeight:700, fontSize:13,
+              background: form.status==="Active" ? "var(--primary-color,#16a34a)" : "#f3f4f6",
+              color: form.status==="Active" ? "#fff" : "#9ca3af",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+            }}>
+              <i className="ri-checkbox-circle-line"/>Active
+            </button>
+            <button onClick={() => F("status","Inactive")} style={{
+              flex:1, padding:"9px 0", borderRadius:24, border:"1px solid #fca5a5", cursor:"pointer", fontWeight:700, fontSize:13,
+              background: form.status==="Inactive" ? "#fff1f2" : "#f3f4f6",
+              color: form.status==="Inactive" ? "#dc2626" : "#9ca3af",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+            }}>
+              <i className="ri-close-circle-line"/>Inactive
+            </button>
+          </div>
+        </div>
+
+        {/* Save / Cancel */}
+        <button onClick={handleSave}
+          disabled={!form.name.trim() || !form.wattage.trim()}
+          style={{ ...SB, width:"100%", justifyContent:"center", opacity:(!form.name.trim()||!form.wattage.trim())?0.5:1 }}>
+          <i className={editId!==null?"ri-save-line":"ri-add-circle-line"}/>
+          {editId !== null ? "Update Rating" : "Save Wattage Rating"}
+        </button>
+        {editId !== null && (
+          <button onClick={() => { setEditId(null); setForm(BLANK_W); }} style={{ ...OB, width:"100%", justifyContent:"center", marginTop:8 }}>
+            <i className="ri-close-line"/>Cancel Edit
+          </button>
+        )}
+      </div>
+
+      {/* ── Right: Table ── */}
+      <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+        {/* Table header */}
+        <div style={{ padding:"14px 18px", borderBottom:"1px solid var(--default-border)", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+          <div>
+            <span style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)" }}>Wattage Ratings</span>
+            <span style={{ marginLeft:8, fontSize:11, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:10, padding:"2px 8px" }}>{rows.length} entries</span>
+          </div>
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search equipment…"
+            style={{ ...INP, width:200, fontSize:12, padding:"6px 10px" }}/>
+        </div>
+
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ ...TH, width:40 }}>#</th>
+                <th style={TH}>Equipment Name</th>
+                <th style={{ ...TH, textAlign:"center" }}>Wattage</th>
+                <th style={{ ...TH, textAlign:"center" }}>Status</th>
+                <th style={{ ...TH, textAlign:"center" }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan={5} style={{ ...TD, textAlign:"center", color:"var(--text-muted)", padding:"32px" }}>No entries found.</td></tr>
+              )}
+              {filtered.map((r, i) => (
+                <tr key={r.id}
+                  onMouseEnter={e => (e.currentTarget.style.background="#f9fafb")}
+                  onMouseLeave={e => (e.currentTarget.style.background="transparent")}
+                  style={{ transition:"background 0.1s", background: editId===r.id?"#eff6ff":"transparent" }}>
+                  <td style={{ ...TD, color:"#d1d5db", fontSize:12 }}>{i+1}</td>
+                  <td style={{ ...TD, fontWeight:600 }}>{r.name}</td>
+                  <td style={{ ...TD, textAlign:"center" }}>
+                    <span style={{ fontWeight:700, color:"#2563eb", background:"#dbeafe", borderRadius:8, padding:"3px 10px", fontSize:12 }}>
+                      {r.wattage} {r.unit}
+                    </span>
+                  </td>
+                  <td style={{ ...TD, textAlign:"center" }}>
+                    <span style={{
+                      fontSize:11, fontWeight:700, borderRadius:20, padding:"3px 12px",
+                      color: r.status==="Active"?"#16a34a":"#dc2626",
+                      background: r.status==="Active"?"#dcfce7":"#fee2e2",
+                    }}>{r.status}</span>
+                  </td>
+                  <td style={{ ...TD, textAlign:"center" }}>
+                    <div style={{ display:"flex", gap:6, justifyContent:"center" }}>
+                      <button onClick={() => handleEdit(r)} style={{ background:"none", border:"none", cursor:"pointer", color:"#2563eb", fontSize:15 }} title="Edit">
+                        <i className="ri-pencil-line"/>
+                      </button>
+                      <button onClick={() => handleDelete(r.id)} style={{ background:"none", border:"none", cursor:"pointer", color:"#dc2626", fontSize:15 }} title="Delete">
+                        <i className="ri-delete-bin-line"/>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Panel router ──────────────────────────────────────────────────────────────
 function RenderPanel({ activeKey }: { activeKey: string }) {
   switch(activeKey) {
     case "company":       return <CompanyPanel/>;
     case "branding":      return <ComingSoonPanel label="Branding & Logo"/>;
     case "audit-general": return <AuditSettingsPanel/>;
-    case "load-type":     return <LoadTypePanel/>;
-    case "templates":     return <ComingSoonPanel label="Checklist Templates"/>;
+    case "load-type":      return <LoadTypePanel/>;
+    case "wattage-rating": return <WattageRatingPanel/>;
+    case "templates":      return <ComingSoonPanel label="Checklist Templates"/>;
     case "scoring":       return <ScoringPanel/>;
     case "due-dates":     return <ComingSoonPanel label="Due Date Rules"/>;
     case "report-config": return <ReportConfigPanel/>;
@@ -817,7 +1019,8 @@ const META: Record<string, { title:string; description:string }> = {
   company:       { title:"Company Profile",       description:"Legal name, registration details, and contact information for Save Earth Energy" },
   branding:      { title:"Branding & Logo",       description:"Upload logos and configure the visual identity of the platform and reports" },
   "audit-general":{ title:"Audit Settings",       description:"Default templates, photo requirements, GPS capture, and submission rules" },
-  "load-type":    { title:"Load Type",            description:"Define load categories and equipment types used in audit load sheets" },
+  "load-type":      { title:"Load Type",            description:"Define load categories and equipment types used in audit load sheets" },
+  "wattage-rating": { title:"Wattage Rating",       description:"Manage equipment wattage ratings used in branch load sheet calculations" },
   templates:     { title:"Checklist Templates",   description:"Manage and version electrical safety audit checklist templates" },
   scoring:       { title:"Scoring & Grading",     description:"Configure passing scores, section weights, and audit grade bands" },
   "due-dates":   { title:"Due Date Rules",        description:"Auto-assign due dates based on branch type and audit frequency" },
