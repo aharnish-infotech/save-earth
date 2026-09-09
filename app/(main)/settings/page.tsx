@@ -119,7 +119,7 @@ function CompanyPanel() {
   const [f, setF] = useState({
     companyName:"Save Earth Energy Services Pvt. Ltd.",
     shortName:"Save Earth Energy",
-    description:"",
+    description:"BEE CERTIFIED ENERGY AUDITOR, CONSULTANT FOR NRE, ELECTRICAL PROJECTS",
     gstin:"27AACES1234P1ZK",
     pan:"AACES1234P",
     cin:"U40100GJ2019PTC109876",
