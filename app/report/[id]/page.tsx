@@ -252,22 +252,22 @@ const CSS = `
   @media print {
     html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
     #rpt { background: #fff !important; padding: 0 !important; }
-    #rpt .rp { page-break-after: always !important; width: 210mm !important; margin: 0 !important; box-shadow: none !important; }
+    #rpt .rp { page-break-after: always !important; width: 210mm !important; margin: 0 !important; padding: 5mm !important; box-shadow: none !important; }
     .toolbar { display: none !important; }
     .no-break { page-break-inside: avoid; }
   }
 
   /* ── Pages ── */
   #rpt .rp {
-    display: block;
-    width: 210mm;
-    min-height: 297mm;
-    margin: 0 auto 6mm;
-    padding: 5mm;
+    display: block !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 auto 6mm !important;
+    padding: 5mm !important;
     background: #fff !important;
-    position: relative;
-    box-sizing: border-box;
-    box-shadow: 0 0 8px rgba(0,0,0,.12);
+    position: relative !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 0 8px rgba(0,0,0,.12) !important;
   }
 
   /* Toolbar */
