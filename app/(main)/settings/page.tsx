@@ -22,6 +22,7 @@ const SECTIONS = [
     color: "#2563eb",
     items: [
       { key:"audit-general", label:"Audit Settings",       icon:"ri-settings-3-line"      },
+      { key:"load-type",     label:"Load Type",            icon:"ri-flashlight-line"      },
       { key:"templates",     label:"Checklist Templates",  icon:"ri-layout-3-line"        },
       { key:"scoring",       label:"Scoring & Grading",    icon:"ri-bar-chart-2-line"     },
       { key:"due-dates",     label:"Due Date Rules",       icon:"ri-calendar-check-line"  },
@@ -693,12 +694,105 @@ function StatusMasterPanel() {
   );
 }
 
+// ── Load Type Panel ───────────────────────────────────────────────────────────
+const LOAD_TYPE_OPTIONS = [
+  "Lighting",
+  "Fans",
+  "AC",
+  "Air Conditioning",
+  "Computer",
+  "IT Equipment",
+  "Other Equipment",
+];
+
+interface LoadTypeEntry {
+  id: number;
+  loadType: string;
+  equipmentType: string;
+}
+
+function LoadTypePanel() {
+  const [entries, setEntries] = useState<LoadTypeEntry[]>([
+    { id: 1, loadType: "", equipmentType: "" },
+  ]);
+
+  const update = (id: number, field: keyof LoadTypeEntry, value: string) =>
+    setEntries(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
+
+  const addEntry = () =>
+    setEntries(prev => [...prev, { id: Date.now(), loadType: "", equipmentType: "" }]);
+
+  const removeEntry = (id: number) =>
+    setEntries(prev => prev.filter(e => e.id !== id));
+
+  return (
+    <div>
+      <div style={CARD}>
+        <h3 style={SH}>
+          <i className="ri-flashlight-line" style={{ color: "#2563eb" }} />
+          Load Type Configuration
+        </h3>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 18px" }}>
+          Define the load types used in audit load sheets and their corresponding equipment categories.
+        </p>
+
+        {entries.map((entry) => (
+          <div key={entry.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "end", marginBottom: 14, padding: "14px 16px", background: "#f9fafb", borderRadius: 10, border: "1px solid var(--default-border)" }}>
+            <div>
+              <label style={FS12}>LOAD TYPE</label>
+              <select
+                value={entry.loadType}
+                onChange={e => update(entry.id, "loadType", e.target.value)}
+                style={SEL}
+              >
+                <option value="">— Select Load Type —</option>
+                {LOAD_TYPE_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={FS12}>EQUIPMENT TYPE</label>
+              <input
+                value={entry.equipmentType}
+                onChange={e => update(entry.id, "equipmentType", e.target.value)}
+                placeholder={entry.loadType ? `Enter equipment type for ${entry.loadType}` : "Select a load type first"}
+                disabled={!entry.loadType}
+                style={{ ...INP, opacity: entry.loadType ? 1 : 0.45, cursor: entry.loadType ? "text" : "not-allowed" }}
+              />
+            </div>
+
+            <button
+              onClick={() => removeEntry(entry.id)}
+              disabled={entries.length === 1}
+              style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #fca5a5", background: entries.length === 1 ? "#f9fafb" : "#fff1f2", color: entries.length === 1 ? "#d1d5db" : "#dc2626", cursor: entries.length === 1 ? "not-allowed" : "pointer", fontSize: 15, display: "flex", alignItems: "center" }}
+              title="Remove row"
+            >
+              <i className="ri-delete-bin-line" />
+            </button>
+          </div>
+        ))}
+
+        <button onClick={addEntry} style={{ ...OB, marginTop: 4 }}>
+          <i className="ri-add-line" />Add Load Type
+        </button>
+      </div>
+
+      <button style={SB}>
+        <i className="ri-save-line" />Save Load Types
+      </button>
+    </div>
+  );
+}
+
 // ── Panel router ──────────────────────────────────────────────────────────────
 function RenderPanel({ activeKey }: { activeKey: string }) {
   switch(activeKey) {
     case "company":       return <CompanyPanel/>;
     case "branding":      return <ComingSoonPanel label="Branding & Logo"/>;
     case "audit-general": return <AuditSettingsPanel/>;
+    case "load-type":     return <LoadTypePanel/>;
     case "templates":     return <ComingSoonPanel label="Checklist Templates"/>;
     case "scoring":       return <ScoringPanel/>;
     case "due-dates":     return <ComingSoonPanel label="Due Date Rules"/>;
@@ -723,6 +817,7 @@ const META: Record<string, { title:string; description:string }> = {
   company:       { title:"Company Profile",       description:"Legal name, registration details, and contact information for Save Earth Energy" },
   branding:      { title:"Branding & Logo",       description:"Upload logos and configure the visual identity of the platform and reports" },
   "audit-general":{ title:"Audit Settings",       description:"Default templates, photo requirements, GPS capture, and submission rules" },
+  "load-type":    { title:"Load Type",            description:"Define load categories and equipment types used in audit load sheets" },
   templates:     { title:"Checklist Templates",   description:"Manage and version electrical safety audit checklist templates" },
   scoring:       { title:"Scoring & Grading",     description:"Configure passing scores, section weights, and audit grade bands" },
   "due-dates":   { title:"Due Date Rules",        description:"Auto-assign due dates based on branch type and audit frequency" },
