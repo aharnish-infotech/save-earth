@@ -21,7 +21,6 @@ const SECTIONS = [
     icon: "ri-file-list-3-line",
     color: "#2563eb",
     items: [
-      { key:"audit-general", label:"Audit Settings",       icon:"ri-settings-3-line"      },
       { key:"load-type",     label:"Load Type",            icon:"ri-flashlight-line"      },
       { key:"scoring",       label:"Scoring & Grading",    icon:"ri-bar-chart-2-line"     },
     ],
@@ -1003,7 +1002,6 @@ function RenderPanel({ activeKey }: { activeKey: string }) {
   switch(activeKey) {
     case "company":       return <CompanyPanel/>;
     case "branding":      return <ComingSoonPanel label="Branding & Logo"/>;
-    case "audit-general": return <AuditSettingsPanel/>;
     case "load-type":     return <LoadTypePanel/>;
     case "scoring":       return <ScoringPanel/>;
     case "report-config": return <ReportConfigPanel/>;
@@ -1021,7 +1019,6 @@ function RenderPanel({ activeKey }: { activeKey: string }) {
 const META: Record<string, { title:string; description:string }> = {
   company:       { title:"Company Profile",       description:"Legal name, registration details, and contact information for Save Earth Energy" },
   branding:      { title:"Branding & Logo",       description:"Upload logos and configure the visual identity of the platform and reports" },
-  "audit-general":{ title:"Audit Settings",       description:"Default templates, photo requirements, GPS capture, and submission rules" },
   "load-type":    { title:"Load Type",            description:"Define load categories, equipment types, and wattage ratings for audit load sheets" },
   scoring:       { title:"Scoring & Grading",     description:"Configure passing scores, section weights, and audit grade bands" },
   "report-config":{ title:"Report Configuration", description:"Header, footer, logo placement, and content inclusions in generated PDF reports" },
