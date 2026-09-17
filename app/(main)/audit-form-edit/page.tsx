@@ -1999,7 +1999,7 @@ function UPSParametersSection({ branchName }: { branchName: string }) {
               <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
                 <div style={{ background:"#f8fafc", borderBottom:"1px solid #e5e7eb", padding:"9px 12px", display:"flex", alignItems:"center", gap:7 }}>
                   <i className="ri-camera-line" style={{ color:violet, fontSize:14 }}/>
-                  <span style={{ fontSize:12, fontWeight:800, color:"#374151", textTransform:"uppercase", letterSpacing:"0.04em" }}>UPS Nameplate Photo</span>
+                  <span style={{ fontSize:12, fontWeight:800, color:"#374151", textTransform:"uppercase", letterSpacing:"0.04em" }}>UPS Photo</span>
                 </div>
                 <div style={{ height:110, background:"#f1f5f9", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
                   <i className="ri-image-line" style={{ fontSize:26, color:"#94a3b8" }}/>
