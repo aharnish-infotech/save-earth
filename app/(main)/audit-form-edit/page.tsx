@@ -645,15 +645,19 @@ function LoadSheetSection({ branchName }: { branchName: string }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // STEP 12 — Meter Details
 // ═══════════════════════════════════════════════════════════════════════════════
+const MOCK_METERS: Meter[] = [
+  { id:"m1", provider:"TORRENT", meterRR:"27001760", sanctionedLoad:"21.780", sanctionedUnit:"KVA", contractDemand:"21.780", billingDemand:"18", maxDemand:"20", avgBill:"24500", avgConsumption:"2400", penalty:"NO", billPhotos:[null] },
+];
+
 function MeterDetailsSection({ branchName }: { branchName: string }) {
-  const [branchArea,   setBranchArea]   = useState("");
-  const [meters,       setMeters]       = useState<Meter[]>([newMeter()]);
+  const [branchArea,   setBranchArea]   = useState("1200");
+  const [meters,       setMeters]       = useState<Meter[]>(MOCK_METERS);
   // Previous audit report
   const [prevPhotos,   setPrevPhotos]   = useState<(string|null)[]>([null]);
-  const [prevDate,     setPrevDate]     = useState("");
-  const [prevAuditor,  setPrevAuditor]  = useState("");
+  const [prevDate,     setPrevDate]     = useState("15/03/24");
+  const [prevAuditor,  setPrevAuditor]  = useState("Rajesh Kumar");
   // AMC
-  const [amcAvail,     setAmcAvail]     = useState<"YES"|"NO"|"">("");
+  const [amcAvail,     setAmcAvail]     = useState<"YES"|"NO"|"">("YES");
   const [amcPhotos,    setAmcPhotos]    = useState<(string|null)[]>([null]);
   const [saved,        setSaved]        = useState(false);
 
@@ -701,43 +705,15 @@ function MeterDetailsSection({ branchName }: { branchName: string }) {
   const L: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" };
   const I: React.CSSProperties = { border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 10px", fontSize:12, color:"#111827", outline:"none", width:"100%", boxSizing:"border-box", background:"#fff" };
 
-  // ── Photo strip (up to maxN) ───────────────────────────────────────────────
-  const PhotoStrip = ({ photos, maxN, onSet, onAdd, accentColor }: {
-    photos: (string|null)[]; maxN: number; accentColor: string;
-    onSet: (idx: number, val: string|null) => void;
-    onAdd: () => void;
-  }) => (
+  // ── Photo strip (edit mode — static placeholder) ──────────────────────────
+  const PhotoStrip = ({ maxN }: { photos: (string|null)[]; maxN: number; accentColor: string; onSet: (idx: number, val: string|null) => void; onAdd: () => void; }) => (
     <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:8 }}>
-      {photos.map((p, i) => (
-        <div key={i} style={{ position:"relative", width:80, height:80, borderRadius:8, overflow:"hidden", border:`1.5px solid ${p ? accentColor : "#e5e7eb"}`, background:p?"transparent":"#f9fafb", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-          {p ? (
-            <>
-              <img src={p} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
-              <button onClick={() => onSet(i, null)}
-                style={{ position:"absolute", top:2, right:2, width:20, height:20, borderRadius:4, border:"none", background:"rgba(239,68,68,0.9)", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10 }}>
-                <i className="ri-close-line"/>
-              </button>
-            </>
-          ) : (
-            <label style={{ width:"100%", height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", gap:3 }}>
-              <i className="ri-camera-line" style={{ color:accentColor, fontSize:18 }}/>
-              <span style={{ fontSize:9, color:"#9ca3af" }}>Photo {i+1}</span>
-              <input type="file" accept="image/*" capture="environment" style={{ display:"none" }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) readFile(f, v => onSet(i, v)); }}/>
-            </label>
-          )}
+      {Array.from({ length: Math.min(1, maxN) }).map((_, i) => (
+        <div key={i} style={{ width:80, height:80, borderRadius:8, border:"1.5px solid #e2e8f0", background:"#f1f5f9", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4, flexShrink:0 }}>
+          <i className="ri-image-line" style={{ fontSize:20, color:"#94a3b8" }}/>
+          <span style={{ fontSize:9, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</span>
         </div>
       ))}
-      {photos.length < maxN && (
-        <button onClick={onAdd}
-          style={{ width:80, height:80, borderRadius:8, border:`1.5px dashed ${accentColor}`, background:"transparent", color:accentColor, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:3, flexShrink:0 }}>
-          <i className="ri-add-line" style={{ fontSize:18 }}/>
-          <span style={{ fontSize:9, fontWeight:700 }}>Add</span>
-        </button>
-      )}
-      {photos.length >= maxN && (
-        <span style={{ fontSize:10, color:"#9ca3af", alignSelf:"center", marginLeft:4 }}>Max {maxN} photos</span>
-      )}
     </div>
   );
 
@@ -784,12 +760,7 @@ function MeterDetailsSection({ branchName }: { branchName: string }) {
               </div>
               <span style={{ fontSize:13, fontWeight:800, color:amberDark }}>Electricity Bill / Meter {idx+1}</span>
             </div>
-            {meters.length > 1 && (
-              <button onClick={() => setMeters(ms => ms.filter(x => x.id !== m.id))}
-                style={{ border:"none", background:"transparent", cursor:"pointer", color:"#ef4444", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:4 }}>
-                <i className="ri-delete-bin-line"/>Remove
-              </button>
-            )}
+            {/* Remove button hidden in edit mode */}
           </div>
 
           <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:12 }}>
@@ -959,12 +930,33 @@ function MeterDetailsSection({ branchName }: { branchName: string }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // STEP 9 — DG Set  (questions sourced from Question Library — "DG Set / Generator" section)
 // ═══════════════════════════════════════════════════════════════════════════════
+// Edit-mode: pre-filled DG specs
+const MOCK_DG_SPECS: DGQuestion[] = [
+  { id:"dg1", no:1, label:"Is the DG set on hiring or owned by the Bank?", badge:"Hired / Owned / Not Installed", inputType:"select", options:["Hired","Owned","Not Installed"], value:"Hired",        obs:"", recommendation:"COMPLIED", risk:"Low" },
+  { id:"dg2", no:2, label:"DG set capacity",                               badge:"KVA",       inputType:"number", value:"62.5",       obs:"", recommendation:"COMPLIED", risk:"Low" },
+  { id:"dg3", no:3, label:"DG set make",                                   badge:"OEM",       inputType:"text",   value:"Cummins",    obs:"", recommendation:"COMPLIED", risk:"Low" },
+  { id:"dg4", no:4, label:"Is the DG set with Acoustic enclosure?",        badge:"YES / NO",  inputType:"yesno",  value:"Yes",        obs:"", recommendation:"COMPLIED", risk:"Low" },
+  { id:"dg5", no:5, label:"DG set model / year of manufacture",            badge:"Year",      inputType:"text",   value:"C62.5D5 / 2019", obs:"", recommendation:"COMPLIED", risk:"Low" },
+  { id:"dg6", no:6, label:"No. of DG set Batteries",                       badge:"Nos.",      inputType:"number", value:"2",          obs:"", recommendation:"COMPLIED", risk:"Low" },
+  { id:"dg7", no:7, label:"DG set Battery rating",                         badge:"AH",        inputType:"number", value:"150",        obs:"", recommendation:"COMPLIED", risk:"Low" },
+];
+// Edit-mode: pre-filled DG library question answers
+const MOCK_DG_ANSWERS: Record<string, { answer: string; remarks: string }> = {
+  q031: { answer:"YES", remarks:"Cummins 62.5 KVA DG set installed at branch premises" },
+  q032: { answer:"YES", remarks:"Two 6 Kg ABC extinguishers placed near DG set — accessible" },
+  q033: { answer:"YES", remarks:"Electrical safety and energy saving awareness meeting conducted with staff" },
+};
+
 function DGSetSection({ branchName }: { branchName: string }) {
   // Spec fields (7 operational items)
-  const [specs, setSpecs]     = useState<DGQuestion[]>(INITIAL_DG);
+  const [specs, setSpecs]     = useState<DGQuestion[]>(MOCK_DG_SPECS);
   // Library questions (Q-031–Q-033)
   const DG_LIB = AUDIT_QUESTIONS.filter(q => q.section === "DG Set / Generator");
-  const initAnswers = () => Object.fromEntries(DG_LIB.map(q => [q.id, { answer:"", remarks:"", photo:null } as AuditAnswer]));
+  const initAnswers = () => Object.fromEntries(DG_LIB.map(q => [q.id, {
+    answer:  MOCK_DG_ANSWERS[q.id]?.answer  ?? "",
+    remarks: MOCK_DG_ANSWERS[q.id]?.remarks ?? "",
+    photo: null,
+  } as AuditAnswer]));
   const [answers, setAnswers] = useState<Record<string, AuditAnswer>>(initAnswers);
   const [saved, setSaved]     = useState(false);
 
@@ -3472,14 +3464,61 @@ function QuestionCard({
   );
 }
 
+// ── Edit-mode mock audit answers ─────────────────────────────────────────────
+const MOCK_AUDIT_ANSWERS: Record<string, { answer: string; remarks: string }> = {
+  // General
+  q001: { answer:"YES", remarks:"All MCCBs/MCBs/ELCBs are of proper rating" },
+  q002: { answer:"YES", remarks:"Normal and emergency lighting available in all electrical areas" },
+  q003: { answer:"YES", remarks:"All electrical rooms dry and free of obsolete items" },
+  q004: { answer:"NO",  remarks:"No water seepage observed near any electrical panel" },
+  q005: { answer:"YES", remarks:"Earthing pits provided and connected to all equipment bodies" },
+  q006: { answer:"YES", remarks:"Earthing pits properly maintained and watered regularly" },
+  q007: { answer:"YES", remarks:"Metal body exhaust fans installed; no combustible items near UPS/panels" },
+  q008: { answer:"NO",  remarks:"No penalty imposed on electricity bills" },
+  q009: { answer:"NO",  remarks:"No additional load requirement from power distribution company" },
+  q010: { answer:"YES", remarks:"Load distributed across 3 phases; no loose connections observed" },
+  q051: { answer:"NO",  remarks:"No loose connections or untight lugs found" },
+  q052: { answer:"NO",  remarks:"No phase cutout or MCCB bypassed" },
+  q011: { answer:"YES", remarks:"Isolating switches provided for non-essential loads and emergency" },
+  q012: { answer:"YES", remarks:"Pantry equipment connected through iron socket box with MCBs" },
+  q013: { answer:"YES", remarks:"Preventive maintenance carried out by licensed electricians" },
+  q014: { answer:"YES", remarks:"Timers installed for server room ACs; thermostat set to 30°C" },
+  q015: { answer:"YES", remarks:"All maintenance by licensed/skilled technicians" },
+  q016: { answer:"YES", remarks:"General condition of all panels and equipment is good" },
+  q053: { answer:"YES", remarks:"All DBs in electrical panel are properly covered" },
+  q017: { answer:"YES", remarks:"Contact numbers displayed in UPS room and available with staff" },
+  q018: { answer:"YES", remarks:"APFC panel of appropriate rating is installed" },
+  // Fire Prevention
+  q019: { answer:"YES", remarks:"Old disposable records and broken furniture cleared from premises" },
+  q020: { answer:"YES", remarks:"Combustible waste removed and cleaned periodically" },
+  q021: { answer:"YES", remarks:"No stationery or records stored in UPS/system room" },
+  q022: { answer:"YES", remarks:"Storage racks maintained at 3+ ft distance from electrical points" },
+  q023: { answer:"NO",  remarks:"LPG not in use at pantry" },
+  // Server and UPS Room
+  q024: { answer:"YES", remarks:"Server room has dual AC units with timer circuit on independent circuits" },
+  q025: { answer:"YES", remarks:"Metal body exhaust fan installed and operational in UPS room" },
+  q026: { answer:"NO",  remarks:"Ceiling fans are non-BLDC type — replacement recommended" },
+  // Electrical Safety
+  q027: { answer:"YES", remarks:"Power supply to record/stationery room via plug and socket" },
+  q028: { answer:"YES", remarks:"LED lights installed throughout the branch" },
+  q029: { answer:"NO",  remarks:"Motion sensors not installed — to be planned in next maintenance cycle" },
+  // Fire Protection
+  q030: { answer:"YES", remarks:"CO2 fire extinguisher available in banking hall, marked and accessible" },
+  q054: { answer:"YES", remarks:"Fire extinguisher at stationery room — accessible and clearly marked" },
+};
+
 function QuestionnaireSection({ branchName, upsQAnswers }: {
   branchName: string;
   upsQAnswers: Record<number, string>;
 }) {
   const initAnswers = () => Object.fromEntries(AUDIT_QUESTIONS.map(q => {
+    const mock  = MOCK_AUDIT_ANSWERS[q.id];
     const upsNo = AUDIT_ID_TO_UPS_Q[q.id];
     const upsAns = upsNo !== undefined ? (upsQAnswers[upsNo] || "") : "";
-    return [q.id, { answer: upsAns, remarks: "", photo: null as string | null }];
+    // UPS-linked questions take UPS answer first; fall back to mock; then empty
+    const answer  = upsAns || mock?.answer  || "";
+    const remarks = mock?.remarks || "";
+    return [q.id, { answer, remarks, photo: null as string | null }];
   }));
   const [answers, setAnswers] = useState<Record<string, AuditAnswer>>(initAnswers);
   const [openSections, setOpenSections] = useState<Record<string,boolean>>(Object.fromEntries(SECTION_ORDER.map(s => [s, true])));
@@ -3630,31 +3669,68 @@ interface ATMLoadGroup extends ATMLoadGroupDef { rows: ATMLoadRow[]; }
 const ATM_QUESTIONS = AUDIT_QUESTIONS.filter(q => q.section === "Onsite ATM");
 const ATM_PUR = "#7c3aed";
 
+// ── Edit-mode mock ATM data ───────────────────────────────────────────────────
+const MOCK_ATM_UPS: ATMUPSUnit[] = [
+  { id:"au1", make:"APC", capacityKVA:"1.5", batteryMake:"Exide", batteryAh:"100", batteryNos:"2" },
+];
+const MOCK_ATM_POWER_MCBS: ATMMCBRow[] = [
+  { id:"pm1", amp:"16", pole:"1", nos:"2" },
+];
+const MOCK_ATM_UPS_DB: ATMMCBRow[] = [
+  { id:"ud1", amp:"10", pole:"1", nos:"1" },
+];
+const MOCK_ATM_LOAD_GROUPS: ATMLoadGroup[] = [
+  { ...ATM_LOAD_DEFS[0], rows: [{ id:"ll1", type:"LED Tube Light (4ft)", nos:"4",  watt:"18"  }] },
+  { ...ATM_LOAD_DEFS[1], rows: [{ id:"al1", type:"Split AC — Inverter",  nos:"1",  watt:"900" }] },
+  { ...ATM_LOAD_DEFS[2], rows: [{ id:"ml1", type:"ATM Machine (Onsite)", nos:"1",  watt:"300" }] },
+];
+const MOCK_ATM_ANSWERS: Record<string, { answer: string; remarks: string }> = {
+  q034: { answer:"YES", remarks:"5 Kg ABC automatic modular fire extinguisher in back room" },
+  q035: { answer:"YES", remarks:"Fire detector connected to branch AFDS" },
+  q036: { answer:"YES", remarks:"MCCB/MCB/ELCB provided and apparently in working condition" },
+  q037: { answer:"YES", remarks:"AC units provided with timer circuit device" },
+  q038: { answer:"YES", remarks:"Main supply switch/MCB clearly marked" },
+  q039: { answer:"YES", remarks:"Power supply through metal clad plug receptacle socket" },
+  q040: { answer:"YES", remarks:"Electrical wires properly covered and insulated" },
+  q041: { answer:"NO",  remarks:"No cooking stove or electric heater noticed in ATM" },
+  q042: { answer:"NO",  remarks:"No water accumulation or seepage observed" },
+  q043: { answer:"NO",  remarks:"No combustible container present in ATM" },
+  q044: { answer:"YES", remarks:"Steel dustbin container provided in ATM" },
+  q045: { answer:"YES", remarks:"No smoking board displayed in ATM cabin" },
+  q046: { answer:"YES", remarks:"Main entrance shutter in working condition" },
+  q047: { answer:"YES", remarks:"Proper locking arrangement at main shutter" },
+  q048: { answer:"YES", remarks:"All electrical lights in working condition" },
+  q049: { answer:"YES", remarks:"External CCTV camera provided" },
+  q050: { answer:"YES", remarks:"CCTV system in working condition" },
+};
+
 function OnsiteATMSection({ branchName }: { branchName: string }) {
   // ── State ─────────────────────────────────────────────────────────────────
-  const [upsUnits, setUpsUnits]       = useState<ATMUPSUnit[]>([newATMUPS()]);
+  const [upsUnits, setUpsUnits]       = useState<ATMUPSUnit[]>(MOCK_ATM_UPS);
 
   // Electrical parameters — flat, avoids Record<string,string> TS indexing issues
-  const [crA,  setCrA]  = useState(""); const [cyA,  setCyA]  = useState("");
-  const [cbA,  setCbA]  = useState(""); const [cnA,  setCnA]  = useState("");
-  const [enV,  setEnV]  = useState(""); const [enRem,setEnRem]= useState("");
+  const [crA,  setCrA]  = useState("8");  const [cyA,  setCyA]  = useState("6");
+  const [cbA,  setCbA]  = useState("7");  const [cnA,  setCnA]  = useState("1");
+  const [enV,  setEnV]  = useState("0.8"); const [enRem,setEnRem]= useState("Within acceptable limit");
 
   // SLD data
-  const [sldSqmm,     setSldSqmm]     = useState("");
-  const [sldCore,     setSldCore]     = useState("");
-  const [mainDbA,     setMainDbA]     = useState("");
-  const [mainDbPole,  setMainDbPole]  = useState("");
-  const [powerMcbs,   setPowerMcbs]   = useState<ATMMCBRow[]>([newATMMCB()]);
-  const [upsDbMcbs,   setUpsDbMcbs]   = useState<ATMMCBRow[]>([newATMMCB()]);
+  const [sldSqmm,     setSldSqmm]     = useState("16");
+  const [sldCore,     setSldCore]     = useState("4");
+  const [mainDbA,     setMainDbA]     = useState("63");
+  const [mainDbPole,  setMainDbPole]  = useState("4");
+  const [powerMcbs,   setPowerMcbs]   = useState<ATMMCBRow[]>(MOCK_ATM_POWER_MCBS);
+  const [upsDbMcbs,   setUpsDbMcbs]   = useState<ATMMCBRow[]>(MOCK_ATM_UPS_DB);
   const [atmPhoto,    setAtmPhoto]    = useState<string | null>(null);
 
   // Load sheet
-  const [loadGroups, setLoadGroups]   = useState<ATMLoadGroup[]>(
-    ATM_LOAD_DEFS.map(d => ({ ...d, rows: [newATMLoadRow()] }))
-  );
+  const [loadGroups, setLoadGroups]   = useState<ATMLoadGroup[]>(MOCK_ATM_LOAD_GROUPS);
 
   // Questions
-  const initAnswers = () => Object.fromEntries(ATM_QUESTIONS.map(q => [q.id, { answer:"", remarks:"", photo:null } as AuditAnswer]));
+  const initAnswers = () => Object.fromEntries(ATM_QUESTIONS.map(q => [q.id, {
+    answer:  MOCK_ATM_ANSWERS[q.id]?.answer  ?? "",
+    remarks: MOCK_ATM_ANSWERS[q.id]?.remarks ?? "",
+    photo: null,
+  } as AuditAnswer]));
   const [answers, setAnswers]         = useState<Record<string, AuditAnswer>>(initAnswers);
 
   // Section open state
@@ -3740,10 +3816,6 @@ function OnsiteATMSection({ branchName }: { branchName: string }) {
           </button>
         </div>
       ))}
-      <button onClick={() => setter(r => [...r, newATMMCB()])}
-        style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:7, border:"1.5px dashed #9ca3af", background:"transparent", color:"#6b7280", fontSize:12, fontWeight:700, cursor:"pointer" }}>
-        <i className="ri-add-line"/>Add {label} Row
-      </button>
     </div>
   );
 
@@ -3856,22 +3928,10 @@ function OnsiteATMSection({ branchName }: { branchName: string }) {
               <div style={{ fontSize:12, fontWeight:800, color:"#92400e", marginBottom:10, display:"flex", alignItems:"center", gap:6 }}>
                 <i className="ri-camera-line" style={{ fontSize:15 }}/>PROMPT — Backroom Photo 1
               </div>
-              {atmPhoto ? (
-                <div style={{ position:"relative", display:"inline-block" }}>
-                  <img src={atmPhoto} alt="Backroom" style={{ width:"100%", maxWidth:280, borderRadius:8, border:"2px solid #fbbf24" }}/>
-                  <button onClick={() => setAtmPhoto(null)}
-                    style={{ position:"absolute", top:4, right:4, width:24, height:24, borderRadius:6, border:"none", background:"#ef4444", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 }}>
-                    <i className="ri-close-line"/>
-                  </button>
-                </div>
-              ) : (
-                <label style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 14px", borderRadius:8, border:"1.5px dashed #f59e0b", cursor:"pointer", background:"#fff", width:"fit-content" }}>
-                  <i className="ri-camera-line" style={{ color:"#d97706", fontSize:16 }}/>
-                  <span style={{ fontSize:12, fontWeight:700, color:"#92400e" }}>Capture Backroom Photo</span>
-                  <input type="file" accept="image/*" capture="environment" style={{ display:"none" }}
-                    onChange={e => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}/>
-                </label>
-              )}
+              <div style={{ width:200, height:110, borderRadius:8, border:"1.5px solid #e2e8f0", background:"#f1f5f9", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:8 }}>
+                <i className="ri-image-line" style={{ fontSize:28, color:"#94a3b8" }}/>
+                <span style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</span>
+              </div>
             </div>
           </div>
         )}
@@ -3972,9 +4032,13 @@ interface DGSolarRow {
 }
 const newDGSolarRow = (): DGSolarRow => ({ id: uid(), make:"", capacityKVA:"", soundProof:"", ownedHired:"", chargesPerMonth:"" });
 
+const MOCK_DG_SOLAR_ROWS: DGSolarRow[] = [
+  { id:"dgs1", make:"Cummins", capacityKVA:"62.5", soundProof:"Yes", ownedHired:"Hired", chargesPerMonth:"28000" },
+];
+
 function DGSolarSection({ branchName }: { branchName: string }) {
-  const [rows,      setRows]      = useState<DGSolarRow[]>([newDGSolarRow()]);
-  const [solarKW,   setSolarKW]   = useState("");
+  const [rows,      setRows]      = useState<DGSolarRow[]>(MOCK_DG_SOLAR_ROWS);
+  const [solarKW,   setSolarKW]   = useState("25");
   const [saved,     setSaved]     = useState(false);
 
   const updRow = (id: string, field: keyof DGSolarRow, val: string) =>
@@ -4025,12 +4089,7 @@ function DGSolarSection({ branchName }: { branchName: string }) {
                   </div>
                   <span style={{ fontSize:13, fontWeight:800, color:"#78350f" }}>DG Set {idx+1}</span>
                 </div>
-                {rows.length > 1 && (
-                  <button onClick={() => setRows(rs => rs.filter(x => x.id !== r.id))}
-                    style={{ border:"none", background:"transparent", cursor:"pointer", color:"#ef4444", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:4 }}>
-                    <i className="ri-delete-bin-line"/>Remove
-                  </button>
-                )}
+                {/* Remove button hidden in edit mode */}
               </div>
 
               {/* Row 1: Make + Capacity */}
@@ -4136,7 +4195,7 @@ interface MiscPhoto { id: string; data: string; label: string; }
 
 function FinalSubmitSection({ branchName }: { branchName: string }) {
   const [miscPhotos, setMiscPhotos] = useState<MiscPhoto[]>([]);
-  const [email,      setEmail]      = useState("");
+  const [email,      setEmail]      = useState("sbi.branch0042@sbi.co.in");
   const [sending,    setSending]    = useState(false);
   const [sent,       setSent]       = useState(false);
   const [emailError, setEmailError] = useState("");
@@ -4213,19 +4272,18 @@ function FinalSubmitSection({ branchName }: { branchName: string }) {
             </div>
           )}
 
-          {/* Add photo button */}
-          <label style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px", borderRadius:9, border:`1.5px dashed ${slateMid}`, cursor:"pointer", background:slateBg, color:slateMid, fontSize:12, fontWeight:700 }}>
-            <i className="ri-camera-line" style={{ fontSize:16 }}/>
-            {miscPhotos.length === 0 ? "Capture / Add a Photo" : "Add Another Photo"}
-            <input type="file" accept="image/*" capture="environment" style={{ display:"none" }} multiple
-              onChange={e => { Array.from(e.target.files || []).forEach(addMiscPhoto); e.target.value=""; }}/>
-          </label>
-
-          {miscPhotos.length === 0 && (
-            <p style={{ fontSize:11, color:"#9ca3af", marginTop:10, fontStyle:"italic" }}>
-              No additional photos added — this section is optional and can be skipped.
-            </p>
-          )}
+          {/* Photo capture — edit mode placeholder */}
+          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+            {[0,1].map(i => (
+              <div key={i} style={{ width:80, height:80, borderRadius:8, border:"1.5px solid #e2e8f0", background:"#f1f5f9", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+                <i className="ri-image-line" style={{ fontSize:20, color:"#94a3b8" }}/>
+                <span style={{ fontSize:9, color:"#94a3b8", fontWeight:600 }}>Photo {i+1}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize:11, color:"#9ca3af", marginTop:10, fontStyle:"italic" }}>
+            Additional photos will appear here — this section is optional.
+          </p>
         </div>
       </div>
 
@@ -4306,14 +4364,14 @@ function AttendanceSheetSection({ branchName }: { branchName: string }) {
     e.target.value = "";
   };
 
-  const PhotoSlot = ({ label, icon, hint, value, onChange, index }: {
+  // Edit mode: static photo placeholder slot
+  const PhotoSlot = ({ label, icon, hint, index }: {
     label: string; icon: string; hint: string;
     value: string | null; onChange: (v: string | null) => void; index: number;
   }) => (
     <div style={{ flex:1, minWidth:0 }}>
-      {/* Slot header */}
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-        <div style={{ width:30, height:30, borderRadius:8, background: blue, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <div style={{ width:30, height:30, borderRadius:8, background:blue, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
           <i className={icon} style={{ color:"#fff", fontSize:14 }}/>
         </div>
         <div>
@@ -4321,39 +4379,10 @@ function AttendanceSheetSection({ branchName }: { branchName: string }) {
           <div style={{ fontSize:10, color:"#9ca3af" }}>{hint}</div>
         </div>
       </div>
-
-      {value ? (
-        <div style={{ borderRadius:12, overflow:"hidden", border:`2px solid ${blue}`, position:"relative" }}>
-          <img src={value} alt={label} style={{ width:"100%", height:220, objectFit:"cover", display:"block" }}/>
-          <div style={{ position:"absolute", top:8, right:8, display:"flex", gap:6 }}>
-            {/* Retake */}
-            <label style={{ width:30, height:30, borderRadius:8, background:"rgba(3,105,161,0.9)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-              <i className="ri-camera-line" style={{ color:"#fff", fontSize:14 }}/>
-              <input type="file" accept="image/*" capture="environment" style={{ display:"none" }} onChange={capturePhoto(onChange)}/>
-            </label>
-            {/* Remove */}
-            <button onClick={() => onChange(null)}
-              style={{ width:30, height:30, borderRadius:8, border:"none", background:"rgba(239,68,68,0.9)", color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
-              <i className="ri-delete-bin-line"/>
-            </button>
-          </div>
-          <div style={{ background:"rgba(3,105,161,0.85)", padding:"6px 10px", display:"flex", alignItems:"center", gap:6 }}>
-            <i className="ri-checkbox-circle-fill" style={{ color:"#fff", fontSize:13 }}/>
-            <span style={{ color:"#fff", fontSize:11, fontWeight:700 }}>Photo captured</span>
-          </div>
-        </div>
-      ) : (
-        <label style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10, height:220, border:`2px dashed ${blueBorder}`, borderRadius:12, background:blueBg, cursor:"pointer" }}>
-          <div style={{ width:52, height:52, borderRadius:14, background:blue, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <i className="ri-camera-line" style={{ color:"#fff", fontSize:24 }}/>
-          </div>
-          <div style={{ textAlign:"center" }}>
-            <div style={{ fontSize:12, fontWeight:800, color:blue }}>Tap to Capture</div>
-            <div style={{ fontSize:10, color:"#94a3b8", marginTop:2 }}>{label}</div>
-          </div>
-          <input type="file" accept="image/*" capture="environment" style={{ display:"none" }} onChange={capturePhoto(onChange)}/>
-        </label>
-      )}
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10, height:220, border:`2px dashed ${blueBorder}`, borderRadius:12, background:blueBg }}>
+        <i className="ri-image-line" style={{ fontSize:36, color:"#94a3b8" }}/>
+        <span style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</span>
+      </div>
     </div>
   );
 
@@ -4457,7 +4486,10 @@ export default function AuditFormPage() {
   const [branchData, setBranchData]   = useState<BranchData | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Set<Step>>(new Set());
   // UPS Q answers lifted here so Questionnaire step can show pre-fills
-  const [upsQAnswers, setUpsQAnswers] = useState<Record<number, string>>({});
+  // Edit mode: pre-seed from MOCK_Q_ANSWERS so UPS-link banners render correctly
+  const [upsQAnswers, setUpsQAnswers] = useState<Record<number, string>>(
+    Object.fromEntries(Object.entries(MOCK_Q_ANSWERS).map(([no, v]) => [Number(no), v.answer]))
+  );
   const onUpsQAnswer = (no: number, answer: string) =>
     setUpsQAnswers(prev => ({ ...prev, [no]: answer }));
 
