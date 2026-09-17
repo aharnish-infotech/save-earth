@@ -2594,36 +2594,13 @@ function ElecSLDPanelCard({
     );
   };
 
-  /* ── Photo slots (max 2, start with 1) ── */
-  const PhotoSlot2 = ({ idx, photo }: { idx: number; photo: string | null }) => {
-    const ref = useRef<HTMLInputElement>(null);
-    return (
-      <div>
-        {photo ? (
-          <div style={{ position:"relative", display:"inline-block" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo} alt={`Panel photo ${idx+1}`} style={{ width:110, height:75, objectFit:"cover", borderRadius:9, border:`2px solid ${greenMid}` }}/>
-            <button onClick={() => { const u=[...panel.photos]; u[idx]=null; upd("photos",u); }}
-              style={{ position:"absolute", top:-6, right:-6, width:20, height:20, borderRadius:"50%", border:"none", background:"#ef4444", color:"#fff", fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:0 }}>
-              <i className="ri-close-line"/>
-            </button>
-          </div>
-        ) : (
-          <button onClick={() => ref.current?.click()}
-            style={{ width:110, height:75, borderRadius:9, border:`2px dashed ${greenMid}`, background:"#f0fdf4", color:green, fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
-            <i className="ri-camera-line" style={{ fontSize:20 }}/>Photo {idx+1}
-          </button>
-        )}
-        <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display:"none" }}
-          onChange={e => {
-            const f = e.target.files?.[0]; if (!f) return;
-            const r = new FileReader();
-            r.onload = ev => { const u=[...panel.photos]; u[idx]=ev.target?.result as string; upd("photos",u); };
-            r.readAsDataURL(f);
-          }}/>
-      </div>
-    );
-  };
+  /* ── Photo slots — edit mode: show placeholder ── */
+  const PhotoSlot2 = ({ idx }: { idx: number }) => (
+    <div style={{ width:110, height:75, borderRadius:9, border:"1.5px solid #e2e8f0", background:"#f1f5f9", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
+      <i className="ri-image-line" style={{ fontSize:20, color:"#94a3b8" }}/>
+      <span style={{ fontSize:10, color:"#94a3b8", fontWeight:600 }}>Photo {idx+1}</span>
+    </div>
+  );
 
   /* ── Helpers ── */
   const Row2 = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -2810,18 +2787,8 @@ function ElecSLDPanelCard({
             <i className="ri-camera-fill" style={{ color:green, fontSize:14 }}/>Panel Photos (max 2)
           </label>
           <div style={{ display:"flex", gap:10, alignItems:"flex-end", flexWrap:"wrap" }}>
-            {panel.photos.map((p, i) => (
-              <PhotoSlot2 key={i} idx={i} photo={p}/>
-            ))}
-            {panel.photos.length < 2 && (
-              <button onClick={() => upd("photos", [...panel.photos, null])}
-                style={{ fontSize:11, fontWeight:700, color:green, background:greenBg, border:`1.5px dashed ${greenMid}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6, alignSelf:"center" }}>
-                <i className="ri-add-line"/>Add Photo 2
-              </button>
-            )}
-            {panel.photos.length >= 2 && (
-              <span style={{ fontSize:11, color:"#9ca3af", fontStyle:"italic", alignSelf:"center" }}>Maximum 2 photos</span>
-            )}
+            <PhotoSlot2 idx={0}/>
+            <PhotoSlot2 idx={1}/>
           </div>
         </div>
       </div>
@@ -2829,12 +2796,36 @@ function ElecSLDPanelCard({
   );
 }
 
+// ── Edit-mode mock SLD panel data ────────────────────────────────────────────
+const MOCK_ELEC_SLD_PANELS: ElecSLDPanel[] = [
+  {
+    id: "sldp1", name: "Main Distribution Board (MDB)",
+    supply: "3-phase", distributionType: "MDB", busbar: "Yes", pfController: "APFC",
+    incomerSqmm: "240", incomerCore: "4",
+    distCableSqmm: "95",  distCableCore: "4",
+    cutoutA: "400", cutoutNos: "1",
+    rccbElcbA: "400", apfcVar: "25000", cosA: "63",
+    mainMccbA: "400", mainMccbPole: "4",
+    mainLightingDbA: "100", mainLightingDbPole: "4",
+    mainAcdbA: "63",  mainAcdbPole: "4",
+    acdbRows: [
+      { id:"ar1", amp:"32", pole:"1", nos:"4" },
+      { id:"ar2", amp:"16", pole:"1", nos:"2" },
+    ],
+    ldbRows: [
+      { id:"lr1", amp:"16", pole:"1", nos:"8" },
+      { id:"lr2", amp:"10", pole:"1", nos:"4" },
+    ],
+    photos: [null],
+  },
+];
+
 function ElecSLDSection({ branchName }: { branchName: string }) {
-  const [panels, setPanels] = useState<ElecSLDPanel[]>([newElecSLDPanel(0)]);
+  const [panels, setPanels] = useState<ElecSLDPanel[]>(MOCK_ELEC_SLD_PANELS);
   const [earthingAl, setEarthingAl] = useState(false);
-  const [earthingCu, setEarthingCu] = useState(false);
-  const [earthingGi, setEarthingGi] = useState(false);
-  const [noOfEarthing, setNoOfEarthing] = useState("");
+  const [earthingCu, setEarthingCu] = useState(true);
+  const [earthingGi, setEarthingGi] = useState(true);
+  const [noOfEarthing, setNoOfEarthing] = useState("3");
   const [saved, setSaved] = useState(false);
   const green = "#166534"; const greenMid = "#16a34a"; const greenBg = "#dcfce7";
 
