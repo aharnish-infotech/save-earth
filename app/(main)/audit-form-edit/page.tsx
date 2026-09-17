@@ -1463,6 +1463,189 @@ function UPSCard({
   );
 }
 
+// ── Edit-mode UPS Parameters state ───────────────────────────────────────────
+interface EditUPSReadings {
+  id: string;
+  batteryMake: string; batteryAh: string; batteryCount: string;
+  r_inputPN: string; r_inputNE: string;
+  r_outputPN: string;
+  r_current: string; r_frequency: string;
+}
+const MOCK_UPS_SPECS = [
+  { id:"u1", name:"UPS 1", type:"Branch" as const, isInverter:"UPS" as const,     make:"APC",      kva:"10", phase:"1-Phase" as const },
+  { id:"u2", name:"UPS 2", type:"ATM"    as const, isInverter:"UPS" as const,     make:"Luminous", kva:"3",  phase:"1-Phase" as const },
+  { id:"u3", name:"UPS 3", type:"ATM"    as const, isInverter:"Inverter" as const, make:"Microtek", kva:"5",  phase:"1-Phase" as const },
+];
+const MOCK_READINGS_INIT: EditUPSReadings[] = [
+  { id:"u1", batteryMake:"Exide",  batteryAh:"42", batteryCount:"8", r_inputPN:"238", r_inputNE:"0.8", r_outputPN:"230", r_current:"18", r_frequency:"50" },
+  { id:"u2", batteryMake:"Amaron", batteryAh:"26", batteryCount:"4", r_inputPN:"235", r_inputNE:"1.2", r_outputPN:"228", r_current:"8",  r_frequency:"50" },
+  { id:"u3", batteryMake:"Amaron", batteryAh:"42", batteryCount:"6", r_inputPN:"236", r_inputNE:"0.9", r_outputPN:"229", r_current:"11", r_frequency:"50" },
+];
+
+function UPSParametersSection({ branchName }: { branchName: string }) {
+  const [readings, setReadings] = useState<EditUPSReadings[]>(MOCK_READINGS_INIT);
+  const [saved, setSaved]       = useState(false);
+
+  const violet = "#6d28d9"; const violetDark = "#4c1d95"; const violetBg = "#f5f3ff";
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const upd = (id: string, field: keyof EditUPSReadings, val: string) =>
+    setReadings(rs => rs.map(r => r.id !== id ? r : { ...r, [field]: val }));
+
+  const LockedBadge = () => (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#f1f5f9", border:"1px solid #e2e8f0", borderRadius:6, padding:"2px 8px", fontSize:10, fontWeight:700, color:"#64748b" }}>
+      <i className="ri-lock-line" style={{ fontSize:10 }}/>Locked
+    </span>
+  );
+
+  return (
+    <div>
+      {saved && (
+        <div style={{ marginBottom:14, background:"#f5f3ff", border:"1px solid #c4b5fd", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <i className="ri-checkbox-circle-fill" style={{ color:violet, fontSize:18 }}/>
+          <span style={{ fontSize:13, fontWeight:700, color:violetDark }}>UPS Parameters saved successfully</span>
+        </div>
+      )}
+
+      {/* Section header */}
+      <div style={{ padding:"14px 18px", background:`linear-gradient(135deg,${violet},${violetDark})`, borderRadius:14, marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 4px 12px rgba(109,40,217,0.3)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-battery-charge-line" style={{ color:"#fff", fontSize:20 }}/>
+          </div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>UPS Room — {MOCK_UPS_SPECS.length} UPS unit{MOCK_UPS_SPECS.length > 1 ? "s" : ""}</div>
+          </div>
+        </div>
+        <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>
+          Step 3
+        </div>
+      </div>
+
+      {MOCK_UPS_SPECS.map((spec, idx) => {
+        const r = readings.find(x => x.id === spec.id)!;
+        return (
+          <div key={spec.id} style={{ background:"#fff", borderRadius:14, border:`2px solid #ddd6fe`, overflow:"hidden", boxShadow:"0 2px 10px rgba(109,40,217,0.08)", marginBottom:16 }}>
+
+            {/* UPS Card header */}
+            <div style={{ background:`linear-gradient(135deg,${violetBg},#ede9fe)`, borderBottom:"2px solid #ddd6fe", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:13, fontWeight:900, color:violet, background:"#fff", borderRadius:8, padding:"4px 12px", border:"1px solid #ddd6fe" }}>
+                  {spec.name}
+                </span>
+                <span style={{ fontSize:11, fontWeight:700, color:"#7c3aed", background:"#ede9fe", borderRadius:6, padding:"2px 8px", border:"1px solid #ddd6fe" }}>
+                  {spec.type}
+                </span>
+                <span style={{ fontSize:11, fontWeight:700, color:"#059669", background:"#d1fae5", borderRadius:6, padding:"2px 8px", border:"1px solid #a7f3d0" }}>
+                  {spec.isInverter}
+                </span>
+              </div>
+              <span style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>UPS {idx + 1} of {MOCK_UPS_SPECS.length}</span>
+            </div>
+
+            <div style={{ padding:16 }}>
+
+              {/* ── Hardware Specs — VIEW ONLY ── */}
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ri-lock-2-line" style={{ fontSize:12 }}/>Hardware Specifications
+                  <span style={{ fontWeight:600, color:"#94a3b8", textTransform:"none", fontSize:10 }}>(read-only)</span>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+                  {[
+                    { label:"Make / Brand", value:spec.make },
+                    { label:"Capacity (KVA)", value:spec.kva },
+                    { label:"Phase", value:spec.phase },
+                  ].map(f => (
+                    <div key={f.label} style={{ background:"#f8fafc", borderRadius:9, border:"1px solid #e2e8f0", padding:"10px 12px" }}>
+                      <div style={{ fontSize:9.5, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                        {f.label}<LockedBadge/>
+                      </div>
+                      <div style={{ fontSize:13, fontWeight:800, color:"#374151" }}>{f.value || "—"}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── UPS Photo placeholder ── */}
+              <div style={{ marginBottom:14, borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+                <div style={{ background:"#f8fafc", borderBottom:"1px solid #e5e7eb", padding:"8px 12px", display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ri-camera-line" style={{ color:violet, fontSize:13 }}/>
+                  <span style={{ fontSize:11, fontWeight:800, color:"#374151", textTransform:"uppercase", letterSpacing:"0.04em" }}>UPS Photo</span>
+                </div>
+                <div style={{ height:120, background:"#f1f5f9", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:8 }}>
+                  <div style={{ width:40, height:40, borderRadius:10, background:"#e2e8f0", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <i className="ri-image-line" style={{ fontSize:22, color:"#94a3b8" }}/>
+                  </div>
+                  <div style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</div>
+                </div>
+              </div>
+
+              {/* ── Battery Specs — EDITABLE ── */}
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:800, color:"#6d28d9", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ri-battery-line" style={{ fontSize:12 }}/>Battery Details
+                  <span style={{ fontWeight:600, color:"#7c3aed", textTransform:"none", fontSize:10 }}>(editable)</span>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+                  {[
+                    { field:"batteryMake" as keyof EditUPSReadings,  label:"Battery Make",  type:"text" },
+                    { field:"batteryAh"   as keyof EditUPSReadings,  label:"Battery Ah",    type:"number" },
+                    { field:"batteryCount"as keyof EditUPSReadings,  label:"Battery Count", type:"number" },
+                  ].map(f => (
+                    <div key={f.field}>
+                      <div style={{ fontSize:9.5, fontWeight:700, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>{f.label}</div>
+                      <input type={f.type} value={r[f.field]} onChange={e => upd(spec.id, f.field, e.target.value)}
+                        style={{ width:"100%", border:`1.5px solid ${r[f.field] ? violet : "#e5e7eb"}`, borderRadius:8, padding:"8px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background: r[f.field] ? violetBg : "#fff", boxSizing:"border-box" }}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Readings Table — EDITABLE ── */}
+              <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", background:violetBg, borderBottom:"2px solid #ddd6fe" }}>
+                  {["Parameters","Test Point","Actual Reading"].map(h => (
+                    <div key={h} style={{ padding:"9px 12px", fontSize:10, fontWeight:800, color:violet, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
+                  ))}
+                </div>
+
+                {[
+                  { label:"INPUT VOLTAGE (V)",  tp:"P-N",   field:"r_inputPN"   as keyof EditUPSReadings, unit:"V" },
+                  { label:"",                   tp:"N-E",   field:"r_inputNE"   as keyof EditUPSReadings, unit:"V" },
+                  { label:"OUTPUT VOLTAGE (V)", tp:"P-N",   field:"r_outputPN"  as keyof EditUPSReadings, unit:"V" },
+                  { label:"CURRENT (A)",         tp:"—",     field:"r_current"   as keyof EditUPSReadings, unit:"A" },
+                  { label:"FREQUENCY (Hz)",      tp:"—",     field:"r_frequency" as keyof EditUPSReadings, unit:"Hz" },
+                ].map((row, ri) => (
+                  <div key={row.field} style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop: ri === 0 ? "none" : "1px solid #f3f4f6" }}>
+                    <div style={{ padding:"10px 12px", fontSize:12, fontWeight:800, color:"#374151", background:"#faf9ff", display:"flex", alignItems:"center" }}>{row.label}</div>
+                    <div style={{ padding:"10px 12px", fontSize:12, color:"#6b7280", display:"flex", alignItems:"center" }}>{row.tp}</div>
+                    <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:6 }}>
+                      <input type="number" value={r[row.field]} onChange={e => upd(spec.id, row.field, e.target.value)}
+                        style={{ flex:1, border:`1.5px solid ${r[row.field] ? violet : "#e5e7eb"}`, borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background: r[row.field] ? violetBg : "#fff", boxSizing:"border-box" }}/>
+                      <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af", flexShrink:0 }}>{row.unit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Save */}
+      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+        <button onClick={save}
+          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${violet},${violetDark})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(109,40,217,0.35)" }}>
+          <i className="ri-save-line"/>Save UPS Parameters
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // STEP 4 — UPS SLD Data  (standalone step, one card per UPS unit)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1623,17 +1806,86 @@ function SLDCard({ sld, onChange }: {
   );
 }
 
+
+// ── Edit-mode SLD state ───────────────────────────────────────────────────────
+interface EditMCB { id: string; amp: string; pole: string; nos: string; }
+const em = (amp: string, pole: string, nos: string): EditMCB => ({ id: uid(), amp, pole, nos });
+interface EditSLD {
+  id: string; name: string;
+  changeoverSwitch: string; cosRating: string;
+  inputMCBs: EditMCB[]; outputMCBs: EditMCB[];
+  cdbMCBs: EditMCB[]; securityDBMCBs: EditMCB[]; eldbMCBs: EditMCB[];
+  rccbA: string; rccbMA: string;
+}
+const MOCK_SLD_DATA: EditSLD[] = [
+  { id:"s1", name:"UPS 1", changeoverSwitch:"Yes", cosRating:"63",
+    inputMCBs:      [em("63","2","1")],
+    outputMCBs:     [em("32","2","1")],
+    cdbMCBs:        [em("16","","4")],
+    securityDBMCBs: [em("6","","2")],
+    eldbMCBs:       [em("10","","2")],
+    rccbA:"63", rccbMA:"300" },
+  { id:"s2", name:"UPS 2", changeoverSwitch:"No", cosRating:"32",
+    inputMCBs:      [em("32","2","1")],
+    outputMCBs:     [em("16","2","1")],
+    cdbMCBs:        [em("10","","2")],
+    securityDBMCBs: [em("6","","1")],
+    eldbMCBs:       [em("6","","1")],
+    rccbA:"32", rccbMA:"100" },
+  { id:"s3", name:"UPS 3", changeoverSwitch:"No", cosRating:"40",
+    inputMCBs:      [em("40","2","1")],
+    outputMCBs:     [em("20","2","1")],
+    cdbMCBs:        [em("10","","3")],
+    securityDBMCBs: [em("6","","1")],
+    eldbMCBs:       [em("10","","1")],
+    rccbA:"40", rccbMA:"300" },
+];
+
 function UPSSLDSection({ branchName }: { branchName: string }) {
-  const [units, setUnits] = useState<SLDUnit[]>([newSLD(0)]);
+  const [units, setUnits] = useState<EditSLD[]>(MOCK_SLD_DATA);
   const [saved, setSaved] = useState(false);
-  const violet = "#4c1d95"; const violetLight = "#6d28d9";
+  const violet = "#4c1d95"; const violetLight = "#6d28d9"; const violetBg = "#f5f3ff";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onChange = (id: string, field: keyof SLDUnit, val: any) =>
+  const updUnit = (id: string, field: keyof EditSLD, val: any) =>
     setUnits(us => us.map(u => u.id !== id ? u : { ...u, [field]: val }));
-  const addUnit    = () => setUnits(us => [...us, newSLD(us.length)]);
-  const removeUnit = (id: string) => setUnits(us => us.filter(u => u.id !== id));
+  const updMCB = (unitId: string, field: keyof EditSLD, mcbId: string, key: keyof EditMCB, val: string) =>
+    setUnits(us => us.map(u => {
+      if (u.id !== unitId) return u;
+      const arr = (u[field] as EditMCB[]).map(m => m.id !== mcbId ? m : { ...m, [key]: val });
+      return { ...u, [field]: arr };
+    }));
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const LBL3: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" };
+  const INP3: React.CSSProperties = { border:"1.5px solid #ddd6fe", borderRadius:8, padding:"8px 9px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:"#fff" };
+  const Divider = ({ label }: { label: string }) => (
+    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+      <div style={{ flex:1, height:1, background:"#ede9fe" }}/>
+      <span style={{ fontSize:10, fontWeight:800, color:violetLight, textTransform:"uppercase", letterSpacing:"0.07em" }}>{label}</span>
+      <div style={{ flex:1, height:1, background:"#ede9fe" }}/>
+    </div>
+  );
+  const MCBRows = ({ unitId, fieldKey, withPole, entries }: { unitId: string; fieldKey: keyof EditSLD; withPole: boolean; entries: EditMCB[] }) => (
+    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+      {entries.map(m => (
+        <div key={m.id} style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+          <input type="number" value={m.amp} onChange={e => updMCB(unitId, fieldKey, m.id, "amp", e.target.value)}
+            placeholder="Amp" style={{ ...INP3, width:70 }}/>
+          <span style={{ fontSize:12, color:"#6b7280", fontWeight:700 }}>A</span>
+          {withPole && <>
+            <input type="number" value={m.pole} onChange={e => updMCB(unitId, fieldKey, m.id, "pole", e.target.value)}
+              placeholder="Pole" style={{ ...INP3, width:54 }}/>
+            <span style={{ fontSize:12, color:"#6b7280", fontWeight:700 }}>pole ×</span>
+          </>}
+          {!withPole && <span style={{ fontSize:12, color:"#6b7280", fontWeight:700 }}>×</span>}
+          <input type="number" value={m.nos} onChange={e => updMCB(unitId, fieldKey, m.id, "nos", e.target.value)}
+            placeholder="Nos." style={{ ...INP3, width:54 }}/>
+          <span style={{ fontSize:12, color:"#6b7280", fontWeight:700 }}>nos.</span>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div>
@@ -1645,34 +1897,118 @@ function UPSSLDSection({ branchName }: { branchName: string }) {
       )}
 
       {/* Header */}
-      <div style={{ background:"linear-gradient(135deg,#4c1d95,#3b0764)", borderRadius:14, padding:"16px 18px", marginBottom:16, boxShadow:"0 4px 12px rgba(76,29,149,0.3)" }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <i className="ri-flow-chart" style={{ color:"#fff", fontSize:20 }}/>
-            </div>
-            <div>
-              <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
-              <div style={{ fontSize:11, color:"#c4b5fd", marginTop:2 }}>UPS Distribution Data for SLD — {units.length} UPS unit{units.length > 1 ? "s" : ""}</div>
-            </div>
+      <div style={{ background:"linear-gradient(135deg,#4c1d95,#3b0764)", borderRadius:14, padding:"16px 18px", marginBottom:16, boxShadow:"0 4px 12px rgba(76,29,149,0.3)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-flow-chart" style={{ color:"#fff", fontSize:20 }}/>
           </div>
-          <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>Step 4</div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
+            <div style={{ fontSize:11, color:"#c4b5fd", marginTop:2 }}>UPS Distribution Data for SLD — {units.length} UPS units</div>
+          </div>
         </div>
+        <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>Step 4</div>
       </div>
 
-      {units.map((u, idx) => (
-        <div key={u.id} style={{ position:"relative" }}>
-          {units.length > 1 && (
-            <button onClick={() => removeUnit(u.id)}
-              style={{ position:"absolute", top:14, right:14, zIndex:10, background:"rgba(239,68,68,0.1)", border:"1px solid #fecaca", borderRadius:8, padding:"4px 10px", color:"#ef4444", fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
-              <i className="ri-delete-bin-line"/>Remove
-            </button>
-          )}
-          <SLDCard sld={u} onChange={onChange}/>
+      {units.map(u => (
+        <div key={u.id} style={{ background:"#fff", borderRadius:14, border:"1.5px solid #ddd6fe", overflow:"hidden", boxShadow:"0 2px 10px rgba(76,29,149,0.1)", marginBottom:16 }}>
+          {/* Card header */}
+          <div style={{ padding:"13px 18px", background:"linear-gradient(135deg,#4c1d95,#3b0764)", display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-flow-chart" style={{ color:"#c4b5fd", fontSize:17 }}/>
+            </div>
+            <div>
+              <div style={{ fontSize:14, fontWeight:900, color:"#fff" }}>{u.name} — SLD Distribution Data</div>
+              <div style={{ fontSize:11, color:"#c4b5fd", marginTop:2 }}>MCBs, MCCB, RCCB &amp; Distribution Boards</div>
+            </div>
+          </div>
+
+          <div style={{ padding:"18px", display:"flex", flexDirection:"column", gap:14 }}>
+
+            {/* Changeover + COS */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div>
+                <label style={LBL3}>Changeover / Switch</label>
+                <select value={u.changeoverSwitch} onChange={e => updUnit(u.id,"changeoverSwitch",e.target.value)}
+                  style={{ width:"100%", border:"1.5px solid #ddd6fe", borderRadius:8, padding:"9px 11px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", cursor:"pointer", background:"#fff" }}>
+                  <option value="">— Select —</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                </select>
+              </div>
+              <div>
+                <label style={LBL3}>COS Rating</label>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <input type="number" value={u.cosRating} onChange={e => updUnit(u.id,"cosRating",e.target.value)}
+                    placeholder="e.g. 63" style={{ ...INP3, flex:1 }}/>
+                  <span style={{ fontSize:13, fontWeight:800, color:"#374151" }}>AMP</span>
+                </div>
+              </div>
+            </div>
+
+            <Divider label="Input"/>
+            <div>
+              <div style={{ fontSize:12, fontWeight:900, color:violet, fontStyle:"italic", marginBottom:8 }}>INPUT: <span style={{ fontStyle:"normal", color:"#1f2937" }}>UPS MAIN input MCB/MCCB</span></div>
+              <MCBRows unitId={u.id} fieldKey="inputMCBs" withPole entries={u.inputMCBs}/>
+            </div>
+
+            <Divider label="Output"/>
+            <div>
+              <div style={{ fontSize:12, fontWeight:900, color:violet, fontStyle:"italic", marginBottom:8 }}>OUTPUT: <span style={{ fontStyle:"normal", color:"#1f2937" }}>UPS MAIN output MCB/MCCB</span></div>
+              <MCBRows unitId={u.id} fieldKey="outputMCBs" withPole entries={u.outputMCBs}/>
+            </div>
+
+            {/* DB group */}
+            <div style={{ background:"#faf9ff", borderRadius:12, padding:"14px", display:"flex", flexDirection:"column", gap:14, border:"1px solid #ede9fe" }}>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800, color:"#1f2937", marginBottom:8 }}>CDB:</div>
+                <MCBRows unitId={u.id} fieldKey="cdbMCBs" withPole={false} entries={u.cdbMCBs}/>
+              </div>
+              <div style={{ height:1, background:"#ede9fe" }}/>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800, color:"#1f2937", marginBottom:8 }}>SECURITY DB:</div>
+                <MCBRows unitId={u.id} fieldKey="securityDBMCBs" withPole={false} entries={u.securityDBMCBs}/>
+              </div>
+              <div style={{ height:1, background:"#ede9fe" }}/>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800, color:"#1f2937", marginBottom:8 }}>ELDB:</div>
+                <MCBRows unitId={u.id} fieldKey="eldbMCBs" withPole={false} entries={u.eldbMCBs}/>
+              </div>
+            </div>
+
+            {/* RCCB Rating */}
+            <div style={{ background:violetBg, borderRadius:12, padding:"14px 16px", border:"1.5px solid #ddd6fe" }}>
+              <label style={{ ...LBL3, color:violet, marginBottom:10 }}>UPS MAIN INPUT / OUTPUT RCCB RATING</label>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <input type="number" value={u.rccbA} onChange={e => updUnit(u.id,"rccbA",e.target.value)}
+                  placeholder="—" style={{ width:90, border:"2px solid #7c3aed", borderRadius:9, padding:"10px", fontSize:15, fontWeight:900, color:"#111827", outline:"none", textAlign:"center", background:"#fff" }}/>
+                <span style={{ fontSize:13, fontWeight:900, color:violet }}>Amp</span>
+                <div style={{ width:1, height:28, background:"#ddd6fe" }}/>
+                <input type="number" value={u.rccbMA} onChange={e => updUnit(u.id,"rccbMA",e.target.value)}
+                  placeholder="—" style={{ width:90, border:"2px solid #7c3aed", borderRadius:9, padding:"10px", fontSize:15, fontWeight:900, color:"#111827", outline:"none", textAlign:"center", background:"#fff" }}/>
+                <span style={{ fontSize:13, fontWeight:900, color:violet }}>mA</span>
+              </div>
+            </div>
+
+            {/* MCB Photos — placeholder */}
+            <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+              <div style={{ background:"#f8fafc", borderBottom:"1px solid #e5e7eb", padding:"9px 12px", display:"flex", alignItems:"center", gap:7 }}>
+                <i className="ri-camera-fill" style={{ color:violetLight, fontSize:14 }}/>
+                <span style={{ fontSize:12, fontWeight:800, color:"#374151", textTransform:"uppercase", letterSpacing:"0.04em" }}>Photos of MCBs</span>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, padding:10 }}>
+                {[1,2,3,4].map(n => (
+                  <div key={n} style={{ height:100, background:"#f1f5f9", borderRadius:9, border:"1px solid #e2e8f0", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6 }}>
+                    <i className="ri-image-line" style={{ fontSize:22, color:"#94a3b8" }}/>
+                    <span style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>Photo {n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
         </div>
       ))}
-
-      {/* Add UPS SLD — removed in Edit mode */}
 
       {/* Save */}
       <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:20 }}>
@@ -1681,603 +2017,6 @@ function UPSSLDSection({ branchName }: { branchName: string }) {
           <i className="ri-save-line"/>Save SLD Data
         </button>
       </div>
-
-      {/* ── DB Schema Panel ─────────────────────────────────────────────────── */}
-      {(() => {
-        const [schemaOpen, setSchemaOpen] = useState(false);
-        const schema = `-- ═══════════════════════════════════════════════════════════════════════
--- UPS SLD DATA — PostgreSQL Schema
--- Step 4 of the Audit Form
--- ═══════════════════════════════════════════════════════════════════════
-
--- ENUM: MCB group types
-CREATE TYPE sld_mcb_group AS ENUM (
-  'input',        -- UPS MAIN input MCB/MCCB
-  'output',       -- UPS MAIN output MCB/MCCB
-  'cdb',          -- CDB distribution MCBs
-  'security_db',  -- Security DB MCBs
-  'eldb'          -- ELDB MCBs
-);
-
--- ─────────────────────────────────────────────────────────────────────
--- TABLE: ups_sld_entries
--- One row per UPS unit per audit session.
--- ─────────────────────────────────────────────────────────────────────
-CREATE TABLE ups_sld_entries (
-  id                  UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-  audit_id            UUID          NOT NULL REFERENCES audits(id) ON DELETE CASCADE,
-  branch_unique_id    VARCHAR(64)   NOT NULL,          -- denormalized for fast lookup & offline sync
-  ups_unit_index      SMALLINT      NOT NULL DEFAULT 0, -- 0-based: UPS 1, UPS 2 …
-  ups_unit_name       VARCHAR(64)   NOT NULL DEFAULT 'UPS 1',
-  changeover_switch   BOOLEAN,                         -- NULL = not answered
-  cos_rating_amp      NUMERIC(8,2),                    -- COS Rating in Amps
-  rccb_amp            NUMERIC(8,2),                    -- RCCB current rating (Amp)
-  rccb_ma             NUMERIC(8,2),                    -- RCCB sensitivity (mA)
-  created_at          TIMESTAMPTZ   NOT NULL DEFAULT now(),
-  updated_at          TIMESTAMPTZ   NOT NULL DEFAULT now(),
-  deleted_at          TIMESTAMPTZ,                     -- soft delete
-
-  CONSTRAINT uq_sld_audit_ups UNIQUE (audit_id, ups_unit_index)
-);
-
-CREATE INDEX idx_sld_entries_audit       ON ups_sld_entries(audit_id);
-CREATE INDEX idx_sld_entries_branch      ON ups_sld_entries(branch_unique_id);
-CREATE INDEX idx_sld_entries_deleted_at  ON ups_sld_entries(deleted_at) WHERE deleted_at IS NULL;
-
--- Auto-update updated_at
-CREATE TRIGGER trg_sld_entries_updated_at
-  BEFORE UPDATE ON ups_sld_entries
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
--- ─────────────────────────────────────────────────────────────────────
--- TABLE: ups_sld_mcb_rows
--- Each MCB/MCCB entry per group (input, output, CDB, Security DB, ELDB)
--- ─────────────────────────────────────────────────────────────────────
-CREATE TABLE ups_sld_mcb_rows (
-  id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-  sld_entry_id    UUID          NOT NULL REFERENCES ups_sld_entries(id) ON DELETE CASCADE,
-  group_type      sld_mcb_group NOT NULL,
-  amp             NUMERIC(8,2),            -- MCB current rating in Amps
-  pole            SMALLINT,                -- pole count (1P, 2P, 3P, 4P) — only for input/output
-  nos             SMALLINT,                -- number of MCBs of this rating
-  sort_order      SMALLINT      NOT NULL DEFAULT 0,
-  created_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
-);
-
-CREATE INDEX idx_sld_mcb_entry   ON ups_sld_mcb_rows(sld_entry_id);
-CREATE INDEX idx_sld_mcb_group   ON ups_sld_mcb_rows(sld_entry_id, group_type);
-
--- ─────────────────────────────────────────────────────────────────────
--- TABLE: ups_sld_photos
--- MCB panel photos (max 4 per SLD unit)
--- ─────────────────────────────────────────────────────────────────────
-CREATE TABLE ups_sld_photos (
-  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  sld_entry_id    UUID        NOT NULL REFERENCES ups_sld_entries(id) ON DELETE CASCADE,
-  object_key      TEXT        NOT NULL,  -- S3/MinIO key: audits/{audit_id}/sld/{sld_entry_id}/mcb_{sort_order}.jpg
-  sort_order      SMALLINT    NOT NULL DEFAULT 0,
-  uploaded_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  CONSTRAINT uq_sld_photo_slot UNIQUE (sld_entry_id, sort_order),  -- enforce max-4 at app layer
-  CONSTRAINT chk_sld_photo_max CHECK (sort_order BETWEEN 0 AND 3)  -- 0..3 = max 4 photos
-);
-
-CREATE INDEX idx_sld_photos_entry ON ups_sld_photos(sld_entry_id);
-
-
--- ═══════════════════════════════════════════════════════════════════════
--- PRISMA SCHEMA  (schema.prisma)
--- ═══════════════════════════════════════════════════════════════════════
-
-enum SldMcbGroup {
-  input
-  output
-  cdb
-  security_db
-  eldb
-}
-
-model UpsSldEntry {
-  id               String         @id @default(uuid())
-  auditId          String         @map("audit_id")
-  branchUniqueId   String         @map("branch_unique_id") @db.VarChar(64)
-  upsUnitIndex     Int            @map("ups_unit_index") @db.SmallInt
-  upsUnitName      String         @map("ups_unit_name") @db.VarChar(64)
-  changeoverSwitch Boolean?       @map("changeover_switch")
-  cosRatingAmp     Decimal?       @map("cos_rating_amp") @db.Decimal(8, 2)
-  rccbAmp          Decimal?       @map("rccb_amp")       @db.Decimal(8, 2)
-  rccbMa           Decimal?       @map("rccb_ma")        @db.Decimal(8, 2)
-  createdAt        DateTime       @default(now())         @map("created_at")
-  updatedAt        DateTime       @updatedAt              @map("updated_at")
-  deletedAt        DateTime?                              @map("deleted_at")
-
-  audit            Audit          @relation(fields: [auditId], references: [id], onDelete: Cascade)
-  mcbRows          UpsSldMcbRow[]
-  photos           UpsSldPhoto[]
-
-  @@unique([auditId, upsUnitIndex])
-  @@index([branchUniqueId])
-  @@map("ups_sld_entries")
-}
-
-model UpsSldMcbRow {
-  id           String        @id @default(uuid())
-  sldEntryId   String        @map("sld_entry_id")
-  groupType    SldMcbGroup   @map("group_type")
-  amp          Decimal?      @db.Decimal(8, 2)
-  pole         Int?          @db.SmallInt
-  nos          Int?          @db.SmallInt
-  sortOrder    Int           @default(0) @map("sort_order") @db.SmallInt
-  createdAt    DateTime      @default(now()) @map("created_at")
-
-  sldEntry     UpsSldEntry   @relation(fields: [sldEntryId], references: [id], onDelete: Cascade)
-
-  @@index([sldEntryId, groupType])
-  @@map("ups_sld_mcb_rows")
-}
-
-model UpsSldPhoto {
-  id           String      @id @default(uuid())
-  sldEntryId   String      @map("sld_entry_id")
-  objectKey    String      @map("object_key")
-  sortOrder    Int         @default(0) @map("sort_order") @db.SmallInt
-  uploadedAt   DateTime    @default(now()) @map("uploaded_at")
-
-  sldEntry     UpsSldEntry @relation(fields: [sldEntryId], references: [id], onDelete: Cascade)
-
-  @@unique([sldEntryId, sortOrder])
-  @@map("ups_sld_photos")
-}
-
-
--- ─────────────────────────────────────────────────────────────────────
--- S3 / MinIO Object Key Pattern
--- ─────────────────────────────────────────────────────────────────────
--- audits/{audit_id}/sld/{sld_entry_id}/mcb_0.jpg   ← Photo 1
--- audits/{audit_id}/sld/{sld_entry_id}/mcb_1.jpg   ← Photo 2
--- audits/{audit_id}/sld/{sld_entry_id}/mcb_2.jpg   ← Photo 3
--- audits/{audit_id}/sld/{sld_entry_id}/mcb_3.jpg   ← Photo 4 (max)
-
--- ─────────────────────────────────────────────────────────────────────
--- BUSINESS RULES
--- ─────────────────────────────────────────────────────────────────────
--- 1. max 4 photos per SLD unit (enforced by CHECK constraint + app layer)
--- 2. pole column is only populated for group_type IN ('input','output')
--- 3. soft delete on ups_sld_entries cascades logically — MCB rows and
---    photos are hard-deleted via ON DELETE CASCADE (photos also purged from S3)
--- 4. branch_unique_id is denormalized to support offline-first sync without
---    joining to the branches table on the mobile device
--- 5. @@unique([auditId, upsUnitIndex]) prevents duplicate UPS slots per audit`;
-
-        return (
-          <div style={{ borderRadius:14, overflow:"hidden", border:"1.5px solid #312e81" }}>
-            <button onClick={() => setSchemaOpen(o => !o)}
-              style={{ width:"100%", padding:"14px 18px", background:"linear-gradient(135deg,#1e1b4b,#312e81)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                <i className="ri-database-2-line" style={{ color:"#a5b4fc", fontSize:18 }}/>
-                <span style={{ fontSize:13, fontWeight:800, color:"#e0e7ff", textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                  DB Schema — UPS SLD Step 4
-                </span>
-                <span style={{ fontSize:10, background:"rgba(165,180,252,0.2)", color:"#a5b4fc", borderRadius:99, padding:"2px 8px", fontWeight:700 }}>
-                  PostgreSQL + Prisma
-                </span>
-              </div>
-              <i className={`ri-arrow-${schemaOpen?"up":"down"}-s-line`} style={{ color:"#a5b4fc", fontSize:18 }}/>
-            </button>
-            {schemaOpen && (
-              <div style={{ background:"#0f0e17", padding:"20px 18px", overflowX:"auto" }}>
-                <pre style={{ margin:0, fontSize:11.5, lineHeight:1.7, color:"#e0e7ff", fontFamily:"'Fira Code','Cascadia Code','Consolas',monospace", whiteSpace:"pre" }}>
-                  {schema}
-                </pre>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-    </div>
-  );
-}
-
-// ── Edit-mode UPS state shape (only editable fields) ─────────────────────────
-interface EditUPSReadings {
-  id: string;
-  batteryMake: string; batteryAh: string; batteryCount: string;
-  r_inputPN: string; r_inputNE: string;
-  r_outputPN: string;
-  r_current: string; r_frequency: string;
-}
-
-const MOCK_UPS_SPECS = [
-  { id:"u1", name:"UPS 1", type:"Branch" as const, isInverter:"UPS"     as const, make:"APC",      kva:"10", phase:"1-Phase" as const },
-  { id:"u2", name:"UPS 2", type:"ATM"    as const, isInverter:"UPS"     as const, make:"Luminous", kva:"3",  phase:"1-Phase" as const },
-  { id:"u3", name:"UPS 3", type:"ATM"    as const, isInverter:"Inverter" as const, make:"Microtek", kva:"5",  phase:"1-Phase" as const },
-];
-
-const MOCK_READINGS_INIT: EditUPSReadings[] = [
-  { id:"u1", batteryMake:"Exide",  batteryAh:"42", batteryCount:"8", r_inputPN:"238", r_inputNE:"0.8", r_outputPN:"230", r_current:"18", r_frequency:"50" },
-  { id:"u2", batteryMake:"Amaron", batteryAh:"26", batteryCount:"4", r_inputPN:"235", r_inputNE:"1.2", r_outputPN:"228", r_current:"8",  r_frequency:"50" },
-  { id:"u3", batteryMake:"Amaron", batteryAh:"42", batteryCount:"6", r_inputPN:"236", r_inputNE:"0.9", r_outputPN:"229", r_current:"11", r_frequency:"50" },
-];
-
-function UPSParametersSection({ branchName }: { branchName: string }) {
-  const [readings, setReadings] = useState<EditUPSReadings[]>(MOCK_READINGS_INIT);
-  const [saved,    setSaved]    = useState(false);
-
-  const violet = "#6d28d9"; const violetDark = "#4c1d95"; const violetBg = "#f5f3ff";
-
-
-  const upd = (id: string, field: keyof EditUPSReadings, val: string) =>
-    setReadings(rs => rs.map(r => r.id !== id ? r : { ...r, [field]: val }));
-
-  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
-
-  const LBL2: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" };
-  const RO2: React.CSSProperties  = { border:"1px solid #e5e7eb", borderRadius:8, padding:"9px 11px", fontSize:13, color:"#374151", background:"#f9fafb", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between" };
-  const INP2: React.CSSProperties = { border:"1.5px solid #c4b5fd", borderRadius:8, padding:"9px 11px", fontSize:13, color:"#111827", background:"#fff", outline:"none", width:"100%", boxSizing:"border-box" as "border-box", fontWeight:600 };
-  const TH2: React.CSSProperties  = { padding:"9px 12px", fontSize:10, fontWeight:800, color:violet, textTransform:"uppercase" as "uppercase", letterSpacing:"0.06em", background:violetBg, borderBottom:"2px solid #ddd6fe" };
-  const PARAM2: React.CSSProperties = { padding:"10px 12px", fontSize:12, fontWeight:800, color:"#374151", background:"#faf9ff", display:"flex", alignItems:"center" };
-  const TP2: React.CSSProperties    = { padding:"10px 12px", fontSize:12, color:"#6b7280", display:"flex", alignItems:"center" };
-
-  const Badge = ({ label, color, bg }: { label: string; color: string; bg: string }) => (
-    <div style={{ display:"inline-flex", alignItems:"center", gap:5, border:`1.5px solid ${color}`, borderRadius:7, padding:"5px 12px", background:bg, fontSize:12, fontWeight:800, color }}>
-      {label}
-      <i className="ri-lock-line" style={{ fontSize:11, opacity:0.6 }}/>
-    </div>
-  );
-
-  return (
-    <div>
-      {saved && (
-        <div style={{ marginBottom:14, background:"#f5f3ff", border:"1px solid #c4b5fd", borderRadius:10, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
-          <i className="ri-checkbox-circle-fill" style={{ color:violet, fontSize:18 }}/>
-          <span style={{ fontSize:13, fontWeight:700, color:violetDark }}>UPS Parameters saved successfully</span>
-        </div>
-      )}
-
-      {/* Section header */}
-      <div style={{ padding:"14px 18px", background:`linear-gradient(135deg,${violet},${violetDark})`, borderRadius:14, marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 4px 12px rgba(109,40,217,0.3)" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <i className="ri-battery-charge-line" style={{ color:"#fff", fontSize:20 }}/>
-          </div>
-          <div>
-            <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
-            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>UPS Room — {MOCK_UPS_SPECS.length} UPS units</div>
-          </div>
-        </div>
-        <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>Step 3</div>
-      </div>
-
-      {MOCK_UPS_SPECS.map((spec, idx) => {
-        const r = readings.find(x => x.id === spec.id)!;
-        return (
-          <div key={spec.id} style={{ background:"#fff", borderRadius:14, border:"1.5px solid #ede9fe", overflow:"hidden", boxShadow:"0 2px 8px rgba(109,40,217,0.08)", marginBottom:20 }}>
-
-            {/* Card header */}
-            <div style={{ padding:"12px 16px", background:`linear-gradient(135deg,${violet},${violetDark})`, display:"flex", alignItems:"center", gap:12 }}>
-              <div style={{ width:32, height:32, borderRadius:9, background:"rgba(255,255,255,0.18)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <i className="ri-battery-charge-line" style={{ color:"#fff", fontSize:16 }}/>
-              </div>
-              <span style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{spec.name}</span>
-              <span style={{ marginLeft:"auto", fontSize:11, background:"rgba(255,255,255,0.15)", borderRadius:6, padding:"3px 10px", color:"rgba(255,255,255,0.85)", fontWeight:700 }}>
-                {idx === 0 ? "Bank UPS" : "ATM UPS"}
-              </span>
-            </div>
-
-            <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:14 }}>
-
-              {/* TYPE + Is it UPS/Inverter — view-only badges */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                <div>
-                  <label style={LBL2}>TYPE</label>
-                  <Badge label={spec.type} color="#6d28d9" bg="#f5f3ff"/>
-                </div>
-                <div>
-                  <label style={LBL2}>UPS / Inverter?</label>
-                  <Badge label={spec.isInverter} color={spec.isInverter === "UPS" ? "#2563eb" : "#0d9488"} bg={spec.isInverter === "UPS" ? "#eff6ff" : "#f0fdfa"}/>
-                </div>
-              </div>
-
-              {/* Spec table — Make/KVA/Phase locked | Battery editable */}
-              <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr", background:violetBg, borderBottom:"2px solid #ddd6fe" }}>
-                  {["UPS/Inverter Make","Capacity (KVA)","1-Ph or 3-Ph","Battery Make","Battery (Ah)","No. of Batteries"].map((h, i) => (
-                    <div key={h} style={{ padding:"8px 10px", fontSize:9, fontWeight:800, color: i < 3 ? "#9ca3af" : violet, textTransform:"uppercase", letterSpacing:"0.05em" }}>{h}</div>
-                  ))}
-                </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr" }}>
-                  <div style={{ margin:8, ...RO2, fontSize:12 }}><span>{spec.make}</span><i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:12 }}/></div>
-                  <div style={{ margin:8, ...RO2, fontSize:12 }}><span>{spec.kva}</span><i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:12 }}/></div>
-                  <div style={{ margin:8, ...RO2, fontSize:12 }}><span>{spec.phase}</span><i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:12 }}/></div>
-                  <input value={r.batteryMake} onChange={e => upd(spec.id,"batteryMake",e.target.value)} style={{ margin:8, ...INP2 }} placeholder="Make"/>
-                  <input type="number" value={r.batteryAh} onChange={e => upd(spec.id,"batteryAh",e.target.value)} style={{ margin:8, ...INP2 }} placeholder="Ah"/>
-                  <input type="number" value={r.batteryCount} onChange={e => upd(spec.id,"batteryCount",e.target.value)} style={{ margin:8, ...INP2 }} placeholder="Nos."/>
-                </div>
-              </div>
-
-              {/* UPS Nameplate Photo placeholder */}
-              <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
-                <div style={{ background:"#f8fafc", borderBottom:"1px solid #e5e7eb", padding:"9px 12px", display:"flex", alignItems:"center", gap:7 }}>
-                  <i className="ri-camera-line" style={{ color:violet, fontSize:14 }}/>
-                  <span style={{ fontSize:12, fontWeight:800, color:"#374151", textTransform:"uppercase", letterSpacing:"0.04em" }}>UPS Photo</span>
-                </div>
-                <div style={{ height:110, background:"#f1f5f9", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-                  <i className="ri-image-line" style={{ fontSize:26, color:"#94a3b8" }}/>
-                  <span style={{ fontSize:12, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</span>
-                </div>
-              </div>
-
-              {/* Reading table — all editable with pre-filled values */}
-              <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr" }}>
-                  {["Parameters","Test Point","Actual Reading"].map(h => <div key={h} style={TH2}>{h}</div>)}
-                </div>
-
-                {/* INPUT VOLTAGE */}
-                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"1px solid #f3f4f6" }}>
-                  <div style={PARAM2}>INPUT VOLTAGE (V)</div><div style={TP2}>P-N</div>
-                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
-                    <input type="number" value={r.r_inputPN} onChange={e => upd(spec.id,"r_inputPN",e.target.value)}
-                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
-                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>V</span>
-                  </div>
-                </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"1px solid #f3f4f6" }}>
-                  <div style={{ ...PARAM2, background:"#fff" }}></div><div style={TP2}>Input N-E Earthing</div>
-                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
-                    <input type="number" value={r.r_inputNE} onChange={e => upd(spec.id,"r_inputNE",e.target.value)}
-                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
-                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>V</span>
-                  </div>
-                </div>
-
-                {/* OUTPUT VOLTAGE */}
-                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"2px solid #f3f4f6" }}>
-                  <div style={PARAM2}>OUTPUT VOLTAGE (V)</div><div style={TP2}>P-N</div>
-                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
-                    <input type="number" value={r.r_outputPN} onChange={e => upd(spec.id,"r_outputPN",e.target.value)}
-                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
-                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>V</span>
-                  </div>
-                </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"1px solid #f3f4f6" }}>
-                  <div style={{ ...PARAM2, background:"#fff" }}></div>
-                  <div style={{ ...TP2, flexDirection:"column", alignItems:"flex-start", gap:2 }}>
-                    <span>Output N-E Earthing</span>
-                    <span style={{ fontSize:9, color:"#9ca3af" }}>auto from Input N-E</span>
-                  </div>
-                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
-                    <div style={{ flex:1, padding:"7px 10px", borderRadius:8, background:"#f0fdf4", border:"1.5px solid #bbf7d0", fontSize:13, fontWeight:700, color:"#16a34a" }}>{r.r_inputNE || <span style={{ color:"#9ca3af", fontWeight:400 }}>auto</span>}</div>
-                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>V</span>
-                  </div>
-                </div>
-
-                {/* N-E Photo placeholder */}
-                <div style={{ borderTop:"1px solid #f3f4f6" }}>
-                  <div style={{ margin:"10px 12px", borderRadius:9, border:"1px solid #e5e7eb", overflow:"hidden" }}>
-                    <div style={{ background:"#f8fafc", borderBottom:"1px solid #e5e7eb", padding:"7px 10px", display:"flex", alignItems:"center", gap:6 }}>
-                      <i className="ri-camera-line" style={{ color:violet, fontSize:13 }}/>
-                      <span style={{ fontSize:11, fontWeight:800, color:"#374151" }}>Output N-E Earthing Photo</span>
-                    </div>
-                    <div style={{ height:80, background:"#f1f5f9", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-                      <i className="ri-image-line" style={{ fontSize:22, color:"#94a3b8" }}/>
-                      <span style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* CURRENT */}
-                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"2px solid #f3f4f6" }}>
-                  <div style={PARAM2}>CURRENT READING (A)</div><div style={TP2}></div>
-                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
-                    <input type="number" value={r.r_current} onChange={e => upd(spec.id,"r_current",e.target.value)}
-                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
-                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>A</span>
-                  </div>
-                </div>
-
-                {/* FREQUENCY */}
-                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"1px solid #f3f4f6" }}>
-                  <div style={PARAM2}>Frequency (Hz)</div><div style={TP2}></div>
-                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
-                    <input type="number" value={r.r_frequency} onChange={e => upd(spec.id,"r_frequency",e.target.value)}
-                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
-                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>Hz</span>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Save */}
-      <div style={{ display:"flex", justifyContent:"flex-end" }}>
-        <button onClick={save}
-          style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${violet},${violetDark})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(109,40,217,0.35)" }}>
-          <i className="ri-save-line"/>Save UPS Parameters
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// STEP 4 — Electrical Parameters (multi-panel)
-// ═══════════════════════════════════════════════════════════════════════════════
-interface ElecRow  { id: string; testPt: string; reading: string; readingAcdb: string; unit: string; bold?: boolean; remarks: string; }
-interface ElecGroup { id: string; label: string; rows: ElecRow[]; }
-interface ElecPanel { id: string; name: string; groups: ElecGroup[]; }
-
-const makeElecGroups = (): ElecGroup[] => [
-  { id: "voltage", label: "VOLTAGE (V)", rows: [
-    { id:"rn",  testPt:"R-N",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
-    { id:"yn",  testPt:"Y-N",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
-    { id:"bn",  testPt:"B-N",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
-    { id:"ry",  testPt:"R-Y",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
-    { id:"yb",  testPt:"Y-B",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
-    { id:"rb",  testPt:"R-B",                     reading:"", readingAcdb:"", unit:"V",    remarks:"" },
-    { id:"ne",  testPt:"N-E",                     reading:"", readingAcdb:"", unit:"V",    remarks:"", bold:true },
-  ]},
-  { id: "current", label: "CURRENT (A)", rows: [
-    { id:"cr",  testPt:"R Phase",                 reading:"", readingAcdb:"", unit:"A",    remarks:"" },
-    { id:"cy",  testPt:"Y Phase",                 reading:"", readingAcdb:"", unit:"A",    remarks:"" },
-    { id:"cb",  testPt:"B Phase",                 reading:"", readingAcdb:"", unit:"A",    remarks:"" },
-    { id:"cn",  testPt:"Neutral",                 reading:"", readingAcdb:"", unit:"A",    remarks:"" },
-  ]},
-  { id: "frequency", label: "FREQUENCY", rows: [
-    { id:"hz",  testPt:"Current Freq",            reading:"", readingAcdb:"", unit:"Hz",   remarks:"" },
-  ]},
-  { id: "pf", label: "POWER FACTOR", rows: [
-    { id:"pf",  testPt:"PF",                      reading:"", readingAcdb:"", unit:"",     remarks:"" },
-  ]},
-  { id: "earthing", label: "EARTHING RESISTANCE", rows: [
-    { id:"raw_earth", testPt:"RAW EARTHING RESISTANCE",  reading:"", readingAcdb:"", unit:"OHMS", remarks:"" },
-    { id:"ups_earth", testPt:"UPS EARTHING RESISTANCE",  reading:"", readingAcdb:"", unit:"OHMS", remarks:"" },
-  ]},
-];
-
-const makePanel = (idx: number): ElecPanel => ({
-  id: `panel-${Date.now()}-${idx}`,
-  name: "",
-  groups: makeElecGroups(),
-});
-
-function ElecPanelCard({
-  panel, panelIdx, totalPanels,
-  onNameChange, onRowChange, onRemove,
-}: {
-  panel: ElecPanel; panelIdx: number; totalPanels: number;
-  onNameChange: (id: string, name: string) => void;
-  onRowChange: (panelId: string, gid: string, rid: string, field: "reading" | "readingAcdb" | "remarks", val: string) => void;
-  onRemove: (id: string) => void;
-}) {
-  const green = "#166534"; const greenBg = "#dcfce7"; const greenMid = "#16a34a";
-
-  // Shared input style factory
-  const inp = (val: string, accent?: string) => ({
-    width:"100%", border:`1.5px solid ${val ? (accent ?? green) : "#e5e7eb"}`,
-    borderRadius:7, padding:"6px 8px", fontSize:12, fontWeight:700,
-    color:"#111827", outline:"none",
-    background: val ? (accent ? "#eff6ff" : "#f0fdf4") : "#fff",
-    boxSizing:"border-box" as const, transition:"all 0.15s",
-  });
-
-  return (
-    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.07)", marginBottom:16 }}>
-
-      {/* Panel header */}
-      <div style={{ background:"#f0fdf4", borderBottom:"2px solid #bbf7d0", padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
-        <span style={{ fontSize:13, fontWeight:900, color:green, background:greenBg, borderRadius:8, padding:"4px 12px", flexShrink:0, border:"1px solid #86efac" }}>
-          Panel {panelIdx + 1}
-        </span>
-        <input
-          value={panel.name}
-          onChange={e => onNameChange(panel.id, e.target.value)}
-          placeholder="Enter panel name / location"
-          style={{ flex:1, border:"1.5px solid #d1fae5", borderRadius:9, padding:"8px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fff", fontWeight:600 }}
-        />
-        {totalPanels > 1 && (
-          <button onClick={() => onRemove(panel.id)}
-            style={{ fontSize:12, fontWeight:700, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:7, padding:"6px 12px", cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", gap:4 }}>
-            <i className="ri-delete-bin-line"/>Remove
-          </button>
-        )}
-      </div>
-
-      {/* Column headers — 4 columns: Test Point | Panel/Meter | ACDB | Remarks */}
-      <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1.4fr 1.4fr 1.6fr", background:"#f9fafb", borderBottom:"2px solid #e5e7eb" }}>
-        {[
-          "Test Point",
-          "Reading at Panel / Meter",
-          "Reading at ACDB",
-          "Observations / Remarks",
-        ].map(h => (
-          <div key={h} style={{ padding:"8px 10px", fontSize:9.5, fontWeight:800, color:greenMid, letterSpacing:"0.05em", textTransform:"uppercase", lineHeight:1.3 }}>{h}</div>
-        ))}
-      </div>
-
-      {/* Groups & rows */}
-      {panel.groups.map((group, gi) => (
-        <div key={group.id}>
-          {/* Group label */}
-          <div style={{ background:"#f0fdf4", borderTop: gi > 0 ? "2px solid #d1fae5" : "none", padding:"6px 12px", display:"flex", alignItems:"center", gap:8 }}>
-            <div style={{ width:3, height:14, borderRadius:99, background:green, flexShrink:0 }}/>
-            <span style={{ fontSize:11, fontWeight:900, color:green, letterSpacing:"0.05em" }}>{group.label}</span>
-          </div>
-
-          {/* Data rows */}
-          {group.rows.map(row => {
-            const isPF = row.id === "pf";
-            const isEarth = group.id === "earthing";
-            return (
-              <div key={row.id}
-                style={{ display:"grid", gridTemplateColumns:"1.3fr 1.4fr 1.4fr 1.6fr", borderTop:"1px solid #f3f4f6" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#fafffe")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                {/* Test point */}
-                <div style={{ padding:"9px 10px", fontSize:12, color:"#374151", display:"flex", alignItems:"center", fontWeight: row.bold ? 800 : 500 }}>
-                  {row.testPt}
-                </div>
-
-                {/* Reading at Panel / Meter */}
-                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center", gap:5 }}>
-                  {isPF ? (
-                    <div style={{ width:"100%" }}>
-                      <input type="number" min="0" max="1" step="0.01"
-                        value={row.reading}
-                        onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
-                        placeholder="0.00"
-                        style={{ ...inp(row.reading), width:"100%" }}/>
-                      <div style={{ fontSize:9, color:"#dc2626", marginTop:2, lineHeight:1.3 }}>0.00 – 1.00 · 2 decimal digits</div>
-                    </div>
-                  ) : (
-                    <>
-                      <input type="number" value={row.reading}
-                        onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
-                        placeholder={`${row.testPt} Panel`}
-                        className="reading-inp"
-                        style={inp(row.reading)}/>
-                      {row.unit && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
-                    </>
-                  )}
-                </div>
-
-                {/* Reading at ACDB — auto-mirrors panel, editable */}
-                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center", gap:5, background:"#f8faff" }}>
-                  {isPF ? (
-                    <input type="number" min="0" max="1" step="0.01"
-                      value={row.readingAcdb}
-                      onChange={e => onRowChange(panel.id, group.id, row.id, "readingAcdb", e.target.value)}
-                      placeholder="0.00"
-                      style={inp(row.readingAcdb, "#2563eb")}/>
-                  ) : (
-                    <>
-                      <input type="number" value={row.readingAcdb}
-                        onChange={e => onRowChange(panel.id, group.id, row.id, "readingAcdb", e.target.value)}
-                        placeholder={`${row.testPt} ACDB`}
-                        className="reading-inp"
-                        style={inp(row.readingAcdb, "#2563eb")}/>
-                      {row.unit && !isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
-                      {isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>OHMS</span>}
-                    </>
-                  )}
-                </div>
-
-                {/* Observations / Remarks */}
-                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center" }}>
-                  <input type="text" value={row.remarks}
-                    onChange={e => onRowChange(panel.id, group.id, row.id, "remarks", e.target.value)}
-                    placeholder={`${row.testPt} remarks`}
-                    style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:7, padding:"6px 8px", fontSize:11, color:"#6b7280", outline:"none", background:"#fff", boxSizing:"border-box" }}/>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
     </div>
   );
 }
@@ -2455,6 +2194,156 @@ function UPSQuestionnaireSection({ branchName, onAnswerChange }: {
           <i className="ri-save-line"/>Save Questionnaire
         </button>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 6 — Electrical Parameters (multi-panel)
+// ═══════════════════════════════════════════════════════════════════════════════
+interface ElecRow  { id: string; testPt: string; reading: string; readingAcdb: string; unit: string; bold?: boolean; remarks: string; }
+interface ElecGroup { id: string; label: string; rows: ElecRow[]; }
+interface ElecPanel { id: string; name: string; groups: ElecGroup[]; }
+
+const makeElecGroups = (): ElecGroup[] => [
+  { id: "voltage", label: "VOLTAGE (V)", rows: [
+    { id:"rn",  testPt:"R-N",                    reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"yn",  testPt:"Y-N",                    reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"bn",  testPt:"B-N",                    reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"ry",  testPt:"R-Y",                    reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"yb",  testPt:"Y-B",                    reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"rb",  testPt:"R-B",                    reading:"", readingAcdb:"", unit:"V",    remarks:"" },
+    { id:"ne",  testPt:"N-E",                    reading:"", readingAcdb:"", unit:"V",    remarks:"", bold:true },
+  ]},
+  { id: "current", label: "CURRENT (A)", rows: [
+    { id:"cr",  testPt:"R Phase",                reading:"", readingAcdb:"", unit:"A",    remarks:"" },
+    { id:"cy",  testPt:"Y Phase",                reading:"", readingAcdb:"", unit:"A",    remarks:"" },
+    { id:"cb",  testPt:"B Phase",                reading:"", readingAcdb:"", unit:"A",    remarks:"" },
+    { id:"cn",  testPt:"Neutral",                reading:"", readingAcdb:"", unit:"A",    remarks:"" },
+  ]},
+  { id: "frequency", label: "FREQUENCY", rows: [
+    { id:"hz",  testPt:"Current Freq",           reading:"", readingAcdb:"", unit:"Hz",   remarks:"" },
+  ]},
+  { id: "pf", label: "POWER FACTOR", rows: [
+    { id:"pf",  testPt:"PF",                     reading:"", readingAcdb:"", unit:"",     remarks:"" },
+  ]},
+  { id: "earthing", label: "EARTHING RESISTANCE", rows: [
+    { id:"raw_earth", testPt:"RAW EARTHING RESISTANCE", reading:"", readingAcdb:"", unit:"OHMS", remarks:"" },
+    { id:"ups_earth", testPt:"UPS EARTHING RESISTANCE", reading:"", readingAcdb:"", unit:"OHMS", remarks:"" },
+  ]},
+];
+
+const makePanel = (idx: number): ElecPanel => ({
+  id: `panel-${Date.now()}-${idx}`,
+  name: "",
+  groups: makeElecGroups(),
+});
+
+function ElecPanelCard({
+  panel, panelIdx, totalPanels,
+  onNameChange, onRowChange, onRemove,
+}: {
+  panel: ElecPanel; panelIdx: number; totalPanels: number;
+  onNameChange: (id: string, name: string) => void;
+  onRowChange: (panelId: string, gid: string, rid: string, field: "reading" | "readingAcdb" | "remarks", val: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const green = "#166534"; const greenBg = "#dcfce7"; const greenMid = "#16a34a";
+
+  const inp = (val: string, accent?: string) => ({
+    width:"100%", border:`1.5px solid ${val ? (accent ?? green) : "#e5e7eb"}`,
+    borderRadius:7, padding:"6px 8px", fontSize:12, fontWeight:700,
+    color:"#111827", outline:"none",
+    background: val ? (accent ? "#eff6ff" : "#f0fdf4") : "#fff",
+    boxSizing:"border-box" as const, transition:"all 0.15s",
+  });
+
+  return (
+    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.07)", marginBottom:16 }}>
+      {/* Panel header */}
+      <div style={{ background:"#f0fdf4", borderBottom:"2px solid #bbf7d0", padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontSize:13, fontWeight:900, color:green, background:greenBg, borderRadius:8, padding:"4px 12px", flexShrink:0, border:"1px solid #86efac" }}>
+          Panel {panelIdx + 1}
+        </span>
+        <input
+          value={panel.name}
+          onChange={e => onNameChange(panel.id, e.target.value)}
+          placeholder="Enter panel name / location"
+          style={{ flex:1, border:"1.5px solid #d1fae5", borderRadius:9, padding:"8px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fff", fontWeight:600 }}
+        />
+        {totalPanels > 1 && (
+          <button onClick={() => onRemove(panel.id)}
+            style={{ fontSize:12, fontWeight:700, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:7, padding:"6px 12px", cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", gap:4 }}>
+            <i className="ri-delete-bin-line"/>Remove
+          </button>
+        )}
+      </div>
+      {/* Column headers */}
+      <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1.4fr 1.4fr 1.6fr", background:"#f9fafb", borderBottom:"2px solid #e5e7eb" }}>
+        {["Test Point","Reading at Panel / Meter","Reading at ACDB","Observations / Remarks"].map(h => (
+          <div key={h} style={{ padding:"8px 10px", fontSize:9.5, fontWeight:800, color:greenMid, letterSpacing:"0.05em", textTransform:"uppercase", lineHeight:1.3 }}>{h}</div>
+        ))}
+      </div>
+      {/* Groups & rows */}
+      {panel.groups.map((group, gi) => (
+        <div key={group.id}>
+          <div style={{ background:"#f0fdf4", borderTop: gi > 0 ? "2px solid #d1fae5" : "none", padding:"6px 12px", display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ width:3, height:14, borderRadius:99, background:green, flexShrink:0 }}/>
+            <span style={{ fontSize:11, fontWeight:900, color:green, letterSpacing:"0.05em" }}>{group.label}</span>
+          </div>
+          {group.rows.map(row => {
+            const isPF = row.id === "pf";
+            const isEarth = group.id === "earthing";
+            return (
+              <div key={row.id}
+                style={{ display:"grid", gridTemplateColumns:"1.3fr 1.4fr 1.4fr 1.6fr", borderTop:"1px solid #f3f4f6" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#fafffe")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <div style={{ padding:"9px 10px", fontSize:12, color:"#374151", display:"flex", alignItems:"center", fontWeight: row.bold ? 800 : 500 }}>{row.testPt}</div>
+                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center", gap:5 }}>
+                  {isPF ? (
+                    <div style={{ width:"100%" }}>
+                      <input type="number" min="0" max="1" step="0.01" value={row.reading}
+                        onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
+                        placeholder="0.00" style={{ ...inp(row.reading), width:"100%" }}/>
+                      <div style={{ fontSize:9, color:"#dc2626", marginTop:2, lineHeight:1.3 }}>0.00 – 1.00 · 2 decimal digits</div>
+                    </div>
+                  ) : (
+                    <>
+                      <input type="number" value={row.reading}
+                        onChange={e => onRowChange(panel.id, group.id, row.id, "reading", e.target.value)}
+                        placeholder={`${row.testPt} Panel`} style={inp(row.reading)}/>
+                      {row.unit && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
+                    </>
+                  )}
+                </div>
+                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center", gap:5, background:"#f8faff" }}>
+                  {isPF ? (
+                    <input type="number" min="0" max="1" step="0.01" value={row.readingAcdb}
+                      onChange={e => onRowChange(panel.id, group.id, row.id, "readingAcdb", e.target.value)}
+                      placeholder="0.00" style={inp(row.readingAcdb, "#2563eb")}/>
+                  ) : (
+                    <>
+                      <input type="number" value={row.readingAcdb}
+                        onChange={e => onRowChange(panel.id, group.id, row.id, "readingAcdb", e.target.value)}
+                        placeholder={`${row.testPt} ACDB`} style={inp(row.readingAcdb, "#2563eb")}/>
+                      {row.unit && !isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>{row.unit}</span>}
+                      {isEarth && <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", flexShrink:0 }}>OHMS</span>}
+                    </>
+                  )}
+                </div>
+                <div style={{ padding:"5px 8px", display:"flex", alignItems:"center" }}>
+                  <input type="text" value={row.remarks}
+                    onChange={e => onRowChange(panel.id, group.id, row.id, "remarks", e.target.value)}
+                    placeholder={`${row.testPt} remarks`}
+                    style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:7, padding:"6px 8px", fontSize:11, color:"#6b7280", outline:"none", background:"#fff", boxSizing:"border-box" }}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
