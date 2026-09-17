@@ -223,9 +223,9 @@ function CaptureBranchStep({
   const [address,      setAddress]      = useState(MOCK_ADDRESS);
   const [circle,       setCircle]       = useState("");
   const [rbo,          setRbo]          = useState("");
-  const [branchType,   setBranchType]   = useState("Urban");
-  const [openingYear,  setOpeningYear]  = useState("");
-  const [floors,       setFloors]       = useState("");
+  const [branchType]   = useState("Urban");
+  const [openingYear]  = useState("");
+  const [floors]       = useState("");
   const [branchStatus, setBranchStatus] = useState("Active");
   const [saved,        setSaved]        = useState(false);
 
@@ -379,26 +379,25 @@ function CaptureBranchStep({
           </div>
           <div>
             <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Type</label>
-            <select value={branchType} onChange={e => setBranchType(e.target.value)}
-              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
-              {["Metro","Urban","Semi-Urban","Rural"].map(t => <option key={t}>{t}</option>)}
-            </select>
+            <div style={{ border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#374151", background:"#f9fafb", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <span>{branchType || "—"}</span>
+              <i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:13 }}/>
+            </div>
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             <div>
               <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Opening Year</label>
-              <select value={openingYear} onChange={e => setOpeningYear(e.target.value)}
-                style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:openingYear?"#111827":"#9ca3af", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
-                <option value="">— Select Year —</option>
-                {Array.from({ length: 2035 - 1950 + 1 }, (_, i) => 2035 - i).map(y => (
-                  <option key={y} value={String(y)}>{y}</option>
-                ))}
-              </select>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#374151", background:"#f9fafb", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <span>{openingYear || "—"}</span>
+                <i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:13 }}/>
+              </div>
             </div>
             <div>
               <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>No. of Floors</label>
-              <input type="number" min="1" max="99" value={floors} onChange={e => setFloors(e.target.value)} placeholder="e.g. 3"
-                style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#374151", background:"#f9fafb", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <span>{floors || "—"}</span>
+                <i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:13 }}/>
+              </div>
             </div>
           </div>
         </div>
