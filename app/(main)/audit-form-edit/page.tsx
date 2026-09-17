@@ -220,8 +220,14 @@ function CaptureBranchStep({
   const MOCK_LNG       = 77.4087;
   const MOCK_HTLT: "HT" | "LT" = "LT";
 
-  const [address, setAddress] = useState(MOCK_ADDRESS);
-  const [saved,   setSaved]   = useState(false);
+  const [address,      setAddress]      = useState(MOCK_ADDRESS);
+  const [circle,       setCircle]       = useState("");
+  const [rbo,          setRbo]          = useState("");
+  const [branchType,   setBranchType]   = useState("Urban");
+  const [openingYear,  setOpeningYear]  = useState("");
+  const [floors,       setFloors]       = useState("");
+  const [branchStatus, setBranchStatus] = useState("Active");
+  const [saved,        setSaved]        = useState(false);
 
   const RO: React.CSSProperties = {
     width:"100%", border:"1px solid #e5e7eb", borderRadius:9,
@@ -245,7 +251,7 @@ function CaptureBranchStep({
       bankCode: MOCK_BANK.code, ifscSuffix: MOCK_IFSC.slice(4),
       ifscData: { BRANCH:MOCK_BRANCH, ADDRESS:address, CITY:MOCK_CITY, DISTRICT:MOCK_DISTRICT, STATE:MOCK_STATE, MICR:MOCK_MICR, CONTACT:MOCK_CONTACT, BANK:MOCK_BANK.name, BANKCODE:MOCK_BANK.code, IFSC:MOCK_IFSC, CENTRE:"", ISO3166:"" },
       gps: { lat: MOCK_LAT, lng: MOCK_LNG },
-      htlt: MOCK_HTLT, sld: "Yes", circle:"", rbo:"", branchType:"Urban", openingYear:"", floors:"", branchStatus:"Active",
+      htlt: MOCK_HTLT, sld: "Yes", circle, rbo, branchType, openingYear, floors, branchStatus,
     });
   };
 
@@ -357,6 +363,64 @@ function CaptureBranchStep({
           {MOCK_HTLT === "LT" ? "LT — Single Line Diagram (SLD) required" : "HT — High Tension supply"}
         </div>
       </SectionCard>
+
+      {/* 5. Branch Classification */}
+      <SectionCard icon="ri-links-line" iconBg="#f5f3ff" iconColor="#7c3aed" title="Branch Classification">
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <div>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Circle / Zone / AO</label>
+            <input value={circle} onChange={e => setCircle(e.target.value)} placeholder="e.g. SBI Gujarat Circle"
+              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
+          </div>
+          <div>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>RBO / CO / Region / ZO</label>
+            <input value={rbo} onChange={e => setRbo(e.target.value)} placeholder="e.g. Ahmedabad RBO"
+              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
+          </div>
+          <div>
+            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Type</label>
+            <select value={branchType} onChange={e => setBranchType(e.target.value)}
+              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
+              {["Metro","Urban","Semi-Urban","Rural"].map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <div>
+              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Opening Year</label>
+              <select value={openingYear} onChange={e => setOpeningYear(e.target.value)}
+                style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:openingYear?"#111827":"#9ca3af", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
+                <option value="">— Select Year —</option>
+                {Array.from({ length: 2035 - 1950 + 1 }, (_, i) => 2035 - i).map(y => (
+                  <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>No. of Floors</label>
+              <input type="number" min="1" max="99" value={floors} onChange={e => setFloors(e.target.value)} placeholder="e.g. 3"
+                style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* 6. Status */}
+      <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 16px", marginBottom:16, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+        <div style={{ fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>STATUS</div>
+        <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+          {(["Active","Inactive"] as const).map((s, i) => {
+            const sel = branchStatus === s;
+            const col = s === "Active" ? "#16a34a" : "#dc2626";
+            return (
+              <button key={s} onClick={() => setBranchStatus(s)}
+                style={{ flex:1, padding:"7px 10px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700,
+                  background:sel?col:"#fff", color:sel?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <i className={s==="Active"?"ri-checkbox-circle-line":"ri-close-circle-line"} style={{ fontSize:14 }}/>{s}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Save Changes + Proceed */}
       <div style={{ display:"flex", gap:10, marginBottom:8 }}>
