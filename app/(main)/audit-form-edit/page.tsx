@@ -206,432 +206,169 @@ function CaptureBranchStep({
 }: {
   onComplete: (data: BranchData) => void;
 }) {
-  const [selectedBank, setSelectedBank] = useState(BANK_LIST[0]);
-  const [ifscSuffix, setIfscSuffix]     = useState("");
-  const [ifscData, setIfscData]         = useState<IFSCData | null>(null);
-  const [ifscLoading, setIfscLoading]   = useState(false);
-  const [ifscError, setIfscError]       = useState("");
-  const [gps, setGps]                   = useState<{ lat: number; lng: number } | null>(null);
-  const [gpsLoading, setGpsLoading]     = useState(false);
-  const [gpsError, setGpsError]         = useState("");
-  const [gpsDenied, setGpsDenied]       = useState(false);
-  const [htlt, setHtlt]                 = useState<"HT" | "LT" | "">("");
-  const [sld, setSld]                   = useState("");
-  const [circle, setCircle]             = useState("");
-  const [rbo, setRbo]                   = useState("");
-  const [branchType, setBranchType]     = useState("Urban");
-  const [openingYear, setOpeningYear]   = useState("");
-  const [floors, setFloors]             = useState("");
-  const [branchStatus, setBranchStatus] = useState("Active");
-  const suffixRef = useRef<HTMLInputElement>(null);
+  // ── Prefilled / mock data — replace with real audit data when wired to API ──
+  const MOCK_BANK      = BANK_LIST[0]; // e.g. SBI
+  const MOCK_IFSC      = "SBIN0000519";
+  const MOCK_BRANCH    = "HET BHOPAL";
+  const MOCK_ADDRESS   = "H.E.T. BHOPAL, PIPLANI BHOPAL, MADHYA PRADESH, PIN 462021";
+  const MOCK_CITY      = "BHOPAL";
+  const MOCK_DISTRICT  = "BHOPAL";
+  const MOCK_STATE     = "MADHYA PRADESH";
+  const MOCK_MICR      = "462002011";
+  const MOCK_CONTACT   = "";
+  const MOCK_LAT       = 23.2286;
+  const MOCK_LNG       = 77.4087;
+  const MOCK_HTLT: "HT" | "LT" = "LT";
 
-  // ── No-IFSC mode ────────────────────────────────────────────────────────────
-  const [noIfsc, setNoIfsc]                 = useState(false);
-  const [noIfscReason, setNoIfscReason]     = useState("Administrative Office");
-  const [manualBranch, setManualBranch]     = useState("");
-  const [manualAddress, setManualAddress]   = useState("");
-  const [manualCity, setManualCity]         = useState("");
-  const [manualDistrict, setManualDistrict] = useState("");
-  const [manualState, setManualState]       = useState("");
-  const [manualMicr, setManualMicr]         = useState("");
-  const NO_IFSC_REASONS = ["Administrative Office","Zonal Office","Regional Office","Corporate Office","Other"];
+  const [address, setAddress] = useState(MOCK_ADDRESS);
+  const [saved,   setSaved]   = useState(false);
 
-  const canProceed = (noIfsc ? manualBranch.trim().length > 0 : (ifscSuffix.trim().length === 7 && !!ifscData)) && !!gps && htlt !== "" && (htlt === "LT" || (htlt === "HT" && sld !== ""));
-
-  const fetchIFSC = async (suffix: string) => {
-    if (suffix.length !== 7) return;
-    const code = `${selectedBank.code}${suffix.toUpperCase()}`;
-    setIfscLoading(true); setIfscError(""); setIfscData(null);
-    try {
-      const res = await fetch(`https://ifsc.razorpay.com/${code}`);
-      if (!res.ok) throw new Error("IFSC not found");
-      const data: IFSCData = await res.json();
-      setIfscData(data);
-    } catch {
-      setIfscError("Invalid IFSC or branch not found. Please check and retry.");
-    } finally {
-      setIfscLoading(false);
-    }
+  const RO: React.CSSProperties = {
+    width:"100%", border:"1px solid #e5e7eb", borderRadius:9,
+    padding:"10px 12px", fontSize:13, color:"#374151",
+    background:"#f9fafb", outline:"none", boxSizing:"border-box",
+    cursor:"default", pointerEvents:"none",
   };
-
-  const handleSuffixChange = (v: string) => {
-    const clean = v.replace(/[^a-zA-Z0-9]/g,"").toUpperCase().slice(0,7);
-    setIfscSuffix(clean); setIfscData(null); setIfscError("");
-    if (clean.length === 7) fetchIFSC(clean);
+  const LBL: React.CSSProperties = {
+    display:"block", fontSize:10, fontWeight:700, color:"#6b7280",
+    marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em",
   };
-
-  const handleBankChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const bank = BANK_LIST.find(b => b.code === e.target.value) ?? BANK_LIST[0];
-    setSelectedBank(bank); setIfscSuffix(""); setIfscData(null); setIfscError("");
-  };
-
-  const fetchGPS = () => {
-    if (!navigator.geolocation) { setGpsError("not-supported"); return; }
-    setGpsLoading(true); setGpsError(""); setGpsDenied(false);
-    navigator.geolocation.getCurrentPosition(
-      pos => { setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsLoading(false); },
-      err => {
-        setGpsLoading(false);
-        if (err.code === 1) { setGpsDenied(true); setGpsError("denied"); }
-        else if (err.code === 2) setGpsError("unavailable");
-        else setGpsError("timeout");
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
+  const ROW = ({ label, value }: { label: string; value: string }) => (
+    <div style={{ display:"flex", gap:10 }}>
+      <span style={{ fontSize:10, fontWeight:700, color:"#6b7280", minWidth:66, textTransform:"uppercase", paddingTop:1 }}>{label}</span>
+      <span style={{ fontSize:12, color:"#111827", fontWeight:600, flex:1 }}>{value}</span>
+    </div>
+  );
 
   const handleProceed = () => {
-    if (!canProceed) return;
     onComplete({
-      bankCode: selectedBank.code, ifscSuffix, ifscData, gps,
-      htlt, sld, circle, rbo, branchType, openingYear, floors, branchStatus,
+      bankCode: MOCK_BANK.code, ifscSuffix: MOCK_IFSC.slice(4),
+      ifscData: { BRANCH:MOCK_BRANCH, ADDRESS:address, CITY:MOCK_CITY, DISTRICT:MOCK_DISTRICT, STATE:MOCK_STATE, MICR:MOCK_MICR, CONTACT:MOCK_CONTACT, BANK:MOCK_BANK.name, BANKCODE:MOCK_BANK.code, IFSC:MOCK_IFSC, CENTRE:"", ISO3166:"" },
+      gps: { lat: MOCK_LAT, lng: MOCK_LNG },
+      htlt: MOCK_HTLT, sld: "Yes", circle:"", rbo:"", branchType:"Urban", openingYear:"", floors:"", branchStatus:"Active",
     });
   };
-
-  const checklist = [
-    { label: "Bank Selected",    done: true },
-    { label: "IFSC Verified",    done: noIfsc ? manualBranch.trim().length > 0 : !!ifscData },
-    { label: "GPS Captured",     done: !!gps },
-    { label: "HT / LT Selected", done: htlt !== "" },
-    { label: "SLD (if HT)",      done: htlt === "LT" || (htlt === "HT" && sld !== "") },
-  ];
-  const doneCt = checklist.filter(c => c.done).length;
 
   return (
     <div style={{ maxWidth:680, margin:"0 auto" }}>
 
-      {/* Progress bar */}
-      <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 18px", marginBottom:16, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-          <span style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Completion</span>
-          <span style={{ fontSize:13, fontWeight:800, color:"#2563eb" }}>{doneCt} / {checklist.length}</span>
+      {/* 1. Bank — view only */}
+      <SectionCard icon="ri-bank-line" iconBg="#dbeafe" iconColor="#2563eb" title="Bank">
+        <label style={LBL}>BANK NAME</label>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ flexShrink:0, background:"#111827", color:"#fff", borderRadius:8, padding:"9px 13px", fontSize:13, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
+            {MOCK_BANK.code}
+          </div>
+          <div style={{ flex:1, border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#374151", background:"#f9fafb", fontWeight:600 }}>
+            {MOCK_BANK.name}
+          </div>
+          <div style={{ flexShrink:0, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:7, padding:"4px 10px", fontSize:11, fontWeight:700, color:"#15803d", display:"flex", alignItems:"center", gap:4 }}>
+            <i className="ri-lock-line" style={{ fontSize:12 }}/>View Only
+          </div>
         </div>
-        <div style={{ height:6, background:"#f3f4f6", borderRadius:99, overflow:"hidden" }}>
-          <div style={{ height:"100%", width:`${(doneCt/checklist.length)*100}%`, background:"linear-gradient(90deg,#2563eb,#60a5fa)", borderRadius:99, transition:"width 0.3s ease" }}/>
-        </div>
-        <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
-          {checklist.map(item => (
-            <div key={item.label} style={{ display:"flex", alignItems:"center", gap:4 }}>
-              <i className={item.done ? "ri-checkbox-circle-fill" : "ri-checkbox-blank-circle-line"} style={{ fontSize:13, color:item.done?"#2563eb":"#d1d5db" }}/>
-              <span style={{ fontSize:11, color:item.done?"#374151":"#9ca3af", fontWeight:item.done?600:400 }}>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 1. Bank Selection */}
-      <SectionCard icon="ri-bank-line" iconBg="#dbeafe" iconColor="#2563eb" title="Bank Selection">
-        <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>BANK NAME</label>
-        <select
-          value={selectedBank.code}
-          onChange={handleBankChange}
-          style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", background:"#fff", outline:"none", cursor:"pointer", fontWeight:600 }}
-        >
-          {BANK_LIST.map(b => <option key={b.code} value={b.code}>{b.name}</option>)}
-        </select>
       </SectionCard>
 
-      {/* 2. IFSC Code */}
+      {/* 2. IFSC — view only */}
       <SectionCard icon="ri-barcode-line" iconBg="#dcfce7" iconColor="#16a34a" title="IFSC Code">
-        {/* No-IFSC toggle */}
-        <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", marginBottom:12, userSelect:"none" }}>
-          <div onClick={() => { setNoIfsc(p => !p); setIfscError(""); setIfscData(null); setIfscSuffix(""); }}
-            style={{ width:36, height:20, borderRadius:10, background:noIfsc?"#dc2626":"#e5e7eb", position:"relative", flexShrink:0, transition:"background 0.2s", cursor:"pointer" }}>
-            <div style={{ position:"absolute", top:2, left:noIfsc?18:2, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left 0.2s", boxShadow:"0 1px 3px rgba(0,0,0,0.2)" }}/>
+        <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:10 }}>
+          <div style={{ flexShrink:0, background:"#111827", color:"#fff", borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
+            {MOCK_IFSC.slice(0,4)}
           </div>
-          <span style={{ fontSize:12, fontWeight:600, color:noIfsc?"#dc2626":"#6b7280" }}>This location has no IFSC code</span>
-        </label>
+          <div style={{ flex:1, border:"1.5px solid #16a34a", borderRadius:9, padding:"10px 12px", fontSize:15, color:"#111827", fontFamily:"monospace", letterSpacing:"0.1em", fontWeight:700, background:"#f9fafb" }}>
+            {MOCK_IFSC.slice(4)}
+          </div>
+          <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:20, flexShrink:0 }}/>
+        </div>
+        <div style={{ fontSize:12, color:"#6b7280", marginBottom:10 }}>
+          Full IFSC: <strong style={{ color:"#111827", fontFamily:"monospace", letterSpacing:"0.06em" }}>{MOCK_IFSC}</strong>
+        </div>
 
-        {noIfsc ? (
-          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-            <div style={{ background:"#fff5f5", border:"1px solid #fecaca", borderRadius:9, padding:"10px 13px", fontSize:12, color:"#dc2626", display:"flex", gap:7, alignItems:"flex-start" }}>
-              <i className="ri-error-warning-line" style={{ flexShrink:0, marginTop:1 }}/>
-              <span>Use only for administrative / zonal offices without banking operations. All fields below are mandatory.</span>
-            </div>
-            <div>
-              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Reason for No IFSC</label>
-              <select value={noIfscReason} onChange={e => setNoIfscReason(e.target.value)}
-                style={{ width:"100%", border:"1.5px solid #fecaca", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", background:"#fff", outline:"none", cursor:"pointer", fontWeight:600 }}>
-                {NO_IFSC_REASONS.map(r => <option key={r}>{r}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch / Office Name <span style={{ color:"#dc2626" }}>*</span></label>
-              <input value={manualBranch} onChange={e => setManualBranch(e.target.value)} placeholder="e.g. HET BHOPAL"
-                style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
-            </div>
-            <div>
-              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Address</label>
-              <input value={manualAddress} onChange={e => setManualAddress(e.target.value)} placeholder="e.g. H.E.T. BHOPAL, PIPLANI BHOPAL"
-                style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              <div>
-                <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>City</label>
-                <input value={manualCity} onChange={e => setManualCity(e.target.value)} placeholder="e.g. BHOPAL"
-                  style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
-              </div>
-              <div>
-                <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>District</label>
-                <input value={manualDistrict} onChange={e => setManualDistrict(e.target.value)} placeholder="e.g. BHOPAL"
-                  style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
-              </div>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              <div>
-                <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>State</label>
-                <input value={manualState} onChange={e => setManualState(e.target.value)} placeholder="e.g. MADHYA PRADESH"
-                  style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box" }}/>
-              </div>
-              <div>
-                <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>MICR</label>
-                <input value={manualMicr} onChange={e => setManualMicr(e.target.value)} placeholder="e.g. 462002011"
-                  style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:9, padding:"9px 12px", fontSize:13, color:"#111827", outline:"none", background:"#fafafa", boxSizing:"border-box", fontFamily:"monospace" }}/>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-          <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:8 }}>
-            <div style={{ flexShrink:0, background:"#111827", color:"#fff", borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:900, letterSpacing:"0.08em", fontFamily:"monospace" }}>
-              {selectedBank.code}
-            </div>
-            <input
-              ref={suffixRef}
-              value={ifscSuffix}
-              onChange={e => handleSuffixChange(e.target.value)}
-              placeholder="0000000"
-              maxLength={7}
-              style={{ flex:1, border:`1.5px solid ${ifscSuffix.length===7?(ifscData?"#16a34a":ifscError?"#dc2626":"#e5e7eb"):"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:15, color:"#111827", outline:"none", fontFamily:"monospace", letterSpacing:"0.1em", fontWeight:700, textTransform:"uppercase", background:"#fafafa" }}
-            />
-            {ifscLoading && <i className="ri-loader-4-line" style={{ color:"#9ca3af", fontSize:18, animation:"spin 1s linear infinite" }}/>}
-            {ifscData && !ifscLoading && <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:18 }}/>}
-          </div>
-          <div style={{ fontSize:12, color:"#6b7280", marginBottom:8 }}>
-            Full IFSC: <strong style={{ color:"#111827", fontFamily:"monospace", letterSpacing:"0.06em" }}>{selectedBank.code}{ifscSuffix.toUpperCase().padEnd(7,"0").slice(0,7)}</strong>
-            <span style={{ marginLeft:6, fontSize:10, color:"#9ca3af" }}>{ifscSuffix.length}/7 characters</span>
-          </div>
-          {ifscError && (
-            <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"8px 12px", fontSize:12, color:"#dc2626", display:"flex", gap:7, alignItems:"center" }}>
-              <i className="ri-error-warning-line"/>{ifscError}
-            </div>
-          )}
-          {ifscData && (
-            <div style={{ marginTop:10, background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:10, padding:"12px" }}>
-              <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8 }}>Branch Details — Auto Populated</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                {[
-                  { label:"Branch",   value: ifscData.BRANCH   },
-                  { label:"Address",  value: ifscData.ADDRESS  },
-                  { label:"City",     value: ifscData.CITY     },
-                  { label:"District", value: ifscData.DISTRICT },
-                  { label:"State",    value: ifscData.STATE    },
-                  { label:"MICR",     value: ifscData.MICR     },
-                  { label:"Contact",  value: ifscData.CONTACT  },
-                ].filter(f => f.value).map(f => (
-                  <div key={f.label} style={{ display:"flex", gap:8 }}>
-                    <span style={{ fontSize:10, fontWeight:700, color:"#6b7280", minWidth:60, textTransform:"uppercase", paddingTop:1 }}>{f.label}</span>
-                    <span style={{ fontSize:12, color:"#111827", fontWeight:500, flex:1 }}>{f.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          </>
-        )}
-      </SectionCard>
-
-      {/* 3. GPS Co-ordinates */}
-      <SectionCard icon="ri-map-pin-2-line" iconBg="#fef9c3" iconColor="#ca8a04" title="GPS Co-ordinates">
-        {!gps ? (
-          <>
-            {gpsDenied ? (
-              <div style={{ marginBottom:12 }}>
-                <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:10, padding:"12px 14px", marginBottom:10 }}>
-                  <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:8 }}>
-                    <i className="ri-lock-line" style={{ color:"#ea580c", fontSize:18, flexShrink:0, marginTop:1 }}/>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:800, color:"#9a3412" }}>Location Access Blocked</div>
-                      <div style={{ fontSize:11, color:"#c2410c", marginTop:2 }}>Follow the steps below to enable location access.</div>
-                    </div>
-                  </div>
-                  <div style={{ borderTop:"1px solid #fed7aa", paddingTop:10, display:"flex", flexDirection:"column", gap:6 }}>
-                    {[
-                      { step:"1", text:"Click the 🔒 lock icon in your browser's address bar" },
-                      { step:"2", text:'Find "Location" and change it to "Allow"' },
-                      { step:"3", text:"Refresh the page, then click Fetch GPS again" },
-                    ].map(s => (
-                      <div key={s.step} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
-                        <span style={{ width:18, height:18, borderRadius:"50%", background:"#ea580c", color:"#fff", fontSize:10, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{s.step}</span>
-                        <span style={{ fontSize:11, color:"#7c2d12", lineHeight:1.5 }}>{s.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <button onClick={() => window.location.reload()}
-                  style={{ width:"100%", padding:"9px", borderRadius:8, border:"1px solid #fed7aa", background:"#fff7ed", color:"#ea580c", cursor:"pointer", fontWeight:700, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                  <i className="ri-refresh-line"/>Refresh Page & Retry
-                </button>
-              </div>
-            ) : gpsError === "unavailable" ? (
-              <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
-                <i className="ri-map-pin-off-line" style={{ fontSize:16 }}/>Position unavailable. Check your device GPS and try again.
-              </div>
-            ) : gpsError === "timeout" ? (
-              <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
-                <i className="ri-time-line" style={{ fontSize:16 }}/>Location request timed out. Move to a better signal area and retry.
-              </div>
-            ) : gpsError === "not-supported" ? (
-              <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 12px", fontSize:12, color:"#dc2626", marginBottom:10, display:"flex", gap:7, alignItems:"center" }}>
-                <i className="ri-error-warning-line" style={{ fontSize:16 }}/>Geolocation not supported. Please use Chrome or Edge.
-              </div>
-            ) : (
-              <div style={{ fontSize:12, color:"#9ca3af", marginBottom:10 }}>Tap to fetch current location coordinates</div>
-            )}
-            {!gpsDenied && (
-              <button onClick={fetchGPS} disabled={gpsLoading}
-                style={{ width:"100%", padding:"11px", borderRadius:9, border:"none", background:gpsLoading?"#9ca3af":"#16a34a", color:"#fff", cursor:gpsLoading?"not-allowed":"pointer", fontWeight:800, fontSize:12, letterSpacing:"0.06em", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-                {gpsLoading ? <><i className="ri-loader-4-line" style={{ animation:"spin 1s linear infinite" }}/>FETCHING LOCATION…</> : <><i className="ri-crosshair-2-line"/>FETCH GPS CO-ORDINATES</>}
-              </button>
-            )}
-          </>
-        ) : (
+        {/* Branch details — Address editable, rest read-only */}
+        <div style={{ background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:10, padding:"12px" }}>
+          <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:10 }}>Branch Details</div>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:9, padding:"10px 14px" }}>
-              <div style={{ display:"flex", gap:16 }}>
-                <div>
-                  <div style={{ fontSize:9, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Latitude</div>
-                  <div style={{ fontSize:14, fontWeight:800, color:"#15803d", fontFamily:"monospace", marginTop:2 }}>{gps.lat.toFixed(7)}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize:9, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em" }}>Longitude</div>
-                  <div style={{ fontSize:14, fontWeight:800, color:"#15803d", fontFamily:"monospace", marginTop:2 }}>{gps.lng.toFixed(7)}</div>
-                </div>
-                <button onClick={() => setGps(null)} style={{ marginLeft:"auto", background:"none", border:"none", color:"#9ca3af", cursor:"pointer", fontSize:18, alignSelf:"flex-start" }}>×</button>
+            <ROW label="Branch"   value={MOCK_BRANCH}   />
+            <ROW label="City"     value={MOCK_CITY}     />
+            <ROW label="District" value={MOCK_DISTRICT} />
+            <ROW label="State"    value={MOCK_STATE}    />
+            <ROW label="MICR"     value={MOCK_MICR}     />
+            {/* Address — editable */}
+            <div>
+              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:5 }}>
+                <span style={{ fontSize:10, fontWeight:700, color:"#2563eb", textTransform:"uppercase", letterSpacing:"0.05em" }}>Address</span>
+                <span style={{ fontSize:10, background:"#eff6ff", color:"#2563eb", border:"1px solid #bfdbfe", borderRadius:4, padding:"1px 6px", fontWeight:700 }}>Editable</span>
               </div>
-            </div>
-            <div style={{ fontSize:11, color:"#16a34a", display:"flex", alignItems:"center", gap:5 }}>
-              <i className="ri-checkbox-circle-fill"/>GPS co-ordinates captured
+              <textarea value={address} onChange={e => setAddress(e.target.value)} rows={2}
+                style={{ width:"100%", border:"1.5px solid #2563eb", borderRadius:9, padding:"9px 12px", fontSize:12, color:"#111827", outline:"none", background:"#fff", boxSizing:"border-box", resize:"vertical", fontFamily:"inherit" }}/>
             </div>
           </div>
-        )}
+        </div>
       </SectionCard>
 
-      {/* 4. HT / LT */}
+      {/* 3. GPS — read-only display */}
+      <SectionCard icon="ri-map-pin-2-line" iconBg="#fef9c3" iconColor="#ca8a04" title="GPS Co-ordinates">
+        <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:9, padding:"12px 16px" }}>
+          <div style={{ display:"flex", gap:24, alignItems:"center" }}>
+            <div>
+              <div style={{ fontSize:9, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:3 }}>Latitude</div>
+              <div style={{ fontSize:15, fontWeight:800, color:"#15803d", fontFamily:"monospace" }}>{MOCK_LAT.toFixed(7)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize:9, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:3 }}>Longitude</div>
+              <div style={{ fontSize:15, fontWeight:800, color:"#15803d", fontFamily:"monospace" }}>{MOCK_LNG.toFixed(7)}</div>
+            </div>
+            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
+              <i className="ri-lock-line" style={{ color:"#9ca3af", fontSize:13 }}/>
+              <span style={{ fontSize:11, color:"#9ca3af", fontWeight:600 }}>Locked</span>
+            </div>
+          </div>
+        </div>
+        <p style={{ fontSize:11, color:"#9ca3af", marginTop:8 }}>GPS was captured during the original audit and cannot be changed.</p>
+      </SectionCard>
+
+      {/* 4. HT / LT — view only badge */}
       <SectionCard icon="ri-flashlight-line" iconBg="#fee2e2" iconColor="#dc2626" title="Is this branch HT or LT?">
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom: htlt !== "" ? 12 : 0 }}>
-          {(["HT","LT"] as const).map(type => (
-            <button key={type} onClick={() => { setHtlt(type); setSld(type === "LT" ? "Yes" : ""); }}
-              style={{
-                padding:"12px", borderRadius:10,
-                border: htlt === type ? `2px solid ${type==="HT"?"#dc2626":"#16a34a"}` : "2px solid #e5e7eb",
-                background: htlt === type ? (type==="HT"?"#fef2f2":"#f0fdf4") : "#fff",
-                color: htlt === type ? (type==="HT"?"#dc2626":"#16a34a") : "#6b7280",
-                cursor:"pointer", fontWeight:800, fontSize:15, letterSpacing:"0.05em", transition:"all 0.15s",
-              }}
-            >{type}</button>
-          ))}
-        </div>
-        {htlt !== "" && (
-          <div style={{ marginTop:4 }}>
-            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>
-              Do you want SLD?{htlt==="HT" && <span style={{ color:"#dc2626" }}> *</span>}
-            </label>
-            {htlt === "LT" ? (
-              <div style={{ display:"flex", alignItems:"center", gap:8, border:"1.5px solid #86efac", borderRadius:9, padding:"10px 12px", background:"#f0fdf4" }}>
-                <i className="ri-checkbox-circle-fill" style={{ color:"#16a34a", fontSize:16 }}/>
-                <span style={{ fontSize:13, fontWeight:700, color:"#15803d" }}>Yes</span>
-                <span style={{ fontSize:11, color:"#6b7280", marginLeft:4 }}>(Default for LT — always required)</span>
-              </div>
-            ) : (
-              <select value={sld} onChange={e => setSld(e.target.value)}
-                style={{ width:"100%", border:`1.5px solid ${sld?"#16a34a":"#e5e7eb"}`, borderRadius:9, padding:"10px 12px", fontSize:13, color:sld?"#111827":"#9ca3af", background:"#fff", outline:"none", cursor:"pointer", fontWeight:600 }}>
-                <option value="">Select…</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            )}
-          </div>
-        )}
-      </SectionCard>
-
-      {/* 5. Branch Classification */}
-      <SectionCard icon="ri-links-line" iconBg="#f5f3ff" iconColor="#7c3aed" title="Branch Classification">
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <div>
-            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Circle / Zone / AO</label>
-            <input value={circle} onChange={e => setCircle(e.target.value)} placeholder="e.g. SBI Gujarat Circle"
-              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
-          </div>
-          <div>
-            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>RBO / CO / Region / ZO</label>
-            <input value={rbo} onChange={e => setRbo(e.target.value)} placeholder="e.g. Ahmedabad RBO"
-              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
-          </div>
-          <div>
-            <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Type</label>
-            <select value={branchType} onChange={e => setBranchType(e.target.value)}
-              style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
-              {["Metro","Urban","Semi-Urban","Rural"].map(t => <option key={t}>{t}</option>)}
-            </select>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-            <div>
-              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>Branch Opening Year</label>
-              <select value={openingYear} onChange={e => setOpeningYear(e.target.value)}
-                style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:openingYear?"#111827":"#9ca3af", outline:"none", cursor:"pointer", background:"#fff", fontWeight:600 }}>
-                <option value="">— Select Year —</option>
-                {Array.from({ length: 2035 - 1950 + 1 }, (_, i) => 2035 - i).map(y => (
-                  <option key={y} value={String(y)}>{y}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:5, textTransform:"uppercase", letterSpacing:"0.05em" }}>No. of Floors</label>
-              <input type="number" min="1" max="99" value={floors} onChange={e => setFloors(e.target.value)} placeholder="e.g. 3"
-                style={{ width:"100%", border:"1px solid #e5e7eb", borderRadius:9, padding:"10px 12px", fontSize:13, color:"#111827", outline:"none", boxSizing:"border-box", background:"#fafafa" }}/>
-            </div>
-          </div>
-        </div>
-      </SectionCard>
-
-      {/* 6. Status */}
-      <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:"14px 16px", marginBottom:16, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
-        <div style={{ fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>STATUS</div>
-        <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
-          {(["Active","Inactive"] as const).map((s, i) => {
-            const sel = branchStatus === s;
-            const col = s === "Active" ? "#16a34a" : "#dc2626";
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          {(["HT","LT"] as Array<"HT"|"LT">).map(type => {
+            const selected = MOCK_HTLT === type;
+            const isHT = type === "HT";
             return (
-              <button key={s} onClick={() => setBranchStatus(s)}
-                style={{ flex:1, padding:"7px 10px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700,
-                  background:sel?col:"#fff", color:sel?"#fff":col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                <i className={s==="Active"?"ri-checkbox-circle-line":"ri-close-circle-line"} style={{ fontSize:14 }}/>{s}
-              </button>
+              <div key={type} style={{
+                flex:1, padding:"13px", borderRadius:10, textAlign:"center",
+                border: selected ? `2px solid ${isHT?"#dc2626":"#16a34a"}` : "2px solid #e5e7eb",
+                background: selected ? (isHT?"#fef2f2":"#f0fdf4") : "#fafafa",
+                color: selected ? (isHT?"#dc2626":"#16a34a") : "#d1d5db",
+                fontWeight:900, fontSize:16, letterSpacing:"0.05em",
+                cursor:"not-allowed", userSelect:"none",
+                position:"relative",
+              }}>
+                {type}
+                {selected && <i className="ri-checkbox-circle-fill" style={{ position:"absolute", top:6, right:8, fontSize:14, color:isHT?"#dc2626":"#16a34a" }}/>}
+              </div>
             );
           })}
+          <div style={{ flexShrink:0, display:"flex", alignItems:"center", gap:5, background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 12px" }}>
+            <i className="ri-lock-line" style={{ color:"#9ca3af", fontSize:13 }}/>
+            <span style={{ fontSize:11, color:"#9ca3af", fontWeight:600 }}>Non-editable</span>
+          </div>
         </div>
+        <div style={{ marginTop:10, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:8, padding:"9px 12px", display:"flex", alignItems:"center", gap:7, fontSize:12, color:"#15803d", fontWeight:700 }}>
+          <i className="ri-checkbox-circle-fill"/>
+          {MOCK_HTLT === "LT" ? "LT — Single Line Diagram (SLD) required" : "HT — High Tension supply"}
+        </div>
+      </SectionCard>
+
+      {/* Save Changes + Proceed */}
+      <div style={{ display:"flex", gap:10, marginBottom:8 }}>
+        <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+          style={{ flex:1, padding:"14px", borderRadius:12, border:"none", background:saved?"#16a34a":"#f1f5f9", color:saved?"#fff":"#475569", cursor:"pointer", fontWeight:800, fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", gap:8, transition:"all 0.2s" }}>
+          {saved ? <><i className="ri-checkbox-circle-fill"/>Changes Saved</> : <><i className="ri-save-line"/>Save Changes</>}
+        </button>
+        <button onClick={handleProceed}
+          style={{ flex:2, padding:"14px", borderRadius:12, border:"none", background:"#2563eb", color:"#fff", cursor:"pointer", fontWeight:900, fontSize:13, letterSpacing:"0.06em", boxShadow:"0 4px 14px rgba(37,99,235,0.35)", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          <i className="ri-arrow-right-line"/>NEXT STEP
+        </button>
       </div>
-
-      {/* Proceed button — always enabled in testing mode */}
-      <button onClick={handleProceed}
-        style={{
-          width:"100%", padding:"15px", borderRadius:12, border:"none",
-          background: canProceed ? "#2563eb" : "#60a5fa",
-          color:"#fff", cursor:"pointer",
-          fontWeight:900, fontSize:13, letterSpacing:"0.08em",
-          boxShadow:"0 4px 14px rgba(37,99,235,0.35)",
-          transition:"all 0.2s", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-        }}>
-        <i className="ri-arrow-right-line"/>
-        PROCEED TO BRANCH PHOTO
-      </button>
-
-      {!canProceed && (
-        <p style={{ textAlign:"center", fontSize:11, color:"#9ca3af", marginTop:10 }}>
-          ⚡ Testing mode — proceed freely without filling all fields
-        </p>
-      )}
     </div>
   );
 }
