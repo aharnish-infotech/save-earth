@@ -1878,21 +1878,52 @@ model UpsSldPhoto {
   );
 }
 
+// ── Edit-mode UPS state shape (only editable fields) ─────────────────────────
+interface EditUPSReadings {
+  id: string;
+  batteryMake: string; batteryAh: string; batteryCount: string;
+  r_inputPN: string; r_inputNE: string;
+  r_outputPN: string;
+  r_current: string; r_frequency: string;
+}
+
+const MOCK_UPS_SPECS = [
+  { id:"u1", name:"UPS 1", type:"Branch" as const, isInverter:"UPS"     as const, make:"APC",      kva:"10", phase:"1-Phase" as const },
+  { id:"u2", name:"UPS 2", type:"ATM"    as const, isInverter:"UPS"     as const, make:"Luminous", kva:"3",  phase:"1-Phase" as const },
+  { id:"u3", name:"UPS 3", type:"ATM"    as const, isInverter:"Inverter" as const, make:"Microtek", kva:"5",  phase:"1-Phase" as const },
+];
+
+const MOCK_READINGS_INIT: EditUPSReadings[] = [
+  { id:"u1", batteryMake:"Exide",  batteryAh:"42", batteryCount:"8", r_inputPN:"238", r_inputNE:"0.8", r_outputPN:"230", r_current:"18", r_frequency:"50" },
+  { id:"u2", batteryMake:"Amaron", batteryAh:"26", batteryCount:"4", r_inputPN:"235", r_inputNE:"1.2", r_outputPN:"228", r_current:"8",  r_frequency:"50" },
+  { id:"u3", batteryMake:"Amaron", batteryAh:"42", batteryCount:"6", r_inputPN:"236", r_inputNE:"0.9", r_outputPN:"229", r_current:"11", r_frequency:"50" },
+];
+
 function UPSParametersSection({ branchName }: { branchName: string }) {
-  const [units, setUnits]       = useState<UPSUnit[]>([newUPS(0)]);
-  const [saved, setSaved]       = useState(false);
-  const [schemaOpen, setSchemaOpen] = useState(false);
+  const [readings, setReadings] = useState<EditUPSReadings[]>(MOCK_READINGS_INIT);
+  const [saved,    setSaved]    = useState(false);
 
-  const violet = "#6d28d9"; const violetDark = "#4c1d95";
+  const violet = "#6d28d9"; const violetDark = "#4c1d95"; const violetBg = "#f5f3ff";
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onChange = (id: string, field: keyof UPSUnit, val: any) =>
-    setUnits(us => us.map(u => u.id !== id ? u : { ...u, [field]: val }));
 
-  const addUPS   = () => setUnits(us => [...us, newUPS(us.length)]);
-  const removeUPS = (id: string) => setUnits(us => us.filter(u => u.id !== id));
+  const upd = (id: string, field: keyof EditUPSReadings, val: string) =>
+    setReadings(rs => rs.map(r => r.id !== id ? r : { ...r, [field]: val }));
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const LBL2: React.CSSProperties = { display:"block", fontSize:10, fontWeight:700, color:"#6b7280", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" };
+  const RO2: React.CSSProperties  = { border:"1px solid #e5e7eb", borderRadius:8, padding:"9px 11px", fontSize:13, color:"#374151", background:"#f9fafb", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between" };
+  const INP2: React.CSSProperties = { border:"1.5px solid #c4b5fd", borderRadius:8, padding:"9px 11px", fontSize:13, color:"#111827", background:"#fff", outline:"none", width:"100%", boxSizing:"border-box" as "border-box", fontWeight:600 };
+  const TH2: React.CSSProperties  = { padding:"9px 12px", fontSize:10, fontWeight:800, color:violet, textTransform:"uppercase" as "uppercase", letterSpacing:"0.06em", background:violetBg, borderBottom:"2px solid #ddd6fe" };
+  const PARAM2: React.CSSProperties = { padding:"10px 12px", fontSize:12, fontWeight:800, color:"#374151", background:"#faf9ff", display:"flex", alignItems:"center" };
+  const TP2: React.CSSProperties    = { padding:"10px 12px", fontSize:12, color:"#6b7280", display:"flex", alignItems:"center" };
+
+  const Badge = ({ label, color, bg }: { label: string; color: string; bg: string }) => (
+    <div style={{ display:"inline-flex", alignItems:"center", gap:5, border:`1.5px solid ${color}`, borderRadius:7, padding:"5px 12px", background:bg, fontSize:12, fontWeight:800, color }}>
+      {label}
+      <i className="ri-lock-line" style={{ fontSize:11, opacity:0.6 }}/>
+    </div>
+  );
 
   return (
     <div>
@@ -1911,19 +1942,155 @@ function UPSParametersSection({ branchName }: { branchName: string }) {
           </div>
           <div>
             <div style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{branchName}</div>
-            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>UPS Room — {units.length} UPS unit{units.length > 1 ? "s" : ""}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.75)", marginTop:2 }}>UPS Room — {MOCK_UPS_SPECS.length} UPS units</div>
           </div>
         </div>
-        <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>
-          Step 3
-        </div>
+        <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:20, padding:"4px 14px", fontSize:12, fontWeight:700, color:"#fff" }}>Step 3</div>
       </div>
 
-      {units.map((u, idx) => (
-        <UPSCard key={u.id} ups={u} idx={idx} isFirst={idx === 0} onChange={onChange} onRemove={removeUPS}/>
-      ))}
+      {MOCK_UPS_SPECS.map((spec, idx) => {
+        const r = readings.find(x => x.id === spec.id)!;
+        return (
+          <div key={spec.id} style={{ background:"#fff", borderRadius:14, border:"1.5px solid #ede9fe", overflow:"hidden", boxShadow:"0 2px 8px rgba(109,40,217,0.08)", marginBottom:20 }}>
 
-      {/* Add UPS — removed in Edit mode */}
+            {/* Card header */}
+            <div style={{ padding:"12px 16px", background:`linear-gradient(135deg,${violet},${violetDark})`, display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{ width:32, height:32, borderRadius:9, background:"rgba(255,255,255,0.18)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <i className="ri-battery-charge-line" style={{ color:"#fff", fontSize:16 }}/>
+              </div>
+              <span style={{ fontSize:15, fontWeight:900, color:"#fff" }}>{spec.name}</span>
+              <span style={{ marginLeft:"auto", fontSize:11, background:"rgba(255,255,255,0.15)", borderRadius:6, padding:"3px 10px", color:"rgba(255,255,255,0.85)", fontWeight:700 }}>
+                {idx === 0 ? "Bank UPS" : "ATM UPS"}
+              </span>
+            </div>
+
+            <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:14 }}>
+
+              {/* TYPE + Is it UPS/Inverter — view-only badges */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div>
+                  <label style={LBL2}>TYPE</label>
+                  <Badge label={spec.type} color="#6d28d9" bg="#f5f3ff"/>
+                </div>
+                <div>
+                  <label style={LBL2}>UPS / Inverter?</label>
+                  <Badge label={spec.isInverter} color={spec.isInverter === "UPS" ? "#2563eb" : "#0d9488"} bg={spec.isInverter === "UPS" ? "#eff6ff" : "#f0fdfa"}/>
+                </div>
+              </div>
+
+              {/* Spec table — Make/KVA/Phase locked | Battery editable */}
+              <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr", background:violetBg, borderBottom:"2px solid #ddd6fe" }}>
+                  {["UPS/Inverter Make","Capacity (KVA)","1-Ph or 3-Ph","Battery Make","Battery (Ah)","No. of Batteries"].map((h, i) => (
+                    <div key={h} style={{ padding:"8px 10px", fontSize:9, fontWeight:800, color: i < 3 ? "#9ca3af" : violet, textTransform:"uppercase", letterSpacing:"0.05em" }}>{h}</div>
+                  ))}
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr" }}>
+                  <div style={{ margin:8, ...RO2, fontSize:12 }}><span>{spec.make}</span><i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:12 }}/></div>
+                  <div style={{ margin:8, ...RO2, fontSize:12 }}><span>{spec.kva}</span><i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:12 }}/></div>
+                  <div style={{ margin:8, ...RO2, fontSize:12 }}><span>{spec.phase}</span><i className="ri-lock-line" style={{ color:"#d1d5db", fontSize:12 }}/></div>
+                  <input value={r.batteryMake} onChange={e => upd(spec.id,"batteryMake",e.target.value)} style={{ margin:8, ...INP2 }} placeholder="Make"/>
+                  <input type="number" value={r.batteryAh} onChange={e => upd(spec.id,"batteryAh",e.target.value)} style={{ margin:8, ...INP2 }} placeholder="Ah"/>
+                  <input type="number" value={r.batteryCount} onChange={e => upd(spec.id,"batteryCount",e.target.value)} style={{ margin:8, ...INP2 }} placeholder="Nos."/>
+                </div>
+              </div>
+
+              {/* UPS Nameplate Photo placeholder */}
+              <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+                <div style={{ background:"#f8fafc", borderBottom:"1px solid #e5e7eb", padding:"9px 12px", display:"flex", alignItems:"center", gap:7 }}>
+                  <i className="ri-camera-line" style={{ color:violet, fontSize:14 }}/>
+                  <span style={{ fontSize:12, fontWeight:800, color:"#374151", textTransform:"uppercase", letterSpacing:"0.04em" }}>UPS Nameplate Photo</span>
+                </div>
+                <div style={{ height:110, background:"#f1f5f9", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                  <i className="ri-image-line" style={{ fontSize:26, color:"#94a3b8" }}/>
+                  <span style={{ fontSize:12, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</span>
+                </div>
+              </div>
+
+              {/* Reading table — all editable with pre-filled values */}
+              <div style={{ borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr" }}>
+                  {["Parameters","Test Point","Actual Reading"].map(h => <div key={h} style={TH2}>{h}</div>)}
+                </div>
+
+                {/* INPUT VOLTAGE */}
+                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"1px solid #f3f4f6" }}>
+                  <div style={PARAM2}>INPUT VOLTAGE (V)</div><div style={TP2}>P-N</div>
+                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
+                    <input type="number" value={r.r_inputPN} onChange={e => upd(spec.id,"r_inputPN",e.target.value)}
+                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
+                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>V</span>
+                  </div>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"1px solid #f3f4f6" }}>
+                  <div style={{ ...PARAM2, background:"#fff" }}></div><div style={TP2}>Input N-E Earthing</div>
+                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
+                    <input type="number" value={r.r_inputNE} onChange={e => upd(spec.id,"r_inputNE",e.target.value)}
+                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
+                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>V</span>
+                  </div>
+                </div>
+
+                {/* OUTPUT VOLTAGE */}
+                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"2px solid #f3f4f6" }}>
+                  <div style={PARAM2}>OUTPUT VOLTAGE (V)</div><div style={TP2}>P-N</div>
+                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
+                    <input type="number" value={r.r_outputPN} onChange={e => upd(spec.id,"r_outputPN",e.target.value)}
+                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
+                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>V</span>
+                  </div>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"1px solid #f3f4f6" }}>
+                  <div style={{ ...PARAM2, background:"#fff" }}></div>
+                  <div style={{ ...TP2, flexDirection:"column", alignItems:"flex-start", gap:2 }}>
+                    <span>Output N-E Earthing</span>
+                    <span style={{ fontSize:9, color:"#9ca3af" }}>auto from Input N-E</span>
+                  </div>
+                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
+                    <div style={{ flex:1, padding:"7px 10px", borderRadius:8, background:"#f0fdf4", border:"1.5px solid #bbf7d0", fontSize:13, fontWeight:700, color:"#16a34a" }}>{r.r_inputNE || <span style={{ color:"#9ca3af", fontWeight:400 }}>auto</span>}</div>
+                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>V</span>
+                  </div>
+                </div>
+
+                {/* N-E Photo placeholder */}
+                <div style={{ borderTop:"1px solid #f3f4f6" }}>
+                  <div style={{ margin:"10px 12px", borderRadius:9, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+                    <div style={{ background:"#f8fafc", borderBottom:"1px solid #e5e7eb", padding:"7px 10px", display:"flex", alignItems:"center", gap:6 }}>
+                      <i className="ri-camera-line" style={{ color:violet, fontSize:13 }}/>
+                      <span style={{ fontSize:11, fontWeight:800, color:"#374151" }}>Output N-E Earthing Photo</span>
+                    </div>
+                    <div style={{ height:80, background:"#f1f5f9", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                      <i className="ri-image-line" style={{ fontSize:22, color:"#94a3b8" }}/>
+                      <span style={{ fontSize:11, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CURRENT */}
+                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"2px solid #f3f4f6" }}>
+                  <div style={PARAM2}>CURRENT READING (A)</div><div style={TP2}></div>
+                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
+                    <input type="number" value={r.r_current} onChange={e => upd(spec.id,"r_current",e.target.value)}
+                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
+                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>A</span>
+                  </div>
+                </div>
+
+                {/* FREQUENCY */}
+                <div style={{ display:"grid", gridTemplateColumns:"1.6fr 1.4fr 1.2fr", borderTop:"1px solid #f3f4f6" }}>
+                  <div style={PARAM2}>Frequency (Hz)</div><div style={TP2}></div>
+                  <div style={{ padding:"6px 10px", display:"flex", alignItems:"center", gap:5 }}>
+                    <input type="number" value={r.r_frequency} onChange={e => upd(spec.id,"r_frequency",e.target.value)}
+                      style={{ flex:1, border:"1.5px solid #6d28d9", borderRadius:8, padding:"7px 10px", fontSize:13, fontWeight:700, color:"#111827", outline:"none", background:violetBg }}/>
+                    <span style={{ fontSize:11, fontWeight:700, color:"#9ca3af" }}>Hz</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        );
+      })}
 
       {/* Save */}
       <div style={{ display:"flex", justifyContent:"flex-end" }}>
@@ -1931,296 +2098,6 @@ function UPSParametersSection({ branchName }: { branchName: string }) {
           style={{ padding:"13px 32px", borderRadius:10, border:"none", background:`linear-gradient(135deg,${violet},${violetDark})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 14px rgba(109,40,217,0.35)" }}>
           <i className="ri-save-line"/>Save UPS Parameters
         </button>
-      </div>
-
-      {/* ── DB Schema Reference ─────────────────────────────────────────────── */}
-      <div style={{ marginTop:24, borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden" }}>
-        {/* Toggle header */}
-        <button
-          onClick={() => setSchemaOpen(o => !o)}
-          style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px", background:"#1e1b4b", border:"none", cursor:"pointer", outline:"none" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ width:32, height:32, borderRadius:8, background:"rgba(167,139,250,0.2)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <i className="ri-database-2-line" style={{ color:"#a78bfa", fontSize:16 }}/>
-            </div>
-            <div style={{ textAlign:"left" }}>
-              <div style={{ fontSize:13, fontWeight:800, color:"#fff" }}>Developer Reference — DB Schema</div>
-              <div style={{ fontSize:11, color:"#a78bfa", marginTop:2 }}>PostgreSQL + Prisma — UPS Parameters (Step 3)</div>
-            </div>
-          </div>
-          <i className={`ri-arrow-${schemaOpen ? "up" : "down"}-s-line`} style={{ color:"#a78bfa", fontSize:20 }}/>
-        </button>
-
-        {schemaOpen && (
-          <div style={{ background:"#0f172a", padding:"20px 22px", overflowX:"auto" }}>
-
-            {/* Branch Unique ID callout */}
-            <div style={{ background:"rgba(167,139,250,0.12)", border:"1px solid rgba(167,139,250,0.3)", borderRadius:10, padding:"12px 16px", marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#a78bfa", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>Primary Reference Key</div>
-              <code style={{ fontSize:13, fontWeight:700, color:"#e2e8f0" }}>branch_unique_id  UUID  FK → branches(id)</code>
-              <p style={{ fontSize:12, color:"#94a3b8", margin:"6px 0 0", lineHeight:1.6 }}>
-                Denormalised into <code style={{ color:"#c4b5fd" }}>audit_ups_units</code> so any UPS record can be queried directly by branch without joining through <code style={{ color:"#c4b5fd" }}>audit_sessions</code>.
-              </p>
-            </div>
-
-            {/* ERD */}
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Entity Relationship</div>
-              <pre style={{ fontSize:12, color:"#94a3b8", margin:0, lineHeight:1.8, fontFamily:"monospace" }}>{`branches
-  └── audit_sessions       [1 branch : many sessions]
-        └── audit_ups_units  [1 session : many UPS units]`}</pre>
-            </div>
-
-            {/* Enums */}
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Enums</div>
-              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`CREATE TYPE ups_type_enum    AS ENUM ('Branch', 'ATM');
-CREATE TYPE ups_device_enum  AS ENUM ('UPS', 'Inverter');
-CREATE TYPE ups_phase_enum   AS ENUM ('1-Phase', '3-Phase');
-CREATE TYPE audit_status_enum AS ENUM (
-  'DRAFT','IN_PROGRESS','COMPLETED','SUBMITTED','APPROVED','REJECTED'
-);`}</pre>
-            </div>
-
-            {/* audit_sessions */}
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Table: audit_sessions</div>
-              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`CREATE TABLE audit_sessions (
-  id               UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-  branch_unique_id UUID          NOT NULL REFERENCES branches(id),
-  auditor_id       UUID          NOT NULL REFERENCES users(id),
-  audit_date       DATE          NOT NULL,
-  status           audit_status_enum NOT NULL DEFAULT 'DRAFT',
-  audit_lat        DOUBLE PRECISION,
-  audit_lng        DOUBLE PRECISION,
-  submitted_at     TIMESTAMPTZ,
-  approved_at      TIMESTAMPTZ,
-  approved_by      UUID          REFERENCES users(id),
-  created_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-  updated_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-  deleted_at       TIMESTAMPTZ
-);
-
-CREATE INDEX idx_audit_sessions_branch  ON audit_sessions(branch_unique_id);
-CREATE INDEX idx_audit_sessions_auditor ON audit_sessions(auditor_id);
-CREATE INDEX idx_audit_sessions_date    ON audit_sessions(audit_date);
-CREATE INDEX idx_audit_sessions_status  ON audit_sessions(status);`}</pre>
-            </div>
-
-            {/* audit_ups_units */}
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Table: audit_ups_units</div>
-              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`CREATE TABLE audit_ups_units (
-  id                    UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-  -- Reference keys
-  audit_session_id      UUID    NOT NULL REFERENCES audit_sessions(id) ON DELETE CASCADE,
-  branch_unique_id      UUID    NOT NULL REFERENCES branches(id),  -- denormalised
-
-  -- Identity
-  unit_index            SMALLINT NOT NULL DEFAULT 1,     -- 1-based display order
-  unit_name             VARCHAR(50) NOT NULL DEFAULT 'UPS 1',
-
-  -- Classification
-  ups_type              ups_type_enum,    -- Branch | ATM
-  device_type           ups_device_enum,  -- UPS | Inverter
-
-  -- Spec table
-  make                  VARCHAR(100),
-  capacity_kva          NUMERIC(10,3),
-  phase_type            ups_phase_enum,   -- drives reading layout
-  battery_make          VARCHAR(100),
-  battery_capacity_ah   NUMERIC(8,2),
-  battery_count         SMALLINT,
-  spec_photo_key        TEXT,             -- S3/MinIO object key
-
-  -- Shared readings (1-Phase + 3-Phase)
-  input_ne_earthing_v   NUMERIC(8,3),    -- V  ← auto-fills output
-  output_voltage_pn_v   NUMERIC(8,3),    -- V
-  output_ne_earthing_v  NUMERIC(8,3),    -- V  default = input_ne_earthing_v
-  output_ne_photo_key   TEXT,
-  frequency_hz          NUMERIC(6,2),    -- Hz
-
-  -- 1-Phase only (NULL for 3-Phase)
-  input_voltage_pn_v    NUMERIC(8,3),    -- V  Input P-N
-  current_reading_a     NUMERIC(8,3),    -- A
-
-  -- 3-Phase only (NULL for 1-Phase)
-  input_voltage_rn_v    NUMERIC(8,3),    -- V
-  input_voltage_yn_v    NUMERIC(8,3),    -- V
-  input_voltage_bn_v    NUMERIC(8,3),    -- V
-  current_r_phase_a     NUMERIC(8,3),    -- A
-  current_y_phase_a     NUMERIC(8,3),    -- A
-  current_b_phase_a     NUMERIC(8,3),    -- A
-
-  -- Audit trail
-  created_by            UUID REFERENCES users(id),
-  updated_by            UUID REFERENCES users(id),
-  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  deleted_at            TIMESTAMPTZ,
-
-  CONSTRAINT unique_ups_per_session UNIQUE (audit_session_id, unit_index),
-  CONSTRAINT ups_index_positive     CHECK  (unit_index >= 1),
-  CONSTRAINT ups_kva_positive       CHECK  (capacity_kva IS NULL OR capacity_kva > 0),
-  CONSTRAINT ups_batt_positive      CHECK  (battery_capacity_ah IS NULL OR battery_capacity_ah > 0),
-  CONSTRAINT ups_batt_count_pos     CHECK  (battery_count IS NULL OR battery_count > 0)
-);
-
-CREATE INDEX idx_ups_session        ON audit_ups_units(audit_session_id);
-CREATE INDEX idx_ups_branch         ON audit_ups_units(branch_unique_id);
-CREATE INDEX idx_ups_branch_session ON audit_ups_units(branch_unique_id, audit_session_id);
-CREATE INDEX idx_ups_phase          ON audit_ups_units(phase_type);
-CREATE INDEX idx_ups_deleted        ON audit_ups_units(deleted_at) WHERE deleted_at IS NULL;`}</pre>
-            </div>
-
-            {/* Trigger */}
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Trigger — Auto-fill Output N-E Earthing</div>
-              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`CREATE OR REPLACE FUNCTION fn_ups_ne_earthing_default()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN
-  IF NEW.output_ne_earthing_v IS NULL AND NEW.input_ne_earthing_v IS NOT NULL THEN
-    NEW.output_ne_earthing_v := NEW.input_ne_earthing_v;
-  END IF;
-  NEW.updated_at := NOW();
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER trg_ups_ne_earthing_default
-  BEFORE INSERT OR UPDATE ON audit_ups_units
-  FOR EACH ROW EXECUTE FUNCTION fn_ups_ne_earthing_default();`}</pre>
-            </div>
-
-            {/* Prisma model */}
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Prisma Schema (schema.prisma)</div>
-              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`model AuditUpsUnit {
-  id                  String      @id @default(uuid())
-  auditSessionId      String      @map("audit_session_id")
-  branchUniqueId      String      @map("branch_unique_id")
-  unitIndex           Int         @map("unit_index")          @db.SmallInt
-  unitName            String      @map("unit_name")           @db.VarChar(50)
-  upsType             UpsType?    @map("ups_type")
-  deviceType          UpsDevice?  @map("device_type")
-  make                String?     @db.VarChar(100)
-  capacityKva         Decimal?    @map("capacity_kva")        @db.Decimal(10,3)
-  phaseType           UpsPhase?   @map("phase_type")
-  batteryMake         String?     @map("battery_make")        @db.VarChar(100)
-  batteryCapacityAh   Decimal?    @map("battery_capacity_ah") @db.Decimal(8,2)
-  batteryCount        Int?        @map("battery_count")       @db.SmallInt
-  specPhotoKey        String?     @map("spec_photo_key")
-  inputNeEarthingV    Decimal?    @map("input_ne_earthing_v") @db.Decimal(8,3)
-  outputVoltagePnV    Decimal?    @map("output_voltage_pn_v") @db.Decimal(8,3)
-  outputNeEarthingV   Decimal?    @map("output_ne_earthing_v")@db.Decimal(8,3)
-  outputNePhotoKey    String?     @map("output_ne_photo_key")
-  frequencyHz         Decimal?    @map("frequency_hz")        @db.Decimal(6,2)
-  inputVoltagePnV     Decimal?    @map("input_voltage_pn_v")  @db.Decimal(8,3)
-  currentReadingA     Decimal?    @map("current_reading_a")   @db.Decimal(8,3)
-  inputVoltageRnV     Decimal?    @map("input_voltage_rn_v")  @db.Decimal(8,3)
-  inputVoltageYnV     Decimal?    @map("input_voltage_yn_v")  @db.Decimal(8,3)
-  inputVoltageBnV     Decimal?    @map("input_voltage_bn_v")  @db.Decimal(8,3)
-  currentRPhaseA      Decimal?    @map("current_r_phase_a")   @db.Decimal(8,3)
-  currentYPhaseA      Decimal?    @map("current_y_phase_a")   @db.Decimal(8,3)
-  currentBPhaseA      Decimal?    @map("current_b_phase_a")   @db.Decimal(8,3)
-  createdBy           String?     @map("created_by")
-  updatedBy           String?     @map("updated_by")
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt      @map("updated_at")
-  deletedAt           DateTime?   @map("deleted_at")
-  auditSession        AuditSession @relation(fields:[auditSessionId], references:[id], onDelete:Cascade)
-  branch              Branch       @relation(fields:[branchUniqueId], references:[id])
-  @@unique([auditSessionId, unitIndex])
-  @@index([branchUniqueId])
-  @@index([branchUniqueId, auditSessionId])
-  @@map("audit_ups_units")
-}`}</pre>
-            </div>
-
-            {/* Field mapping table */}
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>UI → DB Field Mapping</div>
-              <div style={{ background:"#1e293b", borderRadius:9, overflow:"hidden" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"1.5fr 1.8fr 0.8fr 1fr", borderBottom:"2px solid #334155" }}>
-                  {["UI Label","DB Column","Type","Notes"].map(h => (
-                    <div key={h} style={{ padding:"8px 12px", fontSize:10, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
-                  ))}
-                </div>
-                {[
-                  ["Branch Unique ID",       "branch_unique_id",       "UUID",         "FK → branches(id)"],
-                  ["Audit Session ID",        "audit_session_id",       "UUID",         "FK → audit_sessions(id)"],
-                  ["UPS Label",               "unit_name",              "VARCHAR(50)",  "Editable, e.g. 'UPS 1'"],
-                  ["Order",                   "unit_index",             "SMALLINT",     "1-based"],
-                  ["TYPE dropdown",           "ups_type",               "UpsType",      "Branch | ATM"],
-                  ["UPS / Inverter?",         "device_type",            "UpsDevice",    "UPS | Inverter"],
-                  ["Make",                    "make",                   "VARCHAR(100)", ""],
-                  ["Capacity KVA",            "capacity_kva",           "DECIMAL(10,3)",""],
-                  ["1-Ph / 3-Ph",             "phase_type",             "UpsPhase",     "Drives reading layout"],
-                  ["Battery Make",            "battery_make",           "VARCHAR(100)", ""],
-                  ["Battery Ah",              "battery_capacity_ah",    "DECIMAL(8,2)", ""],
-                  ["No. of Batteries",        "battery_count",          "SMALLINT",     ""],
-                  ["UPS Photo",               "spec_photo_key",         "TEXT",         "S3/MinIO key"],
-                  ["Input Voltage P-N",       "input_voltage_pn_v",     "DECIMAL(8,3)", "1-Phase only · V"],
-                  ["Input N-E Earthing",      "input_ne_earthing_v",    "DECIMAL(8,3)", "Both · V · auto-fills output"],
-                  ["Output Voltage P-N",      "output_voltage_pn_v",    "DECIMAL(8,3)", "Both · V"],
-                  ["Output N-E Earthing",     "output_ne_earthing_v",   "DECIMAL(8,3)", "Both · V · default=input NE"],
-                  ["Output N-E Photo",        "output_ne_photo_key",    "TEXT",         "S3/MinIO key"],
-                  ["Current Reading",         "current_reading_a",      "DECIMAL(8,3)", "1-Phase only · A"],
-                  ["Frequency",               "frequency_hz",           "DECIMAL(6,2)", "Both · Hz"],
-                  ["Input Voltage R-N",       "input_voltage_rn_v",     "DECIMAL(8,3)", "3-Phase only · V"],
-                  ["Input Voltage Y-N",       "input_voltage_yn_v",     "DECIMAL(8,3)", "3-Phase only · V"],
-                  ["Input Voltage B-N",       "input_voltage_bn_v",     "DECIMAL(8,3)", "3-Phase only · V"],
-                  ["Current R Phase",         "current_r_phase_a",      "DECIMAL(8,3)", "3-Phase only · A"],
-                  ["Current Y Phase",         "current_y_phase_a",      "DECIMAL(8,3)", "3-Phase only · A"],
-                  ["Current B Phase",         "current_b_phase_a",      "DECIMAL(8,3)", "3-Phase only · A"],
-                ].map(([label, col, type, note], i) => (
-                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1.5fr 1.8fr 0.8fr 1fr", borderTop:"1px solid #1e293b", background: i%2===0 ? "#1e293b" : "#263145" }}>
-                    <div style={{ padding:"7px 12px", fontSize:11, color:"#e2e8f0", fontWeight:600 }}>{label}</div>
-                    <div style={{ padding:"7px 12px", fontFamily:"monospace", fontSize:11, color:"#c4b5fd" }}>{col}</div>
-                    <div style={{ padding:"7px 12px", fontFamily:"monospace", fontSize:10, color:"#94a3b8" }}>{type}</div>
-                    <div style={{ padding:"7px 12px", fontSize:11, color:"#64748b" }}>{note}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Sample API payload */}
-            <div style={{ marginBottom:8 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>Sample API Payload — POST /api/v1/audits/{"{session_id}"}/ups</div>
-              <pre style={{ fontSize:12, color:"#e2e8f0", margin:0, lineHeight:1.9, fontFamily:"monospace", background:"#1e293b", padding:14, borderRadius:9, overflowX:"auto" }}>{`{
-  "branchUniqueId":   "b1a2c3d4-e5f6-7890-abcd-ef1234567890",
-  "auditSessionId":   "a9b8c7d6-e5f4-3210-fedc-ba0987654321",
-  "units": [
-    {
-      "unitIndex":        1,
-      "unitName":         "UPS 1",
-      "upsType":          "Branch",
-      "deviceType":       "UPS",
-      "make":             "APC",
-      "capacityKva":      10.0,
-      "phaseType":        "3-Phase",
-      "batteryMake":      "Exide",
-      "batteryCapacityAh": 42,
-      "batteryCount":     8,
-      "specPhotoKey":     "audits/{session_id}/ups/1/spec.jpg",
-      "inputVoltageRnV":  230.5,
-      "inputVoltageYnV":  231.0,
-      "inputVoltageBnV":  229.8,
-      "inputNeEarthingV": 1.2,
-      "outputVoltagePnV": 230.0,
-      "outputNeEarthingV": 1.2,
-      "outputNePhotoKey": "audits/{session_id}/ups/1/ne.jpg",
-      "currentRPhaseA":   12.4,
-      "currentYPhaseA":   11.9,
-      "currentBPhaseA":   12.1,
-      "frequencyHz":      50.0
-    }
-  ]
-}`}</pre>
-            </div>
-
-          </div>
-        )}
       </div>
     </div>
   );
