@@ -2350,9 +2350,64 @@ function ElecPanelCard({
   );
 }
 
+// ── Edit-mode mock electrical panel data ─────────────────────────────────────
+const patchGroups = (vals: Record<string, { reading: string; readingAcdb: string; remarks?: string }>): ElecGroup[] =>
+  makeElecGroups().map(g => ({
+    ...g,
+    rows: g.rows.map(r => ({
+      ...r,
+      reading:     vals[r.id]?.reading     ?? r.reading,
+      readingAcdb: vals[r.id]?.readingAcdb ?? r.readingAcdb,
+      remarks:     vals[r.id]?.remarks     ?? r.remarks,
+    })),
+  }));
+
+const MOCK_ELEC_PANELS: ElecPanel[] = [
+  {
+    id: "ep1", name: "Main LT Panel",
+    groups: patchGroups({
+      rn:        { reading:"231", readingAcdb:"230", remarks:"" },
+      yn:        { reading:"229", readingAcdb:"228", remarks:"" },
+      bn:        { reading:"232", readingAcdb:"231", remarks:"" },
+      ry:        { reading:"400", readingAcdb:"399", remarks:"" },
+      yb:        { reading:"398", readingAcdb:"397", remarks:"" },
+      rb:        { reading:"401", readingAcdb:"400", remarks:"" },
+      ne:        { reading:"1.2", readingAcdb:"1.1", remarks:"Within acceptable limit" },
+      cr:        { reading:"42",  readingAcdb:"41",  remarks:"" },
+      cy:        { reading:"38",  readingAcdb:"38",  remarks:"" },
+      cb:        { reading:"40",  readingAcdb:"39",  remarks:"" },
+      cn:        { reading:"4",   readingAcdb:"4",   remarks:"Low neutral — OK" },
+      hz:        { reading:"50",  readingAcdb:"50",  remarks:"" },
+      pf:        { reading:"0.92",readingAcdb:"0.91",remarks:"" },
+      raw_earth: { reading:"2.1", readingAcdb:"2.1", remarks:"" },
+      ups_earth: { reading:"1.8", readingAcdb:"1.8", remarks:"" },
+    }),
+  },
+  {
+    id: "ep2", name: "ACDB Panel",
+    groups: patchGroups({
+      rn:        { reading:"230", readingAcdb:"229", remarks:"" },
+      yn:        { reading:"228", readingAcdb:"227", remarks:"" },
+      bn:        { reading:"231", readingAcdb:"230", remarks:"" },
+      ry:        { reading:"398", readingAcdb:"397", remarks:"" },
+      yb:        { reading:"396", readingAcdb:"395", remarks:"" },
+      rb:        { reading:"399", readingAcdb:"398", remarks:"" },
+      ne:        { reading:"0.9", readingAcdb:"0.9", remarks:"" },
+      cr:        { reading:"18",  readingAcdb:"17",  remarks:"" },
+      cy:        { reading:"16",  readingAcdb:"16",  remarks:"" },
+      cb:        { reading:"17",  readingAcdb:"17",  remarks:"" },
+      cn:        { reading:"2",   readingAcdb:"2",   remarks:"" },
+      hz:        { reading:"50",  readingAcdb:"50",  remarks:"" },
+      pf:        { reading:"0.90",readingAcdb:"0.90",remarks:"" },
+      raw_earth: { reading:"2.3", readingAcdb:"2.3", remarks:"" },
+      ups_earth: { reading:"1.9", readingAcdb:"1.9", remarks:"" },
+    }),
+  },
+];
+
 // ────────────────────────────────────────────────────────────────────────────────
 function ElectricalParametersSection({ branchName }: { branchName: string }) {
-  const [panels, setPanels] = useState<ElecPanel[]>([makePanel(0)]);
+  const [panels, setPanels] = useState<ElecPanel[]>(MOCK_ELEC_PANELS);
   const [saved, setSaved]   = useState(false);
 
   const green = "#166534"; const greenMid = "#16a34a"; const greenBg = "#dcfce7";
