@@ -1083,122 +1083,29 @@ function DGSetSection({ branchName }: { branchName: string }) {
 // STEP 2 — Branch Photo
 // ═══════════════════════════════════════════════════════════════════════════════
 function BranchPhotoSection({ branchName, onContinue }: { branchName: string; onContinue: () => void }) {
-  const [photo, setPhoto]       = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const teal = "#0d9488"; const tealDark = "#0f766e"; const tealBg = "#f0fdfa"; const tealBorder = "#99f6e4";
-
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = e => setPhoto(e.target?.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
   return (
     <div style={{ maxWidth:600, margin:"0 auto" }}>
 
-      {/* Instruction card */}
-      <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e7eb", padding:"32px 24px", textAlign:"center", marginBottom:16, boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
-        <div style={{ width:72, height:72, borderRadius:20, background:tealBg, border:`1px solid ${tealBorder}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 18px" }}>
-          <i className="ri-camera-line" style={{ fontSize:34, color:teal }}/>
+      {/* Photo placeholder */}
+      <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e7eb", overflow:"hidden", marginBottom:16, boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+        {/* Title bar */}
+        <div style={{ background:"#f8fafc", borderBottom:"1px solid #e5e7eb", padding:"12px 16px", display:"flex", alignItems:"center", gap:8 }}>
+          <i className="ri-camera-line" style={{ color:"#0d9488", fontSize:16 }}/>
+          <span style={{ fontSize:13, fontWeight:800, color:"#111827", textTransform:"uppercase", letterSpacing:"0.04em" }}>Branch Photograph From Outside</span>
         </div>
-        <h3 style={{ fontSize:20, fontWeight:900, color:"#111827", margin:"0 0 10px" }}>Please step outside the branch</h3>
-        <p style={{ fontSize:14, color:"#6b7280", lineHeight:1.6, margin:0 }}>
-          Take a clear photo of the branch entrance / building exterior and submit to proceed.
-        </p>
+        {/* Placeholder area */}
+        <div style={{ height:280, background:"#f1f5f9", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12 }}>
+          <div style={{ width:64, height:64, borderRadius:16, background:"#e2e8f0", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <i className="ri-image-line" style={{ fontSize:32, color:"#94a3b8" }}/>
+          </div>
+          <div style={{ fontSize:13, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</div>
+        </div>
       </div>
 
-      {/* Drop / capture zone */}
-      {photo ? (
-        <div style={{ borderRadius:16, overflow:"hidden", border:`2px solid ${teal}`, marginBottom:16, position:"relative", boxShadow:"0 4px 16px rgba(13,148,136,0.2)" }}>
-          <img src={photo} alt="Branch exterior" style={{ width:"100%", display:"block", maxHeight:320, objectFit:"cover" }}/>
-          <div style={{ position:"absolute", top:10, right:10, display:"flex", gap:8 }}>
-            <button
-              onClick={() => setPhoto(null)}
-              style={{ background:"rgba(0,0,0,0.6)", border:"none", borderRadius:8, padding:"6px 12px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
-              <i className="ri-refresh-line"/>Retake
-            </button>
-          </div>
-          <div style={{ background:`linear-gradient(135deg,${teal},${tealDark})`, padding:"10px 16px", display:"flex", alignItems:"center", gap:8 }}>
-            <i className="ri-checkbox-circle-fill" style={{ color:"#fff", fontSize:16 }}/>
-            <span style={{ fontSize:13, fontWeight:700, color:"#fff" }}>Photo captured — ready to submit</span>
-          </div>
-        </div>
-      ) : (
-        <div
-          onClick={() => fileRef.current?.click()}
-          onDragOver={e => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          style={{
-            borderRadius:16, border:`2px dashed ${dragging ? teal : "#d1d5db"}`,
-            background: dragging ? tealBg : "#fafafa",
-            padding:"48px 24px", textAlign:"center", cursor:"pointer",
-            marginBottom:16, transition:"all 0.15s",
-          }}>
-          <div style={{ width:56, height:56, borderRadius:16, background:"#f3f4f6", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
-            <i className="ri-camera-line" style={{ fontSize:28, color:"#9ca3af" }}/>
-          </div>
-          <div style={{ fontSize:16, fontWeight:800, color:"#111827", marginBottom:5 }}>Tap to capture photo</div>
-          <div style={{ fontSize:13, color:"#9ca3af" }}>Branch exterior / entrance</div>
-          <div style={{ fontSize:11, color:"#d1d5db", marginTop:10 }}>or drag and drop an image here</div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            style={{ display:"none" }}
-            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-          />
-        </div>
-      )}
-
-      {/* Photo tips */}
-      <div style={{ background:tealBg, border:`1px solid ${tealBorder}`, borderRadius:12, padding:"14px 16px", marginBottom:24 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
-          <i className="ri-camera-2-line" style={{ color:teal, fontSize:16 }}/>
-          <span style={{ fontSize:13, fontWeight:800, color:tealDark }}>Photo Tips</span>
-        </div>
-        {[
-          "Ensure the bank name board is clearly visible",
-          "Stand at least 5–8 metres from the entrance",
-          "Avoid glare or obstructions in the frame",
-        ].map(tip => (
-          <div key={tip} style={{ display:"flex", alignItems:"flex-start", gap:8, marginBottom:6 }}>
-            <span style={{ color:teal, fontSize:13, lineHeight:1.5, flexShrink:0 }}>•</span>
-            <span style={{ fontSize:13, color:"#374151", lineHeight:1.5 }}>{tip}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Submit & Continue */}
-      <button
-        onClick={onContinue}
-        style={{
-          width:"100%", padding:"15px", borderRadius:12, border:"none",
-          background: photo
-            ? `linear-gradient(135deg,${teal},${tealDark})`
-            : "#d1d5db",
-          color:"#fff", cursor:"pointer",
-          fontWeight:900, fontSize:14, letterSpacing:"0.06em",
-          boxShadow: photo ? "0 4px 14px rgba(13,148,136,0.35)" : "none",
-          transition:"all 0.2s", display:"flex", alignItems:"center", justifyContent:"center", gap:10,
-        }}>
-        Submit &amp; Continue →
+      <button onClick={onContinue}
+        style={{ width:"100%", padding:"15px", borderRadius:12, border:"none", background:"#0d9488", color:"#fff", cursor:"pointer", fontWeight:900, fontSize:13, letterSpacing:"0.06em", boxShadow:"0 4px 14px rgba(13,148,136,0.3)", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+        <i className="ri-arrow-right-line"/>NEXT STEP
       </button>
-
-      {!photo && (
-        <p style={{ textAlign:"center", fontSize:11, color:"#9ca3af", marginTop:8 }}>
-          Capture a photo above to enable submit
-        </p>
-      )}
     </div>
   );
 }
