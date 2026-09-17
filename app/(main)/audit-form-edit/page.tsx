@@ -4481,9 +4481,22 @@ function AttendanceSheetSection({ branchName }: { branchName: string }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // ROOT PAGE — Multi-Step Audit Form
 // ═══════════════════════════════════════════════════════════════════════════════
+const MOCK_BRANCH_DATA: BranchData = {
+  bankCode: BANK_LIST[0].code,
+  ifscSuffix: "0000519",
+  ifscData: {
+    BRANCH:"HET BHOPAL", ADDRESS:"H.E.T. BHOPAL, PIPLANI BHOPAL, MADHYA PRADESH, PIN 462021",
+    CITY:"BHOPAL", DISTRICT:"BHOPAL", STATE:"MADHYA PRADESH",
+    MICR:"462002011", CONTACT:"", BANK:BANK_LIST[0].name, BANKCODE:BANK_LIST[0].code,
+    IFSC:"SBIN0000519", CENTRE:"", ISO3166:"",
+  },
+  gps:{ lat:23.2286, lng:77.4087 },
+  htlt:"LT", sld:"Yes", circle:"", rbo:"", branchType:"Urban", openingYear:"", floors:"", branchStatus:"Active",
+};
+
 export default function AuditFormPage() {
   const [currentStep, setCurrentStep] = useState<Step>("capture-branch");
-  const [branchData, setBranchData]   = useState<BranchData | null>(null);
+  const [branchData, setBranchData]   = useState<BranchData | null>(MOCK_BRANCH_DATA);
   const [completedSteps, setCompletedSteps] = useState<Set<Step>>(new Set());
   // UPS Q answers lifted here so Questionnaire step can show pre-fills
   // Edit mode: pre-seed from MOCK_Q_ANSWERS so UPS-link banners render correctly
