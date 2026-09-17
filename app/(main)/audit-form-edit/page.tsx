@@ -2052,8 +2052,31 @@ const UPS_Q_INITIAL: Omit<UPSQItem, "answer" | "photo" | "remarks">[] = [
   { no:14, question:"Are FIRE EXTINGUISHERS available in the following work area and clearly marked and accessible IN Systems/UPS Room: CO2(3kg/4.5kg)×2", photoTrigger:"Yes" },
 ];
 
+// Dummy pre-filled answers for edit mode
+const MOCK_Q_ANSWERS: Record<number, { answer: UPSQAnswer; remarks: string }> = {
+  1:  { answer:"Yes", remarks:"Dedicated fire-resistant enclosure in place" },
+  2:  { answer:"Yes", remarks:"Metal body exhaust fans installed and functional" },
+  3:  { answer:"Yes", remarks:"Timer circuit operational — fans alternate every 30 min" },
+  4:  { answer:"Yes", remarks:"Rubber mat placed in front of all panels" },
+  5:  { answer:"Yes", remarks:"Both normal and emergency lighting available" },
+  6:  { answer:"No",  remarks:"No stationery or obsolete items found in UPS room" },
+  7:  { answer:"Yes", remarks:"UPS room is dry and maintained in good condition" },
+  8:  { answer:"No",  remarks:"No water seepage observed near any electrical panel" },
+  9:  { answer:"Yes", remarks:"Earthing DB connected to all equipment bodies" },
+  10: { answer:"Yes", remarks:"All panels and switch boards properly covered" },
+  11: { answer:"Yes", remarks:"Contact numbers displayed in UPS room" },
+  12: { answer:"Yes", remarks:"Dual AC units with timer circuit in server room" },
+  13: { answer:"Yes", remarks:"Battery racks earthed and verified" },
+  14: { answer:"Yes", remarks:"CO2 extinguishers (3kg × 2) present and accessible" },
+};
+
 const makeUPSQItems = (): UPSQItem[] =>
-  UPS_Q_INITIAL.map(q => ({ ...q, answer: "", photo: null, remarks: "" }));
+  UPS_Q_INITIAL.map(q => ({
+    ...q,
+    answer:  MOCK_Q_ANSWERS[q.no]?.answer  ?? "",
+    photo:   null,
+    remarks: MOCK_Q_ANSWERS[q.no]?.remarks ?? "",
+  }));
 
 function UPSQuestionnaireSection({ branchName, onAnswerChange }: {
   branchName: string;
@@ -2061,11 +2084,10 @@ function UPSQuestionnaireSection({ branchName, onAnswerChange }: {
 }) {
   const [items, setItems] = useState<UPSQItem[]>(makeUPSQItems());
   const [saved, setSaved] = useState(false);
-  const teal = "#0e7490"; const tealLight = "#0891b2"; const tealBg = "#ecfeff";
+  const teal = "#0e7490"; const tealBg = "#ecfeff";
 
   const upd = (no: number, field: keyof UPSQItem, val: string | null) => {
     setItems(prev => prev.map(i => i.no !== no ? i : { ...i, [field]: val }));
-    // lift answer changes so Questionnaire step can show pre-fills
     if (field === "answer") onAnswerChange?.(no, val as string ?? "");
   };
 
@@ -2074,39 +2096,19 @@ function UPSQuestionnaireSection({ branchName, onAnswerChange }: {
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
 
-  const PhotoSlot = ({ item }: { item: UPSQItem }) => {
-    const ref = useRef<HTMLInputElement>(null);
-    return (
-      <div style={{ marginTop:10 }}>
-        <div style={{ fontSize:11, fontWeight:800, color:"#b45309", background:"#fef3c7", border:"1.5px solid #fcd34d", borderRadius:6, padding:"5px 10px", display:"inline-flex", alignItems:"center", gap:5, marginBottom:8 }}>
-          <i className="ri-camera-fill" style={{ fontSize:13 }}/>
-          Photo required — answer is &quot;{item.photoTrigger}&quot;
-        </div>
-        {item.photo ? (
-          <div style={{ position:"relative", display:"inline-block" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={item.photo} alt="Q photo" style={{ width:120, height:80, objectFit:"cover", borderRadius:10, border:"2px solid #a5f3fc" }}/>
-            <button onClick={() => upd(item.no, "photo", null)}
-              style={{ position:"absolute", top:-6, right:-6, width:20, height:20, borderRadius:"50%", border:"none", background:"#ef4444", color:"#fff", fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:0 }}>
-              <i className="ri-close-line"/>
-            </button>
-          </div>
-        ) : (
-          <button onClick={() => ref.current?.click()}
-            style={{ width:120, height:80, borderRadius:10, border:`2px dashed ${tealLight}`, background:tealBg, color:teal, fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4 }}>
-            <i className="ri-camera-line" style={{ fontSize:22 }}/>Capture
-          </button>
-        )}
-        <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display:"none" }}
-          onChange={e => {
-            const f = e.target.files?.[0]; if (!f) return;
-            const reader = new FileReader();
-            reader.onload = ev => upd(item.no, "photo", ev.target?.result as string);
-            reader.readAsDataURL(f);
-          }}/>
+  // Edit mode: photo already captured — show placeholder instead of camera button
+  const PhotoSlot = ({ item }: { item: UPSQItem }) => (
+    <div style={{ marginTop:10 }}>
+      <div style={{ fontSize:11, fontWeight:800, color:"#b45309", background:"#fef3c7", border:"1.5px solid #fcd34d", borderRadius:6, padding:"5px 10px", display:"inline-flex", alignItems:"center", gap:5, marginBottom:8 }}>
+        <i className="ri-camera-fill" style={{ fontSize:13 }}/>
+        Photo required — answer is &quot;{item.photoTrigger}&quot;
       </div>
-    );
-  };
+      <div style={{ width:120, height:80, borderRadius:10, border:"1.5px solid #e2e8f0", background:"#f1f5f9", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6 }}>
+        <i className="ri-image-line" style={{ fontSize:22, color:"#94a3b8" }}/>
+        <span style={{ fontSize:10, color:"#94a3b8", fontWeight:600 }}>Photo will appear here</span>
+      </div>
+    </div>
+  );
 
   return (
     <div>
