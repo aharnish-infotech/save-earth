@@ -651,12 +651,12 @@ export default function QuestionLibraryPage() {
               </div>
 
               {/* Photo Requirement */}
-              <div style={{ border:"1px solid #e5e7eb", borderRadius:9, overflow:"hidden" }}>
-                <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6 }}>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:9 }}>
+                <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6, borderRadius:"9px 9px 0 0" }}>
                   <i className="ri-camera-line" style={{ fontSize:13, color:"#0891b2" }}/>
                   <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Photo Requirement</span>
                 </div>
-                <div style={{ padding:"12px 14px 14px", background:"#f9fafb", display:"flex", flexWrap:"wrap" as const, gap:8 }}>
+                <div style={{ padding:"14px 14px 16px", background:"#f9fafb", display:"flex", flexWrap:"wrap" as const, gap:8, borderRadius:"0 0 9px 9px" }}>
                   {([
                     { value:"none",   label:"Not Required",     icon:"ri-camera-off-line",       color:"#6b7280", bg:"#f3f4f6",  border:"#e5e7eb"  },
                     { value:"always", label:"Always Required",  icon:"ri-camera-fill",            color:"#dc2626", bg:"#fee2e2",  border:"#fca5a5"  },
