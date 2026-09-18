@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type QType            = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "OK_NOT_OK_NA" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
+type QType            = "YES_NO_NA" | "OK_NOT_OK_NA";
 type RiskLevel        = "HIGH" | "MEDIUM" | "LOW";
 type QStatus          = "Active" | "Draft" | "Inactive";
 type PhotoRequirement = "none" | "always" | "if_yes" | "if_no" | "if_na";
@@ -319,29 +319,24 @@ const SEED: Question[] = [
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SECTIONS   = ["All Sections","General","Electrical Safety","Fire Prevention Measures","Server and UPS Room","Fire Protection","DG Set / Generator","Onsite ATM"];
-const Q_TYPES    = ["YES_NO_NA","YES_NO","OK_NOT_OK","OK_NOT_OK_NA","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
+const Q_TYPES    = ["YES_NO_NA","OK_NOT_OK_NA"] as const;
 const RISK_LEVELS= ["HIGH","MEDIUM","LOW"] as const;
 const STATUS_LIST= ["All Status","Active","Inactive"];
 const PAGE_SIZE  = 10;
 
 const TYPE_LABEL: Record<QType,string> = {
-  "YES_NO_NA":"YES / NO / NA","YES_NO":"YES / NO",
-  "OK_NOT_OK":"OK / NOT OK","OK_NOT_OK_NA":"OK / NOT OK / NA",
-  "RATING_1_5":"Rating 1–5","NUMERIC":"Numeric","TEXT":"Text","MULTI_CHOICE":"Multiple Choice",
+  "YES_NO_NA":   "YES / NO / NA",
+  "OK_NOT_OK_NA":"OK / NOT OK / NA",
 };
 const TYPE_STYLE: Record<QType,{color:string;bg:string}> = {
-  "YES_NO_NA":{color:"#16a34a",bg:"#dcfce7"},"YES_NO":{color:"#2563eb",bg:"#dbeafe"},
-  "OK_NOT_OK":{color:"#0891b2",bg:"#ecfeff"},"OK_NOT_OK_NA":{color:"#0891b2",bg:"#ecfeff"},
-  "RATING_1_5":{color:"#7c3aed",bg:"#f5f3ff"},"NUMERIC":{color:"#0891b2",bg:"#ecfeff"},
-  "TEXT":{color:"#374151",bg:"#f3f4f6"},"MULTI_CHOICE":{color:"#d97706",bg:"#fef3c7"},
+  "YES_NO_NA":   {color:"#16a34a",bg:"#dcfce7"},
+  "OK_NOT_OK_NA":{color:"#0891b2",bg:"#ecfeff"},
 };
 
 // Answer labels vary by question type (internal keys stay if_yes/if_no/if_na)
-function getAnswerLabels(type: QType): { yes: string; no: string; na: string | null } {
-  if (type === "OK_NOT_OK")    return { yes:"OK", no:"NOT OK", na:null };
+function getAnswerLabels(type: QType): { yes: string; no: string; na: string } {
   if (type === "OK_NOT_OK_NA") return { yes:"OK", no:"NOT OK", na:"N/A" };
-  if (type === "YES_NO")       return { yes:"YES", no:"NO", na:null };
-  return                              { yes:"YES", no:"NO",   na:"N/A" };
+  return                              { yes:"YES", no:"NO",    na:"N/A" };
 }
 const SECTION_COLOR: Record<string,string> = {
   "General":"#16a34a","Electrical Safety":"#ca8a04",
@@ -673,11 +668,11 @@ export default function QuestionLibraryPage() {
                   {(()=>{
                     const AL = getAnswerLabels(form.type);
                     const opts: { value: PhotoRequirement; label: string; icon: string; color: string; bg: string; border: string }[] = [
-                      { value:"none",   label:"Not Required",                    icon:"ri-camera-off-line",     color:"#6b7280", bg:"#f3f4f6", border:"#e5e7eb" },
-                      { value:"always", label:"Always Required",                 icon:"ri-camera-fill",         color:"#dc2626", bg:"#fee2e2", border:"#fca5a5" },
-                      { value:"if_yes", label:`Required if ${AL.yes}`,           icon:"ri-checkbox-circle-line",color:"#16a34a", bg:"#dcfce7", border:"#86efac" },
-                      { value:"if_no",  label:`Required if ${AL.no}`,            icon:"ri-close-circle-line",   color:"#ea580c", bg:"#ffedd5", border:"#fdba74" },
-                      ...(AL.na ? [{ value:"if_na" as PhotoRequirement, label:`Required if ${AL.na}`, icon:"ri-question-mark", color:"#7c3aed", bg:"#f5f3ff", border:"#c4b5fd" }] : []),
+                      { value:"none",   label:"Not Required",              icon:"ri-camera-off-line",     color:"#6b7280", bg:"#f3f4f6", border:"#e5e7eb" },
+                      { value:"always", label:"Always Required",           icon:"ri-camera-fill",         color:"#dc2626", bg:"#fee2e2", border:"#fca5a5" },
+                      { value:"if_yes", label:`Required if ${AL.yes}`,    icon:"ri-checkbox-circle-line",color:"#16a34a", bg:"#dcfce7", border:"#86efac" },
+                      { value:"if_no",  label:`Required if ${AL.no}`,     icon:"ri-close-circle-line",   color:"#ea580c", bg:"#ffedd5", border:"#fdba74" },
+                      { value:"if_na",  label:`Required if ${AL.na}`,     icon:"ri-question-mark",       color:"#7c3aed", bg:"#f5f3ff", border:"#c4b5fd" },
                     ];
                     return opts.map(opt => {
                       const sel = form.photoRequirement === opt.value;
@@ -705,7 +700,7 @@ export default function QuestionLibraryPage() {
                     const rows: { key:"remarkIfYes"|"remarkIfNo"|"remarkIfNA"; label:string; color:string; bg:string; border:string; icon:string; placeholder:string }[] = [
                       { key:"remarkIfYes", label:`Remark if Answer = ${AL.yes}`, color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", icon:"ri-checkbox-circle-line", placeholder:"e.g. Complied — maintained properly" },
                       { key:"remarkIfNo",  label:`Remark if Answer = ${AL.no}`,  color:"#dc2626", bg:"#fef2f2", border:"#fecaca", icon:"ri-close-circle-line",    placeholder:"e.g. Non-compliant — immediate action required" },
-                      ...(AL.na ? [{ key:"remarkIfNA" as const, label:`Remark if Answer = ${AL.na}`, color:"#7c3aed", bg:"#faf5ff", border:"#e9d5ff", icon:"ri-question-mark", placeholder:"e.g. Not applicable for this location" }] : []),
+                      { key:"remarkIfNA",  label:`Remark if Answer = ${AL.na}`,  color:"#7c3aed", bg:"#faf5ff", border:"#e9d5ff", icon:"ri-question-mark",        placeholder:"e.g. Not applicable for this location" },
                     ];
                     return rows;
                   })().map(r => (
@@ -854,7 +849,7 @@ export default function QuestionLibraryPage() {
   questionCode     String   @unique       // e.g. "Q-001"
   textEn           String
   textHi           String   @default("")
-  type             QuestionType           // YES_NO_NA | YES_NO | ...
+  type             QuestionType           // YES_NO_NA | OK_NOT_OK_NA
   category         String   @default("General")
   section          String   @default("General")
   riskLevel        RiskLevel @default(HIGH)
@@ -882,13 +877,7 @@ export default function QuestionLibraryPage() {
 
 enum QuestionType {
   YES_NO_NA
-  YES_NO
-  OK_NOT_OK
   OK_NOT_OK_NA
-  RATING_1_5
-  NUMERIC
-  TEXT
-  MULTI_CHOICE
 }
 
 enum PhotoReq {
@@ -904,7 +893,7 @@ enum QStatus   { ACTIVE  DRAFT  INACTIVE }`;
 
             const KW   = /\b(model|enum|@@id|@@index|@@map|@id|@unique|@default|@map|@updatedAt|@relation)\b/g;
             const TYPE = /\b(String|Int|Boolean|DateTime|Float)\b/g;
-            const ENUM = /\b(QuestionType|PhotoReq|RiskLevel|QStatus|YES_NO_NA|YES_NO|OK_NOT_OK_NA|OK_NOT_OK|RATING_1_5|NUMERIC|TEXT|MULTI_CHOICE|NONE|ALWAYS|IF_YES|IF_NO|IF_NA|HIGH|MEDIUM|LOW|ACTIVE|DRAFT|INACTIVE)\b/g;
+            const ENUM = /\b(QuestionType|PhotoReq|RiskLevel|QStatus|YES_NO_NA|OK_NOT_OK_NA|NONE|ALWAYS|IF_YES|IF_NO|IF_NA|HIGH|MEDIUM|LOW|ACTIVE|DRAFT|INACTIVE)\b/g;
             const CMT  = /(\/\/[^\n]*)/g;
 
             function colorPrisma(sql: string): React.ReactNode[] {
@@ -1005,7 +994,7 @@ enum QStatus   { ACTIVE  DRAFT  INACTIVE }`;
                       <i className="ri-questionnaire-line" style={{ fontSize:32, display:"block", marginBottom:8, opacity:0.3 }}/>No questions found
                     </td></tr>
                   ) : paged.map((q, idx) => {
-                    const ts = TYPE_STYLE[q.type];
+                    const ts = TYPE_STYLE[q.type as QType] ?? {color:"#374151",bg:"#f3f4f6"};
                     const sc = SECTION_COLOR[q.section] || "#374151";
                     const isActive = editRow?.id === q.id;
                     return (
@@ -1026,7 +1015,7 @@ enum QStatus   { ACTIVE  DRAFT  INACTIVE }`;
                           <span style={{ fontSize:10, fontWeight:700, color:sc, background:`${sc}18`, borderRadius:20, padding:"2px 8px", whiteSpace:"nowrap" as const }}>{q.section}</span>
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
-                          <span style={{ fontSize:10, fontWeight:700, color:ts.color, background:ts.bg, borderRadius:5, padding:"2px 7px", whiteSpace:"nowrap" as const }}>{TYPE_LABEL[q.type]}</span>
+                          <span style={{ fontSize:10, fontWeight:700, color:ts.color, background:ts.bg, borderRadius:5, padding:"2px 7px", whiteSpace:"nowrap" as const }}>{TYPE_LABEL[q.type as QType] ?? q.type}</span>
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
                           <span style={{ fontSize:13, fontWeight:800, color:"#2563eb" }}>{q.weightage}</span>
