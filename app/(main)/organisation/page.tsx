@@ -203,7 +203,7 @@ export default function OrganisationPage() {
     if (levelDef.order === 1) return [];
 
     // Branch in SBI can go under any non-leaf level (HO, LHO, RBO)
-    if (form.level === "BRANCH" && form.bankCode === "SBI") {
+    if (form.level === "BRANCH" && form.bankCode === "SBIN") {
       return rows.filter(r => r.bankCode === form.bankCode && !levels.find(l => l.code === r.level)?.isLeaf);
     }
 
@@ -454,23 +454,49 @@ export default function OrganisationPage() {
                 </div>
               )}
 
-              {/* Level */}
+              {/* Level — pill buttons */}
               <div>
                 <label style={LBL}>Unit Level <span style={{ color:"#dc2626" }}>*</span></label>
-                <select
-                  value={form.level}
-                  onChange={fp("level")}
-                  disabled={!form.bankCode}
-                  style={{ ...INP, cursor: form.bankCode ? "pointer" : "not-allowed", opacity: form.bankCode ? 1 : 0.5 }}
-                >
-                  <option value="">{form.bankCode ? "Select level" : "Select bank first"}</option>
-                  {currentBankLevels.filter(l => !l.isLeaf && l.order > 1).map(l => (
-                    <option key={l.code} value={l.code}>{l.code} — {l.name}</option>
-                  ))}
-                </select>
-                {currentLevelDef?.isLeaf && (
-                  <div style={{ fontSize:10, color:"#9ca3af", marginTop:3 }}>
-                    <i className="ri-information-line"/> Leaf node — cannot have child units
+                {!form.bankCode ? (
+                  <div style={{ ...INP, color:"#9ca3af", fontSize:12, display:"flex", alignItems:"center", gap:6, opacity:0.6, cursor:"not-allowed" }}>
+                    <i className="ri-information-line" style={{ fontSize:13 }}/>
+                    Select a bank first
+                  </div>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {currentBankLevels.filter(l => !l.isLeaf && l.order > 1).map(l => {
+                      const isSelected = form.level === l.code;
+                      const ls = getLevelStyle(l.code);
+                      return (
+                        <button
+                          key={l.code}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, level: l.code, parentId: "" }))}
+                          style={{
+                            display:"flex", alignItems:"center", gap:10,
+                            padding:"10px 14px", borderRadius:9, cursor:"pointer",
+                            border: isSelected ? `2px solid ${ls.color}` : "2px solid #e5e7eb",
+                            background: isSelected ? ls.bg : "#fff",
+                            textAlign:"left", transition:"all 0.15s",
+                          }}
+                        >
+                          <span style={{
+                            fontSize:11, fontWeight:800, color: isSelected ? ls.color : "#9ca3af",
+                            background: isSelected ? "#fff" : "#f3f4f6",
+                            border:`1px solid ${isSelected ? ls.border : "#e5e7eb"}`,
+                            borderRadius:6, padding:"2px 7px", minWidth:34, textAlign:"center",
+                          }}>
+                            {l.code}
+                          </span>
+                          <span style={{ fontSize:12, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#111827" : "#6b7280" }}>
+                            {l.name}
+                          </span>
+                          {isSelected && (
+                            <i className="ri-check-line" style={{ fontSize:14, color:ls.color, marginLeft:"auto" }}/>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -715,7 +741,9 @@ CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
                     </tr>
                   ) : treeRows.map(({ node, depth, hasChildren }) => {
                     const isEditing = editId === node.id;
+                    const lvlDef    = BANK_CONFIGS[node.bankCode]?.levels.find(l => l.code === node.level);
                     const lvlLabel  = node.level === "BRANCH" ? "Branch" : node.level;
+                    const lvlFullName = lvlDef?.name?.replace(/ — .*$/, "") ?? lvlLabel; // strip "— Mumbai" etc.
                     const lvlStyle  = getLevelStyle(node.level);
 
                     return (
@@ -754,9 +782,12 @@ CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
 
                         {/* Level badge */}
                         <td style={TD}>
-                          <span style={{ fontSize:10, fontWeight:700, color:lvlStyle.color, background:lvlStyle.bg, border:`1px solid ${lvlStyle.border}`, borderRadius:20, padding:"2px 9px", whiteSpace:"nowrap" }}>
-                            {lvlLabel}
-                          </span>
+                          <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                            <span style={{ fontSize:10, fontWeight:700, color:lvlStyle.color, background:lvlStyle.bg, border:`1px solid ${lvlStyle.border}`, borderRadius:20, padding:"2px 9px", whiteSpace:"nowrap", alignSelf:"flex-start" }}>
+                              {lvlLabel}
+                            </span>
+                            <span style={{ fontSize:10, color:"#9ca3af" }}>{lvlFullName}</span>
+                          </div>
                         </td>
 
                         {/* Code */}
@@ -767,7 +798,12 @@ CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
                         </td>
 
                         {/* Bank */}
-                        <td style={{ ...TD, fontSize:12, color:"#6b7280" }}>{node.bankCode}</td>
+                        <td style={{ ...TD, fontSize:12 }}>
+                          <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
+                            <span style={{ fontWeight:700, color:"#374151" }}>{node.bankCode}</span>
+                            <span style={{ fontSize:10, color:"#9ca3af" }}>{node.bankName}</span>
+                          </div>
+                        </td>
 
                         {/* Status toggle */}
                         <td style={{ ...TD, textAlign:"center" }}>
