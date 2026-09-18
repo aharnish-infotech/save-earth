@@ -2,9 +2,10 @@
 import React, { useState } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type QType     = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
-type RiskLevel = "HIGH" | "MEDIUM" | "LOW";
-type QStatus   = "Active" | "Draft" | "Inactive";
+type QType            = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
+type RiskLevel        = "HIGH" | "MEDIUM" | "LOW";
+type QStatus          = "Active" | "Draft" | "Inactive";
+type PhotoRequirement = "none" | "always" | "if_yes" | "if_no" | "if_na";
 
 // UUID v4 generator — replaces crypto.randomUUID() for mock/SSR safety
 const uuid = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
@@ -23,10 +24,10 @@ interface Question {
   weightage:    number;
   helpEn:       string;
   helpHi:       string;
-  mandatory:    boolean;
-  allowRemarks: boolean;
-  allowPhoto:   boolean;
-  multiPhoto:   boolean;
+  mandatory:        boolean;
+  allowRemarks:     boolean;
+  photoRequirement: PhotoRequirement;
+  multiPhoto:       boolean;
   numericValue: boolean;
   allowNA:      boolean;
   recommendEn:  string;
@@ -47,7 +48,7 @@ const mkQ = (
   id: uuid(), questionCode, section, textEn, textHi, type, category,
   riskLevel: "HIGH", weightage: 5,
   helpEn, helpHi: "", recommendEn: "COMPLIED", recommendHi,
-  mandatory: true, allowRemarks: true, allowPhoto: false,
+  mandatory: true, allowRemarks: true, photoRequirement: "none" as PhotoRequirement,
   multiPhoto: false, numericValue: false, allowNA: false,
   status: "Active", usedIn: 0, createdOn: D,
 });
@@ -341,7 +342,7 @@ const EMPTY = {
   textEn:"", textHi:"", type:"YES_NO_NA" as QType, category:"General",
   section:"General", riskLevel:"HIGH" as RiskLevel, weightage:5,
   helpEn:"", helpHi:"", recommendEn:"COMPLIED", recommendHi:"ठीक है",
-  mandatory:true, allowRemarks:true, allowPhoto:false,
+  mandatory:true, allowRemarks:true, photoRequirement:"none" as PhotoRequirement,
   multiPhoto:false, numericValue:false, allowNA:false,
   status:"Active" as QStatus,
 };
@@ -462,7 +463,7 @@ export default function QuestionLibraryPage() {
     setForm({ textEn:q.textEn, textHi:q.textHi, type:q.type,
       section:q.section, riskLevel:q.riskLevel, weightage:q.weightage,
       helpEn:q.helpEn, helpHi:q.helpHi, recommendEn:q.recommendEn, recommendHi:q.recommendHi,
-      mandatory:q.mandatory, allowRemarks:q.allowRemarks, allowPhoto:q.allowPhoto,
+      mandatory:q.mandatory, allowRemarks:q.allowRemarks, photoRequirement:q.photoRequirement,
       multiPhoto:q.multiPhoto, numericValue:q.numericValue, allowNA:q.allowNA,
       status:q.status, category:q.category });
   };
@@ -505,11 +506,11 @@ export default function QuestionLibraryPage() {
   const handleToggle = (id: string) =>
     setQuestions(qs => qs.map(q => q.id===id ? { ...q, status:q.status==="Active"?"Inactive":"Active" as QStatus } : q));
 
-  const chk = (key: "mandatory"|"allowRemarks"|"allowPhoto") => (
+  const chk = (key: "mandatory"|"allowRemarks") => (
     <label key={key} style={{ display:"inline-flex", alignItems:"center", gap:5, cursor:"pointer", fontSize:12, color:"#374151", userSelect:"none" }}>
       <input type="checkbox" checked={!!form[key]} onChange={e=>fp(key,e.target.checked)}
         style={{ width:14, height:14, accentColor:"#16a34a", cursor:"pointer" }}/>
-      {key==="mandatory"?"Mandatory":key==="allowRemarks"?"Allow Recommendation":"Allow Photo"}
+      {key==="mandatory" ? "Mandatory" : "Allow Recommendation"}
     </label>
   );
 
@@ -644,8 +645,34 @@ export default function QuestionLibraryPage() {
                   <i className="ri-settings-3-line" style={{ fontSize:13, color:"#6b7280" }}/>
                   <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Question Behaviour</span>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px 6px", padding:"10px 12px", background:"#f9fafb" }}>
-                  {(["mandatory","allowRemarks","allowPhoto"] as const).map(chk)}
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px 6px", padding:"10px 12px", background:"#f9fafb" }}>
+                  {(["mandatory","allowRemarks"] as const).map(chk)}
+                </div>
+              </div>
+
+              {/* Photo Requirement */}
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:9, overflow:"hidden" }}>
+                <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ri-camera-line" style={{ fontSize:13, color:"#0891b2" }}/>
+                  <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Photo Requirement</span>
+                </div>
+                <div style={{ padding:"10px 12px", background:"#f9fafb", display:"flex", flexWrap:"wrap" as const, gap:6 }}>
+                  {([
+                    { value:"none",   label:"Not Required",     icon:"ri-camera-off-line",       color:"#6b7280", bg:"#f3f4f6",  border:"#e5e7eb"  },
+                    { value:"always", label:"Always Required",  icon:"ri-camera-fill",            color:"#dc2626", bg:"#fee2e2",  border:"#fca5a5"  },
+                    { value:"if_yes", label:"Required if Yes",  icon:"ri-checkbox-circle-line",   color:"#16a34a", bg:"#dcfce7",  border:"#86efac"  },
+                    { value:"if_no",  label:"Required if No",   icon:"ri-close-circle-line",      color:"#ea580c", bg:"#ffedd5",  border:"#fdba74"  },
+                    { value:"if_na",  label:"Required if N/A",  icon:"ri-question-mark",          color:"#7c3aed", bg:"#f5f3ff",  border:"#c4b5fd"  },
+                  ] as { value: PhotoRequirement; label: string; icon: string; color: string; bg: string; border: string }[]).map(opt => {
+                    const sel = form.photoRequirement === opt.value;
+                    return (
+                      <button key={opt.value} onClick={() => fp("photoRequirement", opt.value)}
+                        style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"6px 11px", borderRadius:20, border:`1px solid ${sel ? opt.border : "#e5e7eb"}`, background: sel ? opt.bg : "#fff", color: sel ? opt.color : "#6b7280", fontWeight: sel ? 700 : 500, fontSize:11, cursor:"pointer", transition:"all 0.15s" }}>
+                        <i className={opt.icon} style={{ fontSize:12 }}/>
+                        {opt.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -730,10 +757,10 @@ export default function QuestionLibraryPage() {
                     type:         form.type,
                     section:      form.section,
                     weightage:    form.weightage,
-                    mandatory:    form.mandatory,
-                    allowRemarks: form.allowRemarks,
-                    allowPhoto:   form.allowPhoto,
-                    recommendEn:  form.recommendEn,
+                    mandatory:        form.mandatory,
+                    allowRemarks:     form.allowRemarks,
+                    photoRequirement: form.photoRequirement,
+                    recommendEn:      form.recommendEn,
                     recommendHi:  form.recommendHi  || "(empty)",
                     status:       form.status,
                   }, null, 2);
@@ -758,10 +785,10 @@ export default function QuestionLibraryPage() {
   type:         form.type,
   section:      form.section,
   weightage:    form.weightage,
-  mandatory:    form.mandatory,
-  allowRemarks: form.allowRemarks,
-  allowPhoto:   form.allowPhoto,
-  recommendEn:  form.recommendEn,
+  mandatory:        form.mandatory,
+  allowRemarks:     form.allowRemarks,
+  photoRequirement: form.photoRequirement,
+  recommendEn:      form.recommendEn,
   recommendHi:  form.recommendHi  || "(empty)",
   status:       form.status,
 }, null, 2))}
@@ -853,7 +880,10 @@ export default function QuestionLibraryPage() {
                         <td style={{ ...TD, textAlign:"center" }}>
                           <div style={{ display:"flex", gap:3, justifyContent:"center", flexWrap:"wrap" }}>
                             {q.mandatory    && <span title="Mandatory"       style={{ fontSize:9, fontWeight:700, color:"#dc2626", background:"#fee2e2", borderRadius:4, padding:"1px 5px" }}>REQ</span>}
-                            {q.allowPhoto   && <span title="Allow Photo"     style={{ fontSize:9, fontWeight:700, color:"#2563eb", background:"#dbeafe", borderRadius:4, padding:"1px 5px" }}>PHO</span>}
+                            {q.photoRequirement === "always" && <span title="Photo: Always Required" style={{ fontSize:9, fontWeight:700, color:"#dc2626", background:"#fee2e2", borderRadius:4, padding:"1px 5px" }}>PHO:ALL</span>}
+                            {q.photoRequirement === "if_yes" && <span title="Photo: Required if Yes" style={{ fontSize:9, fontWeight:700, color:"#16a34a", background:"#dcfce7", borderRadius:4, padding:"1px 5px" }}>PHO:YES</span>}
+                            {q.photoRequirement === "if_no"  && <span title="Photo: Required if No"  style={{ fontSize:9, fontWeight:700, color:"#ea580c", background:"#ffedd5", borderRadius:4, padding:"1px 5px" }}>PHO:NO</span>}
+                            {q.photoRequirement === "if_na"  && <span title="Photo: Required if N/A" style={{ fontSize:9, fontWeight:700, color:"#7c3aed", background:"#f5f3ff", borderRadius:4, padding:"1px 5px" }}>PHO:NA</span>}
                             {q.allowRemarks && <span title="Recommendation"  style={{ fontSize:9, fontWeight:700, color:"#7c3aed", background:"#f5f3ff", borderRadius:4, padding:"1px 5px" }}>REC</span>}
                           </div>
                         </td>
