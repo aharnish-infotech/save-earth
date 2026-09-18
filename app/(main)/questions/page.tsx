@@ -831,6 +831,108 @@ export default function QuestionLibraryPage() {
             </pre>
           </div>
 
+          {/* ── DB Schema card ──────────────────────────────────────────────────── */}
+          {(() => {
+            const [open, setOpen] = React.useState(false);
+            const SQL = `model Question {
+  id               String   @id @default(uuid())
+  questionCode     String   @unique       // e.g. "Q-001"
+  textEn           String
+  textHi           String   @default("")
+  type             QuestionType           // YES_NO_NA | YES_NO | ...
+  category         String   @default("General")
+  section          String   @default("General")
+  riskLevel        RiskLevel @default(HIGH)
+  weightage        Int      @default(5)
+  helpEn           String   @default("")
+  helpHi           String   @default("")
+  mandatory        Boolean  @default(true)
+  allowRemarks     Boolean  @default(true)
+  photoRequirement PhotoReq @default(NONE)
+  remarkIfYes      String   @default("")
+  remarkIfNo       String   @default("")
+  remarkIfNA       String   @default("")
+  recommendEn      String   @default("COMPLIED")
+  recommendHi      String   @default("")
+  status           QStatus  @default(ACTIVE)
+  usedIn           Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([section])
+  @@index([status])
+  @@index([type])
+  @@map("questions")
+}
+
+enum QuestionType {
+  YES_NO_NA
+  YES_NO
+  OK_NOT_OK
+  RATING_1_5
+  NUMERIC
+  TEXT
+  MULTI_CHOICE
+}
+
+enum PhotoReq {
+  NONE
+  ALWAYS
+  IF_YES
+  IF_NO
+  IF_NA
+}
+
+enum RiskLevel { HIGH  MEDIUM  LOW }
+enum QStatus   { ACTIVE  DRAFT  INACTIVE }`;
+
+            const KW   = /\b(model|enum|@@id|@@index|@@map|@id|@unique|@default|@map|@updatedAt|@relation)\b/g;
+            const TYPE = /\b(String|Int|Boolean|DateTime|Float)\b/g;
+            const ENUM = /\b(QuestionType|PhotoReq|RiskLevel|QStatus|YES_NO_NA|YES_NO|OK_NOT_OK|RATING_1_5|NUMERIC|TEXT|MULTI_CHOICE|NONE|ALWAYS|IF_YES|IF_NO|IF_NA|HIGH|MEDIUM|LOW|ACTIVE|DRAFT|INACTIVE)\b/g;
+            const CMT  = /(\/\/[^\n]*)/g;
+
+            function colorPrisma(sql: string): React.ReactNode[] {
+              const parts: React.ReactNode[] = [];
+              const tokens: { index:number; end:number; type:string; text:string }[] = [];
+              const scan = (rx: RegExp, t: string) => { rx.lastIndex=0; let m; while((m=rx.exec(sql))!==null) tokens.push({index:m.index,end:m.index+m[0].length,type:t,text:m[0]}); };
+              scan(CMT,"cmt"); scan(KW,"kw"); scan(TYPE,"type"); scan(ENUM,"enum");
+              tokens.sort((a,b)=>a.index-b.index);
+              const seen=new Set<number>(); let last=0;
+              for(const t of tokens){
+                if(seen.has(t.index)) continue; seen.add(t.index);
+                if(t.index>last) parts.push(sql.slice(last,t.index));
+                const color = t.type==="kw"?"#569cd6":t.type==="type"?"#4ec9b0":t.type==="enum"?"#ce9178":"#6a9955";
+                parts.push(<span key={t.index} style={{color}}>{t.text}</span>);
+                last=t.end;
+              }
+              if(last<sql.length) parts.push(sql.slice(last));
+              return parts;
+            }
+
+            return (
+              <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+                <div onClick={()=>setOpen(o=>!o)}
+                  style={{ padding:"11px 16px", background:"#f8fafc", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", userSelect:"none" as const }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ width:28, height:28, borderRadius:7, background:"#faf5ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <i className="ri-database-2-line" style={{ fontSize:14, color:"#9333ea" }}/>
+                    </div>
+                    <span style={{ fontSize:12, fontWeight:800, color:"#111827" }}>Prisma Schema</span>
+                    <span style={{ fontSize:10, color:"#9333ea", background:"#faf5ff", borderRadius:20, padding:"1px 8px", fontWeight:700 }}>Question model</span>
+                  </div>
+                  <i className={`ri-arrow-${open?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
+                </div>
+                {open && (
+                  <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:320, overflowY:"auto" }}>
+                    <pre style={{ margin:0, fontSize:11, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.7, whiteSpace:"pre", color:"#d4d4d4" }}>
+                      {colorPrisma(SQL)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           </div>
 
         {/* ── RIGHT — TABLE ─────────────────────────────────────────────────────── */}
