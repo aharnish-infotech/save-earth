@@ -21,9 +21,8 @@ interface OrgUnit {
   id: string;
   bankCode: string;
   bankName: string;
-  level: string;       // "HO" | "LHO" | "AO" | "RBO" | "BRANCH" | "ZO" | "RO" …
+  level: string;       // "HO" | "LHO" | "RBO" | "BRANCH" | "ZO" | "RO"
   levelOrder: number;
-  subType?: string;    // "AO" | "CO" | "MODULE" — only when level="AO" in SBI
   code: string;
   name: string;
   parentId: string | null;
@@ -41,8 +40,8 @@ type FormData = {
 
 // ── Auto code generation ───────────────────────────────────────────────────────
 // Format: {LEVEL_PREFIX}-{NAME_ABBR}-{SEQ:03d}
-// e.g.  LHO-CHA-001  |  BR-MOD-002  |  ZO-NOR-001  |  CO-AMR-001
-const STOP_WORDS = new Set(["the","and","of","for","in","at","ho","lho","ao","rbo","zo","ro","co","module","branch","branches","office","local","head","administrative","circle","zone","regional","zonal","national","state","bank","india"]);
+// e.g.  LHO-AHM-001  |  BR-SUR-002  |  ZO-CHN-001  |  RO-MNG-001
+const STOP_WORDS = new Set(["the","and","of","for","in","at","ho","lho","rbo","zo","ro","branch","branches","office","local","head","zone","regional","zonal","national","state","bank","india"]);
 
 function generateCode(bankCode: string, level: string, name: string, existing: OrgUnit[]): string {
   if (!bankCode || !level || !name.trim()) return "";
@@ -66,68 +65,50 @@ function generateCode(bankCode: string, level: string, name: string, existing: O
 }
 
 // ── Bank hierarchy configurations (metadata-driven) ────────────────────────────
-// Standard 4-level hierarchy shared by most PSBs and private banks
-const STD_LEVELS: OrgLevel[] = [
-  { code: "HO",     name: "Head Office",     order: 1                         },
-  { code: "ZO",     name: "Zonal Office",    order: 2                         },
-  { code: "RO",     name: "Regional Office", order: 3, canDirectBranch: true  },
-  { code: "BRANCH", name: "Branch",          order: 4, isLeaf: true           },
-];
+
+// HO city per bank
+const BANK_HO_CITY: Record<string, string> = {
+  SBIN: "Mumbai",
+  CNRB: "Bengaluru",
+};
 
 const BANK_CONFIGS: Record<string, BankConfig> = {
-  // ── Public Sector Banks ──────────────────────────────────────────────────────
   SBIN: {
     name: "State Bank of India",
     levels: [
-      { code: "HO",     name: "Head Office",             order: 1, canDirectBranch: true },
-      { code: "LHO",    name: "Local Head Office",        order: 2, canDirectBranch: true },
-      { code: "AO",     name: "Admin / Circle / Module",  order: 3, hasSubType: true      },
-      { code: "RBO",    name: "Regional Business Office", order: 4                        },
-      { code: "BRANCH", name: "Branch",                   order: 5, isLeaf: true          },
+      { code: "HO",     name: "Head Office — Mumbai",      order: 1, canDirectBranch: true },
+      { code: "LHO",    name: "Local Head Office",          order: 2, canDirectBranch: true },
+      { code: "RBO",    name: "Regional Business Office",   order: 3                        },
+      { code: "BRANCH", name: "Branch",                     order: 4, isLeaf: true          },
     ],
   },
-  PUNB: {
-    name: "Punjab National Bank",
+  CNRB: {
+    name: "Canara Bank",
     levels: [
-      { code: "HO",     name: "Head Office",     order: 1 },
-      { code: "ZO",     name: "Zonal Office",    order: 2 },
-      { code: "RO",     name: "Regional Office", order: 3, canDirectBranch: true },
-      { code: "BRANCH", name: "Branch",           order: 4, isLeaf: true },
+      { code: "HO",     name: "Head Office — Bengaluru",   order: 1                        },
+      { code: "ZO",     name: "Zonal Office",               order: 2                        },
+      { code: "RO",     name: "Regional Office",            order: 3, canDirectBranch: true },
+      { code: "BRANCH", name: "Branch",                     order: 4, isLeaf: true          },
     ],
   },
-  CNRB: { name: "Canara Bank",           levels: STD_LEVELS },
-  UBIN: { name: "Union Bank of India",   levels: STD_LEVELS },
-  BKID: { name: "Bank of India",         levels: STD_LEVELS },
-  BARB: { name: "Bank of Baroda",        levels: STD_LEVELS },
-  MAHB: { name: "Bank of Maharashtra",   levels: STD_LEVELS },
-  CBIN: { name: "Central Bank of India", levels: STD_LEVELS },
-  IDIB: { name: "Indian Bank",           levels: STD_LEVELS },
-  IBKL: { name: "IDBI Bank",            levels: STD_LEVELS },
-  // ── Private Sector Banks ─────────────────────────────────────────────────────
-  HDFC: { name: "HDFC Bank",            levels: STD_LEVELS },
-  ICIC: { name: "ICICI Bank",           levels: STD_LEVELS },
-  UTIB: { name: "Axis Bank",            levels: STD_LEVELS },
-  KKBK: { name: "Kotak Mahindra Bank",  levels: STD_LEVELS },
-  INDB: { name: "IndusInd Bank",        levels: STD_LEVELS },
-  YESB: { name: "Yes Bank",            levels: STD_LEVELS },
 };
 
 const uuid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
-// ── Seed data — reflects real-world SBI + PNB hierarchy ───────────────────────
+// ── Seed data — SBI (SBIN) + Canara Bank (CNRB) ───────────────────────────────
 const SEED: OrgUnit[] = [
-  // SBIN — HO is auto-created from the Bank record; only intermediate levels are added here
-  { id:"s-lho1", bankCode:"SBIN", bankName:"State Bank of India", level:"LHO",   levelOrder:2, code:"LHO-CHD",   name:"Chandigarh",      parentId:null,    isActive:true  },
-  { id:"s-lho2", bankCode:"SBIN", bankName:"State Bank of India", level:"LHO",   levelOrder:2, code:"LHO-MUM",   name:"Mumbai",          parentId:null,    isActive:true  },
-  { id:"s-ao1",  bankCode:"SBIN", bankName:"State Bank of India", level:"AO",    levelOrder:3, code:"AO-LDH",    name:"Ludhiana",        parentId:"s-lho1",isActive:true  },
-  { id:"s-ao2",  bankCode:"SBIN", bankName:"State Bank of India", level:"AO",    levelOrder:3, code:"CO-AMR",    name:"Amritsar",        parentId:"s-lho1",isActive:true  },
-  { id:"s-ao3",  bankCode:"SBIN", bankName:"State Bank of India", level:"AO",    levelOrder:3, code:"AO-MUM1",   name:"Mumbai North",    parentId:"s-lho2",isActive:true  },
-  { id:"s-rbo1", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO",   levelOrder:4, code:"RBO-LDH",   name:"Ludhiana",        parentId:"s-ao1", isActive:true  },
-  { id:"s-rbo2", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO",   levelOrder:4, code:"RBO-JAL",   name:"Jalandhar",       parentId:"s-ao1", isActive:true  },
-  // PUNB — HO auto-created from Bank record
-  { id:"p-zo1",  bankCode:"PUNB", bankName:"Punjab National Bank",level:"ZO",    levelOrder:2, code:"ZO-NORTH",  name:"North",           parentId:null,    isActive:true  },
-  { id:"p-zo2",  bankCode:"PUNB", bankName:"Punjab National Bank",level:"ZO",    levelOrder:2, code:"ZO-WEST",   name:"West",            parentId:null,    isActive:false },
-  { id:"p-rbo1", bankCode:"PUNB", bankName:"Punjab National Bank",level:"RO",    levelOrder:3, code:"RO-DEL",    name:"Delhi",           parentId:"p-zo1", isActive:true  },
+  // SBIN — HO (Mumbai) is auto-assigned; intermediate levels only
+  { id:"s-lho1", bankCode:"SBIN", bankName:"State Bank of India", level:"LHO", levelOrder:2, code:"LHO-AHM", name:"Ahmedabad",  parentId:null,    isActive:true  },
+  { id:"s-lho2", bankCode:"SBIN", bankName:"State Bank of India", level:"LHO", levelOrder:2, code:"LHO-CHD", name:"Chandigarh", parentId:null,    isActive:true  },
+  { id:"s-rbo1", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:3, code:"RBO-AHM", name:"Ahmedabad",  parentId:"s-lho1",isActive:true  },
+  { id:"s-rbo2", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:3, code:"RBO-SUR", name:"Surat",      parentId:"s-lho1",isActive:true  },
+  { id:"s-rbo3", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:3, code:"RBO-LDH", name:"Ludhiana",   parentId:"s-lho2",isActive:true  },
+  // CNRB — HO (Bengaluru) is auto-assigned
+  { id:"c-zo1",  bankCode:"CNRB", bankName:"Canara Bank", level:"ZO",  levelOrder:2, code:"ZO-BLR",  name:"Bengaluru", parentId:null,   isActive:true  },
+  { id:"c-zo2",  bankCode:"CNRB", bankName:"Canara Bank", level:"ZO",  levelOrder:2, code:"ZO-CHN",  name:"Chennai",   parentId:null,   isActive:true  },
+  { id:"c-ro1",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-BLR",  name:"Bengaluru", parentId:"c-zo1",isActive:true  },
+  { id:"c-ro2",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-MNG",  name:"Mangaluru", parentId:"c-zo1",isActive:true  },
+  { id:"c-ro3",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-CHN",  name:"Chennai",   parentId:"c-zo2",isActive:true  },
 ];
 
 const EMPTY_FORM: FormData = {
@@ -138,9 +119,6 @@ const EMPTY_FORM: FormData = {
 const LEVEL_STYLE: Record<string, { color: string; bg: string; border: string }> = {
   HO:     { color:"#1d4ed8", bg:"#dbeafe", border:"#bfdbfe" },
   LHO:    { color:"#166534", bg:"#dcfce7", border:"#bbf7d0" },
-  AO:     { color:"#92400e", bg:"#fef3c7", border:"#fde68a" },
-  CO:     { color:"#92400e", bg:"#fef3c7", border:"#fde68a" },
-  MODULE: { color:"#92400e", bg:"#fef3c7", border:"#fde68a" },
   RBO:    { color:"#6b21a8", bg:"#f3e8ff", border:"#e9d5ff" },
   ZO:     { color:"#0e7490", bg:"#cffafe", border:"#a5f3fc" },
   RO:     { color:"#0e7490", bg:"#cffafe", border:"#a5f3fc" },
@@ -152,7 +130,7 @@ function getLevelStyle(level: string) {
 }
 
 // User stores just the location name ("Ludhiana").
-// Display appends the level so it reads "Ludhiana — AO" or "Chandigarh — LHO".
+// Display appends the level so it reads "Ludhiana — RBO" or "Chandigarh — LHO".
 // HO stores the full institution name so it shows as-is.
 function getDisplayName(unit: OrgUnit): string {
   if (unit.level === "HO") return unit.name;
@@ -202,7 +180,7 @@ export default function OrganisationPage() {
   const [rows, setRows]           = useState<OrgUnit[]>(SEED);
   const [form, setForm]           = useState<FormData>({ ...EMPTY_FORM });
   const [editId, setEditId]       = useState<string | null>(null);
-  const [expanded, setExpanded]   = useState<Set<string>>(new Set(["s-ho","s-lho1","s-ao1","p-ho","p-zo1"]));
+  const [expanded, setExpanded]   = useState<Set<string>>(new Set(["s-lho1","s-lho2","c-zo1","c-zo2"]));
   const [bankFilter, setBankFilter] = useState("");
   const [search, setSearch]       = useState("");
   const formRef = useRef<HTMLDivElement>(null);
@@ -224,7 +202,7 @@ export default function OrganisationPage() {
     // HO has no parent
     if (levelDef.order === 1) return [];
 
-    // Branch in SBI can go under any non-leaf level (HO, LHO, AO, RBO)
+    // Branch in SBI can go under any non-leaf level (HO, LHO, RBO)
     if (form.level === "BRANCH" && form.bankCode === "SBI") {
       return rows.filter(r => r.bankCode === form.bankCode && !levels.find(l => l.code === r.level)?.isLeaf);
     }
@@ -464,6 +442,18 @@ export default function OrganisationPage() {
                 </select>
               </div>
 
+              {/* HO City — auto from bank */}
+              {form.bankCode && BANK_HO_CITY[form.bankCode] && (
+                <div>
+                  <label style={LBL}>Head Office (HO)</label>
+                  <div style={{ ...INP, background:"#f9fafb", display:"flex", alignItems:"center", gap:8, color:"#374151", fontWeight:700 }}>
+                    <i className="ri-building-4-line" style={{ fontSize:13, color:"#6b7280" }}/>
+                    <span>{BANK_HO_CITY[form.bankCode]}</span>
+                    <span style={{ fontSize:11, color:"#9ca3af", fontWeight:400, marginLeft:2 }}>— auto-assigned</span>
+                  </div>
+                </div>
+              )}
+
               {/* Level */}
               <div>
                 <label style={LBL}>Unit Level <span style={{ color:"#dc2626" }}>*</span></label>
@@ -526,7 +516,6 @@ export default function OrganisationPage() {
                   const placeholders: Record<string, string> = {
                     HO:     "e.g. State Bank of India",
                     LHO:    "e.g. Chandigarh",
-                    AO:     "e.g. Ludhiana",
                     RBO:    "e.g. Ludhiana",
                     ZO:     "e.g. North",
                     RO:     "e.g. Delhi",
@@ -610,8 +599,8 @@ export default function OrganisationPage() {
   id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   bank_code    VARCHAR(4)   NOT NULL,          -- IFSC prefix e.g. SBIN, HDFC
   bank_name    VARCHAR(100) NOT NULL,
-  level        VARCHAR(10)  NOT NULL,          -- HO | LHO | AO | RBO | ZO | RO
-  level_order  SMALLINT     NOT NULL,          -- 1=HO, 2=LHO/ZO, 3=AO/RO, 4=RBO
+  level        VARCHAR(10)  NOT NULL,          -- HO | LHO | RBO | ZO | RO | BRANCH
+  level_order  SMALLINT     NOT NULL,          -- 1=HO, 2=LHO/ZO, 3=RBO/RO, 4=BRANCH
   code         VARCHAR(20)  NOT NULL UNIQUE,   -- e.g. LHO-CHD-001
   name         VARCHAR(100) NOT NULL,          -- location name only e.g. "Chandigarh"
   parent_id    UUID         REFERENCES org_units(id) ON DELETE RESTRICT,
@@ -627,8 +616,8 @@ CREATE INDEX idx_org_units_parent ON org_units (parent_id);
 CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
 
 -- Hierarchy reference
--- SBI  (SBIN): HO(1) → LHO(2) → AO/CO/MO(3) → RBO(4) → Branch (separate table)
--- Others:      HO(1) → ZO(2)  → RO(3)         → Branch (separate table)`
+-- SBI   (SBIN): HO(1) → LHO(2) → RBO(3) → Branch (separate table)
+-- Canara (CNRB): HO(1) → ZO(2)  → RO(3)  → Branch (separate table)`
             }</pre>
           </div>
 
@@ -823,12 +812,12 @@ CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
               <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                 <span style={{ fontSize:10, color:"#9ca3af" }}>Legend:</span>
                 {[
-                  { code:"HO", label:"Head Office" },
-                  { code:"LHO", label:"LHO" },
-                  { code:"AO", label:"AO/CO" },
-                  { code:"RBO", label:"RBO" },
-                  { code:"ZO", label:"ZO" },
-                  { code:"BRANCH", label:"Branch" },
+                  { code:"HO",     label:"Head Office" },
+                  { code:"LHO",    label:"LHO"         },
+                  { code:"RBO",    label:"RBO"         },
+                  { code:"ZO",     label:"ZO"          },
+                  { code:"RO",     label:"RO"          },
+                  { code:"BRANCH", label:"Branch"      },
                 ].map(({ code, label }) => {
                   const st = getLevelStyle(code);
                   return (
