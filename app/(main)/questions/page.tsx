@@ -569,8 +569,8 @@ export default function QuestionLibraryPage() {
       <div style={{ display:"flex", alignItems:"flex-start", gap:18 }}>
 
         {/* ── LEFT PANEL — Add / Edit (always visible) ─────────────────────────── */}
-          <div style={{ width:380, flexShrink:0, display:"flex", flexDirection:"column", gap:14, position:"sticky", top:80 }}>
-          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)", overflow:"hidden" }}>
+          <div style={{ width:380, flexShrink:0, display:"flex", flexDirection:"column", gap:14 }}>
+          <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", boxShadow:"0 4px 24px rgba(0,0,0,0.09)" }}>
 
             {/* Panel header */}
             <div style={{ padding:"14px 18px", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between", background: isEditMode ? "#fffbeb" : "#f0fdf4" }}>
@@ -590,8 +590,8 @@ export default function QuestionLibraryPage() {
               <strong>Auto-translation on.</strong> Type English → click Hindi field to auto-translate. Use <strong>↺</strong> to regenerate.
             </div>
 
-            {/* Scrollable body */}
-            <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:11, maxHeight:"calc(100vh - 270px)", overflowY:"auto" }}>
+            {/* Form body */}
+            <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:11 }}>
 
               {/* English */}
               <div>
