@@ -2,22 +2,23 @@
 import React, { useState } from "react";
 
 const SEED = [
-  { id:"ZN-001", name:"SBI Gujarat Circle",      bank:"SBI",            type:"Circle", ao:"AO - Ahmedabad",  state:"Gujarat",     branches:46, status:"Active"   },
-  { id:"ZN-002", name:"SBI MP Circle",           bank:"SBI",            type:"Circle", ao:"AO - Bhopal",     state:"MP",          branches:37, status:"Active"   },
-  { id:"ZN-003", name:"SBI Rajasthan Circle",    bank:"SBI",            type:"Circle", ao:"AO - Jaipur",     state:"Rajasthan",   branches:32, status:"Active"   },
-  { id:"ZN-004", name:"BOB Gujarat Circle",      bank:"Bank of Baroda", type:"Circle", ao:"BO - Baroda",     state:"Gujarat",     branches:25, status:"Active"   },
-  { id:"ZN-005", name:"BOB Rajasthan Circle",    bank:"Bank of Baroda", type:"Circle", ao:"BO - Jaipur",     state:"Rajasthan",   branches:13, status:"Inactive" },
-  { id:"ZN-006", name:"UCO East Circle",         bank:"UCO Bank",       type:"Circle", ao:"ZO - Kolkata",    state:"West Bengal", branches:24, status:"Active"   },
-  { id:"ZN-007", name:"PNB North Circle",        bank:"PNB",            type:"Circle", ao:"ZO - Delhi",      state:"Delhi",       branches:12, status:"Active"   },
-  { id:"ZN-008", name:"Canara South Circle",     bank:"Canara Bank",    type:"Circle", ao:"RO - Bengaluru",  state:"Karnataka",   branches:23, status:"Active"   },
-  { id:"ZN-009", name:"AO - Ahmedabad",          bank:"SBI",            type:"AO",     ao:"SBI Gujarat Circle",state:"Gujarat",   branches:28, status:"Active"   },
-  { id:"ZN-010", name:"AO - Surat",              bank:"SBI",            type:"AO",     ao:"SBI Gujarat Circle",state:"Gujarat",   branches:18, status:"Active"   },
+  { id:"ZN-001", name:"SBI Ahmedabad LHO",       bank:"SBI",         type:"LHO", ao:"Mumbai HO",         state:"Gujarat",     branches:46, status:"Active"   },
+  { id:"ZN-002", name:"SBI Bhopal LHO",          bank:"SBI",         type:"LHO", ao:"Mumbai HO",         state:"MP",          branches:37, status:"Active"   },
+  { id:"ZN-003", name:"SBI Jaipur ZO",           bank:"SBI",         type:"ZO",  ao:"SBI Ahmedabad LHO", state:"Rajasthan",   branches:32, status:"Active"   },
+  { id:"ZN-004", name:"SBI Ahmedabad RBO",       bank:"SBI",         type:"RBO", ao:"SBI Ahmedabad LHO", state:"Gujarat",     branches:28, status:"Active"   },
+  { id:"ZN-005", name:"SBI Surat RBO",           bank:"SBI",         type:"RBO", ao:"SBI Ahmedabad LHO", state:"Gujarat",     branches:18, status:"Active"   },
+  { id:"ZN-006", name:"Canara Bengaluru LHO",    bank:"Canara Bank", type:"LHO", ao:"Bengaluru HO",      state:"Karnataka",   branches:23, status:"Active"   },
+  { id:"ZN-007", name:"Canara Chennai ZO",       bank:"Canara Bank", type:"ZO",  ao:"Canara Bengaluru LHO",state:"Tamil Nadu", branches:19, status:"Active"   },
+  { id:"ZN-008", name:"Canara Bengaluru RBO",    bank:"Canara Bank", type:"RBO", ao:"Canara Bengaluru LHO",state:"Karnataka",  branches:14, status:"Active"   },
+  { id:"ZN-009", name:"Canara Mangaluru RO",     bank:"Canara Bank", type:"RO",  ao:"Canara Bengaluru LHO",state:"Karnataka",  branches:11, status:"Inactive" },
+  { id:"ZN-010", name:"SBI Mumbai RO",           bank:"SBI",         type:"RO",  ao:"SBI Bhopal LHO",    state:"Maharashtra", branches:9,  status:"Active"   },
 ];
 
 type Row = typeof SEED[0];
-const EMPTY: Row = { id:"", name:"", bank:"SBI", type:"Circle", ao:"", state:"Gujarat", branches:0, status:"Active" };
-const BANKS   = ["All Banks","SBI","Bank of Baroda","UCO Bank","PNB","Canara Bank"];
-const TYPES   = ["All Types","Circle","Zone","AO","RBO","CO"];
+const EMPTY: Row = { id:"", name:"", bank:"SBI", type:"LHO", ao:"", state:"Gujarat", branches:0, status:"Active" };
+const BANKS   = ["All Banks","SBI","Canara Bank"];
+const TYPES   = ["All Types","LHO","ZO","RBO","RO"];
+const BANK_HO: Record<string, string> = { "SBI":"Mumbai", "Canara Bank":"Bengaluru" };
 const STATUSES= ["All Status","Active","Inactive"];
 const PAGE_SIZE = 8;
 
@@ -61,22 +62,22 @@ export default function ZonesPage() {
   const handleCancel = () => { setForm({ ...EMPTY }); setEditing(null); };
 
   const TYPE_COLOR: Record<string,{c:string;bg:string}> = {
-    "Circle":{ c:"#7c3aed",bg:"#f5f3ff" }, "Zone":{ c:"#2563eb",bg:"#dbeafe" },
-    "AO":{ c:"#0891b2",bg:"#ecfeff" }, "RBO":{ c:"#ca8a04",bg:"#fef9c3" }, "CO":{ c:"#16a34a",bg:"#dcfce7" }
+    "LHO":{ c:"#7c3aed",bg:"#f5f3ff" }, "ZO":{ c:"#2563eb",bg:"#dbeafe" },
+    "RBO":{ c:"#ca8a04",bg:"#fef9c3" }, "RO":{ c:"#0891b2",bg:"#ecfeff" },
   };
 
   return (
     <div style={{ padding:"24px 0" }}>
       <div style={{ marginBottom:4 }}>
-        <h4 style={{ fontSize:22, fontWeight:800, color:"#111827", margin:0 }}>Circle / Zone / AO</h4>
-        <div style={{ fontSize:12, color:"#9ca3af", marginTop:3 }}>Dashboard / Banking Structure / <span style={{ color:"#16a34a", fontWeight:600 }}>Circle / Zone / AO</span></div>
+        <h4 style={{ fontSize:22, fontWeight:800, color:"#111827", margin:0 }}>Org Units</h4>
+        <div style={{ fontSize:12, color:"#9ca3af", marginTop:3 }}>Dashboard / Banking Structure / <span style={{ color:"#16a34a", fontWeight:600 }}>Org Units (LHO / ZO / RBO / RO)</span></div>
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, margin:"16px 0 20px" }}>
         {[
-          { label:"Total Zones",   value:rows.length,                                  color:"#2563eb", bg:"#eff6ff", icon:"ri-global-line",          border:"#2563eb" },
+          { label:"Total Org Units", value:rows.length,                                  color:"#2563eb", bg:"#eff6ff", icon:"ri-global-line",          border:"#2563eb" },
           { label:"Active",        value:rows.filter(r=>r.status==="Active").length,   color:"#16a34a", bg:"#f0fdf4", icon:"ri-checkbox-circle-line", border:"#16a34a" },
-          { label:"Circles",       value:rows.filter(r=>r.type==="Circle").length,     color:"#7c3aed", bg:"#f5f3ff", icon:"ri-donut-chart-line",     border:"#7c3aed" },
+          { label:"LHOs",           value:rows.filter(r=>r.type==="LHO").length,     color:"#7c3aed", bg:"#f5f3ff", icon:"ri-donut-chart-line",     border:"#7c3aed" },
           { label:"Total Branches",value:rows.reduce((s,r)=>s+r.branches,0),           color:"#0891b2", bg:"#ecfeff", icon:"ri-building-2-line",      border:"#0891b2" },
         ].map(c=>(
           <div key={c.label} style={{ background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", padding:"13px 15px", display:"flex", alignItems:"center", gap:11, borderLeft:`4px solid ${c.border}`, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
@@ -96,26 +97,47 @@ export default function ZonesPage() {
         <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", position:"sticky", top:80 }}>
           <div style={{ padding:"14px 18px", borderBottom:"1px solid #f3f4f6", background:editing?"#fffbeb":"#f9fafb", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div>
-              <div style={{ fontSize:14, fontWeight:800, color:"#111827" }}>{editing ? `Edit — ${editing}` : "Add Circle / Zone / AO"}</div>
+              <div style={{ fontSize:14, fontWeight:800, color:"#111827" }}>{editing ? `Edit — ${editing}` : "Add Org Unit"}</div>
               <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>Fill details and save</div>
             </div>
             {editing && <button onClick={handleCancel} style={{ fontSize:11, color:"#6b7280", background:"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", fontWeight:600 }}>× Cancel</button>}
           </div>
           <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:12 }}>
-            <div><label style={LBL}>Name <span style={{ color:"#dc2626" }}>*</span></label><input value={form.name} onChange={fp("name")} placeholder="e.g. SBI Gujarat Circle" style={INP}/></div>
+            <div><label style={LBL}>Name <span style={{ color:"#dc2626" }}>*</span></label><input value={form.name} onChange={fp("name")} placeholder="e.g. SBI Ahmedabad LHO" style={INP}/></div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div><label style={LBL}>Bank</label>
-                <select value={form.bank} onChange={fp("bank")} style={{ ...INP, padding:"7px 10px" }}>
-                  {["SBI","Bank of Baroda","UCO Bank","PNB","Canara Bank"].map(b=><option key={b}>{b}</option>)}
+                <select value={form.bank} onChange={e => setForm(f => ({ ...f, bank:e.target.value }))} style={{ ...INP, padding:"7px 10px" }}>
+                  {["SBI","Canara Bank"].map(b=><option key={b}>{b}</option>)}
                 </select>
               </div>
-              <div><label style={LBL}>Type</label>
-                <select value={form.type} onChange={fp("type")} style={{ ...INP, padding:"7px 10px" }}>
-                  {["Circle","Zone","AO","RBO","CO"].map(t=><option key={t}>{t}</option>)}
-                </select>
+              <div>
+                <label style={LBL}>HO (Head Office)</label>
+                <div style={{ ...INP, background:"#f9fafb", display:"flex", alignItems:"center", gap:8, color:"#374151", fontWeight:700 }}>
+                  <i className="ri-building-4-line" style={{ fontSize:13, color:"#6b7280" }}/>
+                  {BANK_HO[form.bank] ?? "—"}
+                </div>
               </div>
             </div>
-            <div><label style={LBL}>Parent / AO Name</label><input value={form.ao} onChange={fp("ao")} placeholder="e.g. AO - Ahmedabad" style={INP}/></div>
+            <div><label style={LBL}>Unit Level</label>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                {([
+                  { value:"LHO", label:"LHO", sub:"Local Head Office", color:"#7c3aed", bg:"#f5f3ff", border:"#ddd6fe" },
+                  { value:"ZO",  label:"ZO",  sub:"Zonal Office",       color:"#2563eb", bg:"#dbeafe", border:"#bfdbfe" },
+                  { value:"RBO", label:"RBO", sub:"Regional Business Office", color:"#ca8a04", bg:"#fef9c3", border:"#fde68a" },
+                  { value:"RO",  label:"RO",  sub:"Regional Office",    color:"#0891b2", bg:"#ecfeff", border:"#a5f3fc" },
+                ] as {value:string;label:string;sub:string;color:string;bg:string;border:string}[]).map(opt => {
+                  const sel = form.type === opt.value;
+                  return (
+                    <button key={opt.value} onClick={() => setForm(f => ({ ...f, type:opt.value }))}
+                      style={{ display:"flex", flexDirection:"column" as const, alignItems:"flex-start", padding:"8px 11px", borderRadius:8, border:`1px solid ${sel ? opt.border : "#e5e7eb"}`, background: sel ? opt.bg : "#fff", cursor:"pointer", transition:"all 0.15s", textAlign:"left" as const }}>
+                      <span style={{ fontSize:12, fontWeight:800, color: sel ? opt.color : "#374151" }}>{opt.label}</span>
+                      <span style={{ fontSize:10, color: sel ? opt.color : "#9ca3af", marginTop:1 }}>{opt.sub}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div><label style={LBL}>Parent Unit</label><input value={form.ao} onChange={fp("ao")} placeholder="e.g. SBI Ahmedabad LHO" style={INP}/></div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div><label style={LBL}>State</label>
                 <select value={form.state} onChange={fp("state")} style={{ ...INP, padding:"7px 10px" }}>
@@ -129,7 +151,7 @@ export default function ZonesPage() {
               </div>
             </div>
             <button onClick={handleSave} style={{ width:"100%", padding:"10px", borderRadius:8, border:"none", background:"#16a34a", color:"#fff", cursor:"pointer", fontWeight:700, fontSize:13, marginTop:4 }}>
-              {editing ? "Update Zone" : "Save Zone"}
+              {editing ? "Update Org Unit" : "Save Org Unit"}
             </button>
           </div>
         </div>
@@ -156,14 +178,14 @@ export default function ZonesPage() {
                   <th style={TH}>NAME</th>
                   <th style={TH}>BANK</th>
                   <th style={{ ...TH, textAlign:"center" }}>TYPE</th>
-                  <th style={TH}>PARENT / AO</th>
+                  <th style={TH}>PARENT UNIT</th>
                   <th style={TH}>STATE</th>
                   <th style={{ ...TH, textAlign:"center" }}>BRANCHES</th>
                   <th style={{ ...TH, textAlign:"center" }}>STATUS</th>
                   <th style={{ ...TH, textAlign:"center" }}>ACTION</th>
                 </tr></thead>
                 <tbody>
-                  {paged.length===0 ? <tr><td colSpan={9} style={{ padding:"50px", textAlign:"center", color:"#9ca3af" }}><i className="ri-global-line" style={{ fontSize:32, display:"block", marginBottom:8, opacity:0.3 }}/>No zones found</td></tr>
+                  {paged.length===0 ? <tr><td colSpan={9} style={{ padding:"50px", textAlign:"center", color:"#9ca3af" }}><i className="ri-global-line" style={{ fontSize:32, display:"block", marginBottom:8, opacity:0.3 }}/>No org units found</td></tr>
                   : paged.map(r => {
                     const isEd=editing===r.id; const tc=TYPE_COLOR[r.type]||{c:"#374151",bg:"#f3f4f6"};
                     return (
