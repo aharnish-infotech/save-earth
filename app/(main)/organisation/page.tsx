@@ -1,5 +1,7 @@
 "use client";
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { getBankConfigs, getLevelStyle } from "@/lib/bank-hierarchy-store";
+import type { BankConfig as StoreBankConfig } from "@/lib/bank-hierarchy-store";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface OrgLevel {
@@ -21,18 +23,20 @@ interface OrgUnit {
   id: string;
   bankCode: string;
   bankName: string;
-  level: string;       // "HO" | "LHO" | "RBO" | "BRANCH" | "ZO" | "RO"
+  level: string;       // "HO" | "LHO" | "AO" | "RBO" | "BRANCH" | "ZO" | "RO"
   levelOrder: number;
+  subType?: string;    // "AO" | "CO" | "MO" — set when level is the AO/CO/MO slot
   code: string;
   name: string;
   parentId: string | null;
   isActive: boolean;
-  skipLevel?: boolean; // branch reports to a unit higher than its normal parent level
+  skipLevel?: boolean;
 }
 
 type FormData = {
   bankCode: string;
   level: string;
+  subType: string;   // for AO slot: "AO" | "CO" | "MO" | ""
   parentId: string;
   name: string;
   isActive: boolean;
@@ -40,14 +44,14 @@ type FormData = {
 
 // ── Auto code generation ───────────────────────────────────────────────────────
 // Format: {LEVEL_PREFIX}-{NAME_ABBR}-{SEQ:03d}
-// e.g.  LHO-AHM-001  |  BR-SUR-002  |  ZO-CHN-001  |  RO-MNG-001
-const STOP_WORDS = new Set(["the","and","of","for","in","at","ho","lho","rbo","zo","ro","branch","branches","office","local","head","zone","regional","zonal","national","state","bank","india"]);
+// e.g.  LHO-AHM-001  |  CO-CHD-001  |  ZO-CHN-001  |  RO-MNG-001
+const STOP_WORDS = new Set(["the","and","of","for","in","at","ho","lho","ao","co","mo","rbo","zo","ro","branch","branches","office","local","head","administrative","circle","module","zone","regional","zonal","national","state","bank","india"]);
 
-function generateCode(bankCode: string, level: string, name: string, existing: OrgUnit[]): string {
+function generateCode(bankCode: string, level: string, name: string, existing: OrgUnit[], subType?: string): string {
   if (!bankCode || !level || !name.trim()) return "";
 
-  // Level prefix — BRANCH shortens to "BR", everything else uses its own code
-  const prefix = level === "BRANCH" ? "BR" : level;
+  // Level prefix — BRANCH → "BR", AO-slot with sub-type → sub-type code (CO, MO…), else level code
+  const prefix = level === "BRANCH" ? "BR" : (subType || level);
 
   // Name abbreviation: first 3 chars of the first meaningful word
   const words = name.trim().split(/[\s\-_/]+/);
@@ -55,7 +59,7 @@ function generateCode(bankCode: string, level: string, name: string, existing: O
   const src = meaningful.length > 0 ? meaningful[0] : words[0] ?? name;
   const abbr = src.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 3).padEnd(3, "X");
 
-  // Sequence: count existing units for this bank + level prefix
+  // Sequence: count existing units at this bank + level
   const count = existing.filter(u =>
     u.bankCode === bankCode && (u.level === "BRANCH" ? "BR" : u.level) === prefix
   ).length;
@@ -64,69 +68,80 @@ function generateCode(bankCode: string, level: string, name: string, existing: O
   return `${prefix}-${abbr}-${seq}`;
 }
 
-// ── Bank hierarchy configurations (metadata-driven) ────────────────────────────
-
-// HO city per bank
-const BANK_HO_CITY: Record<string, string> = {
-  SBIN: "Mumbai",
-  CNRB: "Bengaluru",
-};
-
-const BANK_CONFIGS: Record<string, BankConfig> = {
-  SBIN: {
-    name: "State Bank of India",
-    levels: [
-      { code: "HO",     name: "Head Office — Mumbai",      order: 1, canDirectBranch: true },
-      { code: "LHO",    name: "Local Head Office",          order: 2, canDirectBranch: true },
-      { code: "RBO",    name: "Regional Business Office",   order: 3                        },
-      { code: "BRANCH", name: "Branch",                     order: 4, isLeaf: true          },
-    ],
-  },
-  CNRB: {
-    name: "Canara Bank",
-    levels: [
-      { code: "HO",     name: "Head Office — Bengaluru",   order: 1                        },
-      { code: "ZO",     name: "Zonal Office",               order: 2                        },
-      { code: "RO",     name: "Regional Office",            order: 3, canDirectBranch: true },
-      { code: "BRANCH", name: "Branch",                     order: 4, isLeaf: true          },
-    ],
-  },
-};
+// ── Bank hierarchy configurations — loaded from shared store (Hierarchy Builder) ──
+// Initialised as empty; hydrated from localStorage in useEffect inside the component.
+let BANK_CONFIGS: Record<string, BankConfig> = {};
+let BANK_HO_CITY: Record<string, string>     = {};
 
 const uuid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
+// ── Universal level slots — same 3 pills shown for every bank ─────────────────
+// Each slot includes its own sub-type picker so the user specifies the exact variant.
+const LEVEL_SLOTS = [
+  {
+    label:     "LHO / ZO",
+    fallback:  "LHO",
+    name:      "Local Head Office (LHO) / Zonal Office (ZO)",
+    slotColor: { color:"#1d4ed8", bg:"#dbeafe", border:"#93c5fd", chip:"#eff6ff" },
+    subtypes: [
+      { code:"LHO", name:"Local Head Office" },
+      { code:"ZO",  name:"Zonal Office"      },
+    ],
+  },
+  {
+    label:     "AO / CO / MO",
+    fallback:  "AO",
+    name:      "Administrative Office (AO) / Circle Office (CO) / Module Office (MO)",
+    slotColor: { color:"#b45309", bg:"#fef3c7", border:"#fcd34d", chip:"#fffbeb" },
+    subtypes: [
+      { code:"AO", name:"Administrative Office" },
+      { code:"CO", name:"Circle Office"         },
+      { code:"MO", name:"Module Office"         },
+    ],
+  },
+  {
+    label:     "RBO / RO",
+    fallback:  "RBO",
+    name:      "Regional Business Office (RBO) / Regional Office (RO)",
+    slotColor: { color:"#15803d", bg:"#dcfce7", border:"#86efac", chip:"#f0fdf4" },
+    subtypes: [
+      { code:"RBO", name:"Regional Business Office" },
+      { code:"RO",  name:"Regional Office"          },
+    ],
+  },
+];
+
+// Flat lookup for all sub-types (used in table badge)
+const ALL_SUBTYPES = LEVEL_SLOTS.flatMap(s => s.subtypes);
+
 // ── Seed data — SBI (SBIN) + Canara Bank (CNRB) ───────────────────────────────
 const SEED: OrgUnit[] = [
-  // SBIN — HO (Mumbai) is auto-assigned; intermediate levels only
-  { id:"s-lho1", bankCode:"SBIN", bankName:"State Bank of India", level:"LHO", levelOrder:2, code:"LHO-AHM", name:"Ahmedabad",  parentId:null,    isActive:true  },
-  { id:"s-lho2", bankCode:"SBIN", bankName:"State Bank of India", level:"LHO", levelOrder:2, code:"LHO-CHD", name:"Chandigarh", parentId:null,    isActive:true  },
-  { id:"s-rbo1", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:3, code:"RBO-AHM", name:"Ahmedabad",  parentId:"s-lho1",isActive:true  },
-  { id:"s-rbo2", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:3, code:"RBO-SUR", name:"Surat",      parentId:"s-lho1",isActive:true  },
-  { id:"s-rbo3", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:3, code:"RBO-LDH", name:"Ludhiana",   parentId:"s-lho2",isActive:true  },
-  // CNRB — HO (Bengaluru) is auto-assigned
-  { id:"c-zo1",  bankCode:"CNRB", bankName:"Canara Bank", level:"ZO",  levelOrder:2, code:"ZO-BLR",  name:"Bengaluru", parentId:null,   isActive:true  },
-  { id:"c-zo2",  bankCode:"CNRB", bankName:"Canara Bank", level:"ZO",  levelOrder:2, code:"ZO-CHN",  name:"Chennai",   parentId:null,   isActive:true  },
-  { id:"c-ro1",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-BLR",  name:"Bengaluru", parentId:"c-zo1",isActive:true  },
-  { id:"c-ro2",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-MNG",  name:"Mangaluru", parentId:"c-zo1",isActive:true  },
-  { id:"c-ro3",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-CHN",  name:"Chennai",   parentId:"c-zo2",isActive:true  },
+  // SBIN — HO (Mumbai) auto-assigned; hierarchy: LHO(2) → AO/CO/MO(3) → RBO(4)
+  { id:"s-lho1", bankCode:"SBIN", bankName:"State Bank of India", level:"LHO", levelOrder:2, code:"LHO-AHM", name:"Ahmedabad",  parentId:null,     isActive:true },
+  { id:"s-lho2", bankCode:"SBIN", bankName:"State Bank of India", level:"LHO", levelOrder:2, code:"LHO-CHD", name:"Chandigarh", parentId:null,     isActive:true },
+  { id:"s-ao1",  bankCode:"SBIN", bankName:"State Bank of India", level:"AO",  levelOrder:3, code:"AO-AHM",  name:"Ahmedabad",  parentId:"s-lho1", isActive:true },
+  { id:"s-ao2",  bankCode:"SBIN", bankName:"State Bank of India", level:"AO",  levelOrder:3, code:"AO-CHD",  name:"Chandigarh", parentId:"s-lho2", isActive:true },
+  { id:"s-ao3",  bankCode:"SBIN", bankName:"State Bank of India", level:"AO",  levelOrder:3, code:"AO-AMR",  name:"Amritsar",   parentId:"s-lho2", isActive:true },
+  { id:"s-rbo1", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:4, code:"RBO-AHM", name:"Ahmedabad",  parentId:"s-ao1",  isActive:true },
+  { id:"s-rbo2", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:4, code:"RBO-SUR", name:"Surat",      parentId:"s-ao1",  isActive:true },
+  { id:"s-rbo3", bankCode:"SBIN", bankName:"State Bank of India", level:"RBO", levelOrder:4, code:"RBO-CHD", name:"Chandigarh", parentId:"s-ao2",  isActive:true },
+  // CNRB — HO (Bengaluru) auto-assigned; hierarchy: ZO(2) → RO(3)
+  { id:"c-zo1",  bankCode:"CNRB", bankName:"Canara Bank", level:"ZO",  levelOrder:2, code:"ZO-BLR",  name:"Bengaluru", parentId:null,    isActive:true },
+  { id:"c-zo2",  bankCode:"CNRB", bankName:"Canara Bank", level:"ZO",  levelOrder:2, code:"ZO-CHN",  name:"Chennai",   parentId:null,    isActive:true },
+  { id:"c-ro1",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-BLR",  name:"Bengaluru", parentId:"c-zo1", isActive:true },
+  { id:"c-ro2",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-MNG",  name:"Mangaluru", parentId:"c-zo1", isActive:true },
+  { id:"c-ro3",  bankCode:"CNRB", bankName:"Canara Bank", level:"RO",  levelOrder:3, code:"RO-CHN",  name:"Chennai",   parentId:"c-zo2", isActive:true },
 ];
 
 const EMPTY_FORM: FormData = {
-  bankCode: "", level: "", parentId: "", name: "", isActive: true,
+  bankCode: "", level: "", subType: "", parentId: "", name: "", isActive: true,
 };
 
-// ── Level badge colors ─────────────────────────────────────────────────────────
-const LEVEL_STYLE: Record<string, { color: string; bg: string; border: string }> = {
-  HO:     { color:"#1d4ed8", bg:"#dbeafe", border:"#bfdbfe" },
-  LHO:    { color:"#166534", bg:"#dcfce7", border:"#bbf7d0" },
-  RBO:    { color:"#6b21a8", bg:"#f3e8ff", border:"#e9d5ff" },
-  ZO:     { color:"#0e7490", bg:"#cffafe", border:"#a5f3fc" },
-  RO:     { color:"#0e7490", bg:"#cffafe", border:"#a5f3fc" },
-  BRANCH: { color:"#374151", bg:"#f3f4f6", border:"#e5e7eb" },
-};
-
-function getLevelStyle(level: string) {
-  return LEVEL_STYLE[level] ?? LEVEL_STYLE.BRANCH;
+// getLevelStyle is imported from @/lib/bank-hierarchy-store (palette-based, config-aware)
+// Usage: getLS(levelCode, bankCode?) — looks up bank config then calls getLevelStyle
+function getLS(levelCode: string, bankCode?: string) {
+  const cfg = bankCode ? BANK_CONFIGS[bankCode] as StoreBankConfig | undefined : undefined;
+  return getLevelStyle(levelCode, cfg);
 }
 
 // User stores just the location name ("Ludhiana").
@@ -178,16 +193,25 @@ function flattenTree(
 // ── Main page component ────────────────────────────────────────────────────────
 export default function OrganisationPage() {
   const [rows, setRows]           = useState<OrgUnit[]>(SEED);
+  const [configsReady, setConfigsReady]   = useState(false);
   const [form, setForm]           = useState<FormData>({ ...EMPTY_FORM });
   const [editId, setEditId]       = useState<string | null>(null);
-  const [expanded, setExpanded]   = useState<Set<string>>(new Set(["s-lho1","s-lho2","c-zo1","c-zo2"]));
+  const [expanded, setExpanded]   = useState<Set<string>>(new Set(["s-lho1","s-lho2","s-ao1","s-ao2","c-zo1","c-zo2"]));
   const [bankFilter, setBankFilter] = useState("");
   const [search, setSearch]       = useState("");
   const formRef = useRef<HTMLDivElement>(null);
 
+  // Hydrate BANK_CONFIGS and BANK_HO_CITY from localStorage on mount
+  useEffect(() => {
+    const storeConfigs = getBankConfigs();
+    BANK_CONFIGS = Object.fromEntries(storeConfigs.map(c => [c.code, { name: c.name, levels: c.levels }]));
+    BANK_HO_CITY = Object.fromEntries(storeConfigs.map(c => [c.code, c.hoCity]));
+    setConfigsReady(true);
+  }, []);
+
   // ── Derived state ────────────────────────────────────────────────────────────
   const currentBankLevels: OrgLevel[] = useMemo(() =>
-    BANK_CONFIGS[form.bankCode]?.levels ?? [], [form.bankCode]);
+    BANK_CONFIGS[form.bankCode]?.levels ?? [], [form.bankCode, configsReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentLevelDef: OrgLevel | undefined = useMemo(() =>
     currentBankLevels.find(l => l.code === form.level), [currentBankLevels, form.level]);
@@ -202,16 +226,19 @@ export default function OrganisationPage() {
     // HO has no parent
     if (levelDef.order === 1) return [];
 
-    // Branch in SBI can go under any non-leaf level (HO, LHO, RBO)
-    if (form.level === "BRANCH" && form.bankCode === "SBIN") {
-      return rows.filter(r => r.bankCode === form.bankCode && !levels.find(l => l.code === r.level)?.isLeaf);
+    // Branch: can go under any non-leaf level (canDirectBranch or normal parent)
+    if (form.level === "BRANCH") {
+      const canDirectParents = levels.filter(l => l.canDirectBranch && !l.isLeaf);
+      if (canDirectParents.length > 0) {
+        return rows.filter(r => r.bankCode === form.bankCode && canDirectParents.some(p => p.code === r.level));
+      }
     }
 
     // Normal: parent must be one level above
     const parentLevel = levels.find(l => l.order === levelDef.order - 1);
     if (!parentLevel) return [];
     return rows.filter(r => r.bankCode === form.bankCode && r.level === parentLevel.code);
-  }, [form.bankCode, form.level, rows]);
+  }, [form.bankCode, form.level, rows, configsReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Detect skip-level when a branch is parented to a non-normal level
   const isSkipLevel = useMemo(() => {
@@ -232,7 +259,7 @@ export default function OrganisationPage() {
     if (!levelDef || levelDef.order === 1) return "";
     const parent = levels.find(l => l.order === levelDef.order - 1);
     return parent?.code ?? "";
-  }, [form.bankCode, form.level]);
+  }, [form.bankCode, form.level, configsReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Flatten visible tree rows
   const treeRows = useMemo(() =>
@@ -262,9 +289,9 @@ export default function OrganisationPage() {
       const val = k === "isActive" ? (e.target as HTMLInputElement).checked : e.target.value;
       setForm(f => {
         const next = { ...f, [k]: val };
-        // Reset downstream when bank changes
-        if (k === "bankCode") { next.level = ""; next.parentId = ""; }
-        if (k === "level")    { next.parentId = ""; }
+        // Reset downstream when bank/level changes
+        if (k === "bankCode") { next.level = ""; next.subType = ""; next.parentId = ""; }
+        if (k === "level")    { next.subType = ""; next.parentId = ""; }
         return next;
       });
     };
@@ -279,6 +306,7 @@ export default function OrganisationPage() {
         bankCode: form.bankCode,
         bankName: BANK_CONFIGS[form.bankCode]?.name ?? form.bankCode,
         level: form.level,
+        subType: form.subType || undefined,
         levelOrder: levelDef?.order ?? r.levelOrder,
         code: autoCode,
         name: form.name.trim(),
@@ -292,6 +320,7 @@ export default function OrganisationPage() {
         bankCode: form.bankCode,
         bankName: BANK_CONFIGS[form.bankCode]?.name ?? form.bankCode,
         level: form.level,
+        subType: form.subType || undefined,
         levelOrder: levelDef?.order ?? 99,
         code: autoCode,
         name: form.name.trim(),
@@ -300,7 +329,6 @@ export default function OrganisationPage() {
         skipLevel: isSkipLevel,
       };
       setRows(rs => [...rs, newUnit]);
-      // Auto-expand parent so new node is visible
       if (newUnit.parentId) setExpanded(prev => new Set([...prev, newUnit.parentId!]));
     }
 
@@ -312,6 +340,7 @@ export default function OrganisationPage() {
     setForm({
       bankCode: unit.bankCode,
       level: unit.level,
+      subType: unit.subType ?? "",
       parentId: unit.parentId ?? "",
       name: unit.name,
       isActive: unit.isActive,
@@ -348,8 +377,8 @@ export default function OrganisationPage() {
   // When editing preserve the original code; when adding, generate live from form state
   const autoCode = useMemo(() => {
     if (editId) return editUnit?.code ?? "";
-    return generateCode(form.bankCode, form.level, form.name, rows);
-  }, [editId, editUnit, form.bankCode, form.level, form.name, rows]);
+    return generateCode(form.bankCode, form.level, form.name, rows, form.subType);
+  }, [editId, editUnit, form.bankCode, form.level, form.name, form.subType, rows]);
 
   const canSave  = !!form.bankCode && !!form.level && !!form.name.trim();
 
@@ -462,43 +491,103 @@ export default function OrganisationPage() {
                     <i className="ri-information-line" style={{ fontSize:13 }}/>
                     Select a bank first
                   </div>
-                ) : (
-                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                    {currentBankLevels.filter(l => !l.isLeaf && l.order > 1).map(l => {
-                      const isSelected = form.level === l.code;
-                      const ls = getLevelStyle(l.code);
-                      return (
-                        <button
-                          key={l.code}
-                          type="button"
-                          onClick={() => setForm(f => ({ ...f, level: l.code, parentId: "" }))}
-                          style={{
-                            display:"flex", alignItems:"center", gap:10,
-                            padding:"10px 14px", borderRadius:9, cursor:"pointer",
-                            border: isSelected ? `2px solid ${ls.color}` : "2px solid #e5e7eb",
-                            background: isSelected ? ls.bg : "#fff",
-                            textAlign:"left", transition:"all 0.15s",
-                          }}
-                        >
-                          <span style={{
-                            fontSize:11, fontWeight:800, color: isSelected ? ls.color : "#9ca3af",
-                            background: isSelected ? "#fff" : "#f3f4f6",
-                            border:`1px solid ${isSelected ? ls.border : "#e5e7eb"}`,
-                            borderRadius:6, padding:"2px 7px", minWidth:34, textAlign:"center",
-                          }}>
-                            {l.code}
-                          </span>
-                          <span style={{ fontSize:12, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#111827" : "#6b7280" }}>
-                            {l.name}
-                          </span>
-                          {isSelected && (
-                            <i className="ri-check-line" style={{ fontSize:14, color:ls.color, marginLeft:"auto" }}/>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                ) : (() => {
+                  // Map the bank's intermediate levels (non-HO, non-leaf) to the 3 fixed slots:
+                  // slot 0 = first level, slot 2 = last level, slot 1 = middle (if 3+ levels)
+                  const intermediates = currentBankLevels
+                    .filter(l => !l.isLeaf && l.order > 1)
+                    .sort((a, b) => a.order - b.order);
+                  const slotMap: (OrgLevel | undefined)[] = [undefined, undefined, undefined];
+                  if (intermediates.length >= 1) slotMap[0] = intermediates[0];
+                  if (intermediates.length >= 2) slotMap[2] = intermediates[intermediates.length - 1];
+                  if (intermediates.length >= 3) slotMap[1] = intermediates[1];
+
+                  return (
+                    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                      {LEVEL_SLOTS.map((slot, idx) => {
+                        // Use the bank's actual level for this slot position; fall back to the slot's default code
+                        const bankLevel  = slotMap[idx];
+                        const levelCode  = bankLevel?.code ?? slot.fallback;
+                        const isSelected = form.level === levelCode;
+                        const sc         = slot.slotColor;   // pastel slot colour
+
+                        return (
+                          <div key={slot.label}>
+                            <button
+                              type="button"
+                              onClick={() => setForm(f => ({ ...f, level: levelCode, subType: "", parentId: "" }))}
+                              style={{
+                                width:"100%", display:"flex", alignItems:"center", gap:10,
+                                padding:"10px 14px",
+                                borderRadius: isSelected && slot.subtypes.length > 0 ? "9px 9px 0 0" : 9,
+                                cursor:"pointer",
+                                border: isSelected ? `2px solid ${sc.color}` : "2px solid #e5e7eb",
+                                background: isSelected ? sc.bg : "#fff",
+                                textAlign:"left", transition:"all 0.15s",
+                              }}
+                            >
+                              <span style={{
+                                fontSize:10, fontWeight:800,
+                                color: isSelected ? sc.color : "#9ca3af",
+                                background: isSelected ? sc.chip : "#f3f4f6",
+                                border:`1px solid ${isSelected ? sc.border : "#e5e7eb"}`,
+                                borderRadius:6, padding:"2px 7px", minWidth:62, textAlign:"center", whiteSpace:"nowrap",
+                              }}>
+                                {slot.label}
+                              </span>
+                              <span style={{ fontSize:12, fontWeight: isSelected ? 700 : 500, color: isSelected ? "#111827" : "#6b7280", flex:1 }}>
+                                {slot.name}
+                              </span>
+                              {isSelected && (
+                                <i className="ri-check-line" style={{ fontSize:14, color:sc.color, flexShrink:0 }}/>
+                              )}
+                            </button>
+
+                            {/* Sub-type picker — only for slots that have variants */}
+                            {isSelected && slot.subtypes.length > 0 && (
+                              <div style={{
+                                background: sc.bg, border:`2px solid ${sc.color}`,
+                                borderTop:"none", borderRadius:"0 0 9px 9px",
+                                padding:"10px 14px",
+                              }}>
+                                <div style={{ fontSize:10, fontWeight:700, color:sc.color, marginBottom:8 }}>
+                                  <i className="ri-information-line"/> Select the exact type for this unit:
+                                </div>
+                                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                                  {slot.subtypes.map(st => {
+                                    const isSel = form.subType === st.code;
+                                    return (
+                                      <button
+                                        key={st.code}
+                                        type="button"
+                                        onClick={() => setForm(f => ({ ...f, subType: isSel ? "" : st.code }))}
+                                        style={{
+                                          display:"flex", alignItems:"center", gap:6,
+                                          padding:"6px 12px", borderRadius:8, cursor:"pointer",
+                                          border: isSel ? `2px solid ${sc.color}` : "2px solid #e5e7eb",
+                                          background: isSel ? "#fff" : "rgba(255,255,255,0.7)",
+                                          transition:"all 0.15s",
+                                        }}
+                                      >
+                                        <span style={{ fontSize:11, fontWeight:800, color: isSel ? sc.color : "#9ca3af", background: isSel ? sc.chip : "#f3f4f6", border:`1px solid ${isSel ? sc.border : "#e5e7eb"}`, borderRadius:5, padding:"1px 6px" }}>
+                                          {st.code}
+                                        </span>
+                                        <span style={{ fontSize:11, fontWeight: isSel ? 700 : 500, color: isSel ? "#111827" : "#6b7280" }}>
+                                          {st.name}
+                                        </span>
+                                        {isSel && <i className="ri-check-line" style={{ fontSize:12, color:sc.color }}/>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
 
 
@@ -625,8 +714,8 @@ export default function OrganisationPage() {
   id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   bank_code    VARCHAR(4)   NOT NULL,          -- IFSC prefix e.g. SBIN, HDFC
   bank_name    VARCHAR(100) NOT NULL,
-  level        VARCHAR(10)  NOT NULL,          -- HO | LHO | RBO | ZO | RO | BRANCH
-  level_order  SMALLINT     NOT NULL,          -- 1=HO, 2=LHO/ZO, 3=RBO/RO, 4=BRANCH
+  level        VARCHAR(10)  NOT NULL,          -- HO | LHO | AO | RBO | ZO | RO | BRANCH
+  level_order  SMALLINT     NOT NULL,          -- 1=HO, 2=LHO/ZO, 3=AO/RO, 4=RBO, 5=BRANCH
   code         VARCHAR(20)  NOT NULL UNIQUE,   -- e.g. LHO-CHD-001
   name         VARCHAR(100) NOT NULL,          -- location name only e.g. "Chandigarh"
   parent_id    UUID         REFERENCES org_units(id) ON DELETE RESTRICT,
@@ -642,21 +731,22 @@ CREATE INDEX idx_org_units_parent ON org_units (parent_id);
 CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
 
 -- Hierarchy reference
--- SBI   (SBIN): HO(1) → LHO(2) → RBO(3) → Branch (separate table)
--- Canara (CNRB): HO(1) → ZO(2)  → RO(3)  → Branch (separate table)`
+-- SBI   (SBIN):  HO(1) → LHO(2) → AO/CO/MO(3) → RBO(4) → Branch
+-- Canara (CNRB): HO(1) → ZO(2)  → RO(3)        → Branch`
             }</pre>
           </div>
 
           {/* ── API Payload Card ───────────────────────────────────────────────── */}
           {(() => {
             const autoCode = form.bankCode && form.level && form.name.trim()
-              ? generateCode(form.bankCode, form.level, form.name, rows)
+              ? generateCode(form.bankCode, form.level, form.name, rows, form.subType)
               : "(auto-generated on save)";
             const payload = {
               id:          editId ?? "(uuid — auto-generated on save)",
               bankCode:    form.bankCode    || "(select bank)",
               bankName:    BANK_CONFIGS[form.bankCode]?.name ?? "",
               level:       form.level       || "(select level)",
+              subType:     form.subType     || null,
               levelOrder:  form.bankCode && form.level
                 ? (BANK_CONFIGS[form.bankCode]?.levels.find(l => l.code === form.level)?.order ?? null)
                 : null,
@@ -741,10 +831,12 @@ CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
                     </tr>
                   ) : treeRows.map(({ node, depth, hasChildren }) => {
                     const isEditing = editId === node.id;
-                    const lvlDef    = BANK_CONFIGS[node.bankCode]?.levels.find(l => l.code === node.level);
-                    const lvlLabel  = node.level === "BRANCH" ? "Branch" : node.level;
-                    const lvlFullName = lvlDef?.name?.replace(/ — .*$/, "") ?? lvlLabel; // strip "— Mumbai" etc.
-                    const lvlStyle  = getLevelStyle(node.level);
+                    const lvlDef      = BANK_CONFIGS[node.bankCode]?.levels.find(l => l.code === node.level);
+                    // If a sub-type was picked (AO/CO/MO), use it as the badge; otherwise use level code
+                    const lvlLabel    = node.level === "BRANCH" ? "Branch" : (node.subType || node.level);
+                    const subTypeDef  = node.subType ? ALL_SUBTYPES.find(s => s.code === node.subType) : undefined;
+                    const lvlFullName = subTypeDef?.name ?? lvlDef?.name ?? lvlLabel;
+                    const lvlStyleObj = getLS(node.level, node.bankCode);
 
                     return (
                       <tr key={node.id}
@@ -783,7 +875,7 @@ CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
                         {/* Level badge */}
                         <td style={TD}>
                           <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
-                            <span style={{ fontSize:10, fontWeight:700, color:lvlStyle.color, background:lvlStyle.bg, border:`1px solid ${lvlStyle.border}`, borderRadius:20, padding:"2px 9px", whiteSpace:"nowrap", alignSelf:"flex-start" }}>
+                            <span style={{ fontSize:10, fontWeight:700, color:lvlStyleObj.color, background:lvlStyleObj.bg, border:`1px solid ${lvlStyleObj.border}`, borderRadius:20, padding:"2px 9px", whiteSpace:"nowrap", alignSelf:"flex-start" }}>
                               {lvlLabel}
                             </span>
                             <span style={{ fontSize:10, color:"#9ca3af" }}>{lvlFullName}</span>
@@ -845,23 +937,13 @@ CREATE INDEX idx_org_units_level  ON org_units (bank_code, level_order);
                 <strong style={{ color:"#111827" }}>{rows.filter(r => r.skipLevel).length}</strong> skip-level links
                 {bankFilter && ` · Filtered to ${BANK_CONFIGS[bankFilter]?.name ?? bankFilter}`}
               </span>
-              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+              <div style={{ display:"flex", gap:6, alignItems:"center", flexWrap:"wrap" }}>
                 <span style={{ fontSize:10, color:"#9ca3af" }}>Legend:</span>
-                {[
-                  { code:"HO",     label:"Head Office" },
-                  { code:"LHO",    label:"LHO"         },
-                  { code:"RBO",    label:"RBO"         },
-                  { code:"ZO",     label:"ZO"          },
-                  { code:"RO",     label:"RO"          },
-                  { code:"BRANCH", label:"Branch"      },
-                ].map(({ code, label }) => {
-                  const st = getLevelStyle(code);
-                  return (
-                    <span key={code} style={{ fontSize:9, fontWeight:700, color:st.color, background:st.bg, border:`1px solid ${st.border}`, borderRadius:10, padding:"1px 7px" }}>
-                      {label}
-                    </span>
-                  );
-                })}
+                {LEVEL_SLOTS.map(slot => (
+                  <span key={slot.label} style={{ fontSize:9, fontWeight:700, color:slot.slotColor.color, background:slot.slotColor.bg, border:`1px solid ${slot.slotColor.border}`, borderRadius:10, padding:"1px 7px" }}>
+                    {slot.label}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
