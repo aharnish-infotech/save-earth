@@ -27,6 +27,9 @@ interface Question {
   mandatory:        boolean;
   allowRemarks:     boolean;
   photoRequirement: PhotoRequirement;
+  remarkIfYes:      string;
+  remarkIfNo:       string;
+  remarkIfNA:       string;
   multiPhoto:       boolean;
   numericValue: boolean;
   allowNA:      boolean;
@@ -49,6 +52,7 @@ const mkQ = (
   riskLevel: "HIGH", weightage: 5,
   helpEn, helpHi: "", recommendEn: "COMPLIED", recommendHi,
   mandatory: true, allowRemarks: true, photoRequirement: "none" as PhotoRequirement,
+  remarkIfYes: "", remarkIfNo: "", remarkIfNA: "",
   multiPhoto: false, numericValue: false, allowNA: false,
   status: "Active", usedIn: 0, createdOn: D,
 });
@@ -344,6 +348,7 @@ const EMPTY = {
   helpEn:"", helpHi:"", recommendEn:"COMPLIED", recommendHi:"ठीक है",
   mandatory:true, allowRemarks:true, photoRequirement:"none" as PhotoRequirement,
   multiPhoto:false, numericValue:false, allowNA:false,
+  remarkIfYes:"", remarkIfNo:"", remarkIfNA:"",
   status:"Active" as QStatus,
 };
 type FormData = typeof EMPTY;
@@ -464,6 +469,7 @@ export default function QuestionLibraryPage() {
       section:q.section, riskLevel:q.riskLevel, weightage:q.weightage,
       helpEn:q.helpEn, helpHi:q.helpHi, recommendEn:q.recommendEn, recommendHi:q.recommendHi,
       mandatory:q.mandatory, allowRemarks:q.allowRemarks, photoRequirement:q.photoRequirement,
+      remarkIfYes:q.remarkIfYes, remarkIfNo:q.remarkIfNo, remarkIfNA:q.remarkIfNA,
       multiPhoto:q.multiPhoto, numericValue:q.numericValue, allowNA:q.allowNA,
       status:q.status, category:q.category });
   };
@@ -640,12 +646,12 @@ export default function QuestionLibraryPage() {
               </div>
 
               {/* Question Behaviour */}
-              <div style={{ border:"1px solid #e5e7eb", borderRadius:9, overflow:"hidden" }}>
-                <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6 }}>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:9 }}>
+                <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6, borderRadius:"9px 9px 0 0" }}>
                   <i className="ri-settings-3-line" style={{ fontSize:13, color:"#6b7280" }}/>
                   <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Question Behaviour</span>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px 6px", padding:"10px 12px", background:"#f9fafb" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px 6px", padding:"12px 14px 14px", background:"#f9fafb", borderRadius:"0 0 9px 9px" }}>
                   {(["mandatory","allowRemarks"] as const).map(chk)}
                 </div>
               </div>
@@ -673,6 +679,30 @@ export default function QuestionLibraryPage() {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Remarks by Answer */}
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:9 }}>
+                <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6, borderRadius:"9px 9px 0 0" }}>
+                  <i className="ri-chat-quote-line" style={{ fontSize:13, color:"#d97706" }}/>
+                  <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Default Remarks by Answer</span>
+                </div>
+                <div style={{ padding:"12px 14px 14px", background:"#f9fafb", display:"flex", flexDirection:"column" as const, gap:10, borderRadius:"0 0 9px 9px" }}>
+                  {([
+                    { key:"remarkIfYes", label:"Remark if Answer = YES", color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", icon:"ri-checkbox-circle-line", placeholder:"e.g. Complied — maintained properly" },
+                    { key:"remarkIfNo",  label:"Remark if Answer = NO",  color:"#dc2626", bg:"#fef2f2", border:"#fecaca", icon:"ri-close-circle-line",    placeholder:"e.g. Non-compliant — immediate action required" },
+                    { key:"remarkIfNA",  label:"Remark if Answer = N/A", color:"#7c3aed", bg:"#faf5ff", border:"#e9d5ff", icon:"ri-question-mark",         placeholder:"e.g. Not applicable for this location" },
+                  ] as { key:"remarkIfYes"|"remarkIfNo"|"remarkIfNA"; label:string; color:string; bg:string; border:string; icon:string; placeholder:string }[]).map(r => (
+                    <div key={r.key}>
+                      <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, fontWeight:700, color:r.color, marginBottom:5, textTransform:"uppercase" as const, letterSpacing:"0.04em" }}>
+                        <i className={r.icon} style={{ fontSize:12 }}/>{r.label}
+                      </label>
+                      <input value={form[r.key]} onChange={e => fp(r.key, e.target.value)}
+                        placeholder={r.placeholder}
+                        style={{ ...INP, borderColor:form[r.key] ? r.border : "#e5e7eb", background: form[r.key] ? r.bg : "#fff", fontSize:12 }}/>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -760,6 +790,9 @@ export default function QuestionLibraryPage() {
                     mandatory:        form.mandatory,
                     allowRemarks:     form.allowRemarks,
                     photoRequirement: form.photoRequirement,
+                    remarkIfYes:      form.remarkIfYes || "(empty)",
+                    remarkIfNo:       form.remarkIfNo  || "(empty)",
+                    remarkIfNA:       form.remarkIfNA  || "(empty)",
                     recommendEn:      form.recommendEn,
                     recommendHi:  form.recommendHi  || "(empty)",
                     status:       form.status,
@@ -788,6 +821,9 @@ export default function QuestionLibraryPage() {
   mandatory:        form.mandatory,
   allowRemarks:     form.allowRemarks,
   photoRequirement: form.photoRequirement,
+  remarkIfYes:      form.remarkIfYes || "(empty)",
+  remarkIfNo:       form.remarkIfNo  || "(empty)",
+  remarkIfNA:       form.remarkIfNA  || "(empty)",
   recommendEn:      form.recommendEn,
   recommendHi:  form.recommendHi  || "(empty)",
   status:       form.status,
