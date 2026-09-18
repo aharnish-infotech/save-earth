@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type QType            = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
+type QType            = "YES_NO_NA" | "YES_NO" | "OK_NOT_OK" | "OK_NOT_OK_NA" | "RATING_1_5" | "NUMERIC" | "TEXT" | "MULTI_CHOICE";
 type RiskLevel        = "HIGH" | "MEDIUM" | "LOW";
 type QStatus          = "Active" | "Draft" | "Inactive";
 type PhotoRequirement = "none" | "always" | "if_yes" | "if_no" | "if_na";
@@ -319,21 +319,30 @@ const SEED: Question[] = [
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SECTIONS   = ["All Sections","General","Electrical Safety","Fire Prevention Measures","Server and UPS Room","Fire Protection","DG Set / Generator","Onsite ATM"];
-const Q_TYPES    = ["YES_NO_NA","YES_NO","OK_NOT_OK","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
+const Q_TYPES    = ["YES_NO_NA","YES_NO","OK_NOT_OK","OK_NOT_OK_NA","RATING_1_5","NUMERIC","TEXT","MULTI_CHOICE"] as const;
 const RISK_LEVELS= ["HIGH","MEDIUM","LOW"] as const;
 const STATUS_LIST= ["All Status","Active","Inactive"];
 const PAGE_SIZE  = 10;
 
 const TYPE_LABEL: Record<QType,string> = {
-  "YES_NO_NA":"YES / NO / NA","YES_NO":"YES / NO","OK_NOT_OK":"OK / NOT OK",
+  "YES_NO_NA":"YES / NO / NA","YES_NO":"YES / NO",
+  "OK_NOT_OK":"OK / NOT OK","OK_NOT_OK_NA":"OK / NOT OK / NA",
   "RATING_1_5":"Rating 1–5","NUMERIC":"Numeric","TEXT":"Text","MULTI_CHOICE":"Multiple Choice",
 };
 const TYPE_STYLE: Record<QType,{color:string;bg:string}> = {
   "YES_NO_NA":{color:"#16a34a",bg:"#dcfce7"},"YES_NO":{color:"#2563eb",bg:"#dbeafe"},
-  "OK_NOT_OK":{color:"#0891b2",bg:"#ecfeff"},
+  "OK_NOT_OK":{color:"#0891b2",bg:"#ecfeff"},"OK_NOT_OK_NA":{color:"#0891b2",bg:"#ecfeff"},
   "RATING_1_5":{color:"#7c3aed",bg:"#f5f3ff"},"NUMERIC":{color:"#0891b2",bg:"#ecfeff"},
   "TEXT":{color:"#374151",bg:"#f3f4f6"},"MULTI_CHOICE":{color:"#d97706",bg:"#fef3c7"},
 };
+
+// Answer labels vary by question type (internal keys stay if_yes/if_no/if_na)
+function getAnswerLabels(type: QType): { yes: string; no: string; na: string | null } {
+  if (type === "OK_NOT_OK")    return { yes:"OK", no:"NOT OK", na:null };
+  if (type === "OK_NOT_OK_NA") return { yes:"OK", no:"NOT OK", na:"N/A" };
+  if (type === "YES_NO")       return { yes:"YES", no:"NO", na:null };
+  return                              { yes:"YES", no:"NO",   na:"N/A" };
+}
 const SECTION_COLOR: Record<string,string> = {
   "General":"#16a34a","Electrical Safety":"#ca8a04",
   "Fire Prevention Measures":"#dc2626","Server and UPS Room":"#2563eb",
@@ -625,15 +634,13 @@ export default function QuestionLibraryPage() {
                 </select>
               </div>
 
-              {/* Type + Weightage — read-only */}
+              {/* Type + Weightage */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                 <div>
                   <label style={LBL}>Question Type</label>
-                  <div style={{ ...INP, padding:"8px 11px", background:"#f9fafb", display:"flex", alignItems:"center", gap:8, cursor:"default" }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:TYPE_STYLE[form.type].color, background:TYPE_STYLE[form.type].bg, borderRadius:6, padding:"2px 10px" }}>
-                      {TYPE_LABEL[form.type]}
-                    </span>
-                  </div>
+                  <select value={form.type} onChange={e => fp("type", e.target.value as QType)} style={{ ...SEL, width:"100%", fontSize:12, fontWeight:700, color:TYPE_STYLE[form.type as QType].color }}>
+                    {Q_TYPES.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label style={LBL}>Weightage</label>
@@ -663,22 +670,26 @@ export default function QuestionLibraryPage() {
                   <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Photo Requirement</span>
                 </div>
                 <div style={{ padding:"14px 14px 16px", background:"#f9fafb", display:"flex", flexWrap:"wrap" as const, gap:8, borderRadius:"0 0 9px 9px" }}>
-                  {([
-                    { value:"none",   label:"Not Required",     icon:"ri-camera-off-line",       color:"#6b7280", bg:"#f3f4f6",  border:"#e5e7eb"  },
-                    { value:"always", label:"Always Required",  icon:"ri-camera-fill",            color:"#dc2626", bg:"#fee2e2",  border:"#fca5a5"  },
-                    { value:"if_yes", label:"Required if Yes",  icon:"ri-checkbox-circle-line",   color:"#16a34a", bg:"#dcfce7",  border:"#86efac"  },
-                    { value:"if_no",  label:"Required if No",   icon:"ri-close-circle-line",      color:"#ea580c", bg:"#ffedd5",  border:"#fdba74"  },
-                    { value:"if_na",  label:"Required if N/A",  icon:"ri-question-mark",          color:"#7c3aed", bg:"#f5f3ff",  border:"#c4b5fd"  },
-                  ] as { value: PhotoRequirement; label: string; icon: string; color: string; bg: string; border: string }[]).map(opt => {
-                    const sel = form.photoRequirement === opt.value;
-                    return (
-                      <button key={opt.value} onClick={() => fp("photoRequirement", opt.value)}
-                        style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"6px 11px", borderRadius:20, border:`1px solid ${sel ? opt.border : "#e5e7eb"}`, background: sel ? opt.bg : "#fff", color: sel ? opt.color : "#6b7280", fontWeight: sel ? 700 : 500, fontSize:11, cursor:"pointer", transition:"all 0.15s" }}>
-                        <i className={opt.icon} style={{ fontSize:12 }}/>
-                        {opt.label}
-                      </button>
-                    );
-                  })}
+                  {(()=>{
+                    const AL = getAnswerLabels(form.type);
+                    const opts: { value: PhotoRequirement; label: string; icon: string; color: string; bg: string; border: string }[] = [
+                      { value:"none",   label:"Not Required",                    icon:"ri-camera-off-line",     color:"#6b7280", bg:"#f3f4f6", border:"#e5e7eb" },
+                      { value:"always", label:"Always Required",                 icon:"ri-camera-fill",         color:"#dc2626", bg:"#fee2e2", border:"#fca5a5" },
+                      { value:"if_yes", label:`Required if ${AL.yes}`,           icon:"ri-checkbox-circle-line",color:"#16a34a", bg:"#dcfce7", border:"#86efac" },
+                      { value:"if_no",  label:`Required if ${AL.no}`,            icon:"ri-close-circle-line",   color:"#ea580c", bg:"#ffedd5", border:"#fdba74" },
+                      ...(AL.na ? [{ value:"if_na" as PhotoRequirement, label:`Required if ${AL.na}`, icon:"ri-question-mark", color:"#7c3aed", bg:"#f5f3ff", border:"#c4b5fd" }] : []),
+                    ];
+                    return opts.map(opt => {
+                      const sel = form.photoRequirement === opt.value;
+                      return (
+                        <button key={opt.value} onClick={() => fp("photoRequirement", opt.value)}
+                          style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"6px 11px", borderRadius:20, border:`1px solid ${sel ? opt.border : "#e5e7eb"}`, background: sel ? opt.bg : "#fff", color: sel ? opt.color : "#6b7280", fontWeight: sel ? 700 : 500, fontSize:11, cursor:"pointer", transition:"all 0.15s" }}>
+                          <i className={opt.icon} style={{ fontSize:12 }}/>
+                          {opt.label}
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
@@ -689,11 +700,15 @@ export default function QuestionLibraryPage() {
                   <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Default Remarks by Answer</span>
                 </div>
                 <div style={{ padding:"12px 14px 14px", background:"#f9fafb", display:"flex", flexDirection:"column" as const, gap:10, borderRadius:"0 0 9px 9px" }}>
-                  {([
-                    { key:"remarkIfYes", label:"Remark if Answer = YES", color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", icon:"ri-checkbox-circle-line", placeholder:"e.g. Complied — maintained properly" },
-                    { key:"remarkIfNo",  label:"Remark if Answer = NO",  color:"#dc2626", bg:"#fef2f2", border:"#fecaca", icon:"ri-close-circle-line",    placeholder:"e.g. Non-compliant — immediate action required" },
-                    { key:"remarkIfNA",  label:"Remark if Answer = N/A", color:"#7c3aed", bg:"#faf5ff", border:"#e9d5ff", icon:"ri-question-mark",         placeholder:"e.g. Not applicable for this location" },
-                  ] as { key:"remarkIfYes"|"remarkIfNo"|"remarkIfNA"; label:string; color:string; bg:string; border:string; icon:string; placeholder:string }[]).map(r => (
+                  {(()=>{
+                    const AL = getAnswerLabels(form.type);
+                    const rows: { key:"remarkIfYes"|"remarkIfNo"|"remarkIfNA"; label:string; color:string; bg:string; border:string; icon:string; placeholder:string }[] = [
+                      { key:"remarkIfYes", label:`Remark if Answer = ${AL.yes}`, color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", icon:"ri-checkbox-circle-line", placeholder:"e.g. Complied — maintained properly" },
+                      { key:"remarkIfNo",  label:`Remark if Answer = ${AL.no}`,  color:"#dc2626", bg:"#fef2f2", border:"#fecaca", icon:"ri-close-circle-line",    placeholder:"e.g. Non-compliant — immediate action required" },
+                      ...(AL.na ? [{ key:"remarkIfNA" as const, label:`Remark if Answer = ${AL.na}`, color:"#7c3aed", bg:"#faf5ff", border:"#e9d5ff", icon:"ri-question-mark", placeholder:"e.g. Not applicable for this location" }] : []),
+                    ];
+                    return rows;
+                  })().map(r => (
                     <div key={r.key}>
                       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, fontWeight:700, color:r.color, marginBottom:5, textTransform:"uppercase" as const, letterSpacing:"0.04em" }}>
                         <i className={r.icon} style={{ fontSize:12 }}/>{r.label}
@@ -869,6 +884,7 @@ enum QuestionType {
   YES_NO_NA
   YES_NO
   OK_NOT_OK
+  OK_NOT_OK_NA
   RATING_1_5
   NUMERIC
   TEXT
@@ -888,7 +904,7 @@ enum QStatus   { ACTIVE  DRAFT  INACTIVE }`;
 
             const KW   = /\b(model|enum|@@id|@@index|@@map|@id|@unique|@default|@map|@updatedAt|@relation)\b/g;
             const TYPE = /\b(String|Int|Boolean|DateTime|Float)\b/g;
-            const ENUM = /\b(QuestionType|PhotoReq|RiskLevel|QStatus|YES_NO_NA|YES_NO|OK_NOT_OK|RATING_1_5|NUMERIC|TEXT|MULTI_CHOICE|NONE|ALWAYS|IF_YES|IF_NO|IF_NA|HIGH|MEDIUM|LOW|ACTIVE|DRAFT|INACTIVE)\b/g;
+            const ENUM = /\b(QuestionType|PhotoReq|RiskLevel|QStatus|YES_NO_NA|YES_NO|OK_NOT_OK_NA|OK_NOT_OK|RATING_1_5|NUMERIC|TEXT|MULTI_CHOICE|NONE|ALWAYS|IF_YES|IF_NO|IF_NA|HIGH|MEDIUM|LOW|ACTIVE|DRAFT|INACTIVE)\b/g;
             const CMT  = /(\/\/[^\n]*)/g;
 
             function colorPrisma(sql: string): React.ReactNode[] {
