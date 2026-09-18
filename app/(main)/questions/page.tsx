@@ -656,7 +656,7 @@ export default function QuestionLibraryPage() {
                   <i className="ri-camera-line" style={{ fontSize:13, color:"#0891b2" }}/>
                   <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Photo Requirement</span>
                 </div>
-                <div style={{ padding:"10px 12px", background:"#f9fafb", display:"flex", flexWrap:"wrap" as const, gap:6 }}>
+                <div style={{ padding:"12px 14px 14px", background:"#f9fafb", display:"flex", flexWrap:"wrap" as const, gap:8 }}>
                   {([
                     { value:"none",   label:"Not Required",     icon:"ri-camera-off-line",       color:"#6b7280", bg:"#f3f4f6",  border:"#e5e7eb"  },
                     { value:"always", label:"Always Required",  icon:"ri-camera-fill",            color:"#dc2626", bg:"#fee2e2",  border:"#fca5a5"  },
