@@ -96,7 +96,7 @@ export default function HierarchyBuilderPage() {
     // Insert before BRANCH (always last)
     const withoutBranch = selectedBank.levels.filter(l => l.code !== "BRANCH");
     const branch = selectedBank.levels.find(l => l.code === "BRANCH");
-    const inserted: BankLevel = { code, name, order: 0, ...newLevel };
+    const inserted: BankLevel = { ...newLevel, code, name, order: 0 };
 
     const reordered = [
       ...withoutBranch,
