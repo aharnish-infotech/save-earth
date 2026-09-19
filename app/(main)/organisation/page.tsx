@@ -359,6 +359,7 @@ export default function OrganisationPage() {
     setForm({
       bankCode: parentUnit.bankCode,
       level: childLevel?.code ?? "",
+      subType: "",
       parentId: parentUnit.id,
       name: "",
       isActive: true,
