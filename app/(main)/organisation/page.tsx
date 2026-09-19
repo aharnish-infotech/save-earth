@@ -199,6 +199,9 @@ export default function OrganisationPage() {
   const [expanded, setExpanded]   = useState<Set<string>>(new Set(["s-lho1","s-lho2","s-ao1","s-ao2","c-zo1","c-zo2"]));
   const [bankFilter, setBankFilter] = useState("");
   const [search, setSearch]       = useState("");
+  const [parentSearch, setParentSearch] = useState("");
+  const [parentOpen, setParentOpen]     = useState(false);
+  const parentDropRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   // Hydrate BANK_CONFIGS and BANK_HO_CITY from localStorage on mount
@@ -207,6 +210,17 @@ export default function OrganisationPage() {
     BANK_CONFIGS = Object.fromEntries(storeConfigs.map(c => [c.code, { name: c.name, levels: c.levels }]));
     BANK_HO_CITY = Object.fromEntries(storeConfigs.map(c => [c.code, c.hoCity]));
     setConfigsReady(true);
+  }, []);
+
+  // Close parent dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (parentDropRef.current && !parentDropRef.current.contains(e.target as Node)) {
+        setParentOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   // ── Derived state ────────────────────────────────────────────────────────────
@@ -290,8 +304,8 @@ export default function OrganisationPage() {
       setForm(f => {
         const next = { ...f, [k]: val };
         // Reset downstream when bank/level changes
-        if (k === "bankCode") { next.level = ""; next.subType = ""; next.parentId = ""; }
-        if (k === "level")    { next.subType = ""; next.parentId = ""; }
+        if (k === "bankCode") { next.level = ""; next.subType = ""; next.parentId = ""; setParentSearch(""); setParentOpen(false); }
+        if (k === "level")    { next.subType = ""; next.parentId = ""; setParentSearch(""); setParentOpen(false); }
         return next;
       });
     };
@@ -605,17 +619,94 @@ export default function OrganisationPage() {
                     None — HO is the top level
                   </div>
                 ) : (
-                  <select
-                    value={form.parentId}
-                    onChange={fp("parentId")}
-                    disabled={!form.level}
-                    style={{ ...INP, cursor: form.level ? "pointer" : "not-allowed", opacity: form.level ? 1 : 0.5 }}
-                  >
-                    <option value="">{form.level ? "Select parent unit" : "Select level first"}</option>
-                    {validParents.map(p => (
-                      <option key={p.id} value={p.id}>{p.code} — {getDisplayName(p)}</option>
-                    ))}
-                  </select>
+                  <div ref={parentDropRef} style={{ position:"relative" }}>
+                    {/* Trigger button */}
+                    <button
+                      type="button"
+                      onClick={() => { if (form.level) { setParentOpen(o => !o); setParentSearch(""); } }}
+                      disabled={!form.level}
+                      style={{
+                        ...INP, width:"100%", textAlign:"left", cursor: form.level ? "pointer" : "not-allowed",
+                        opacity: form.level ? 1 : 0.5, display:"flex", alignItems:"center", justifyContent:"space-between",
+                        background:"#fff",
+                      }}
+                    >
+                      <span style={{ color: form.parentId ? "#111827" : "#9ca3af", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {form.parentId
+                          ? (() => { const p = validParents.find(x => x.id === form.parentId); return p ? `${p.code} — ${getDisplayName(p)}` : "Select parent unit"; })()
+                          : (form.level ? "Select parent unit" : "Select level first")}
+                      </span>
+                      <i className={`ri-arrow-${parentOpen ? "up" : "down"}-s-line`} style={{ color:"#9ca3af", flexShrink:0, marginLeft:6 }} />
+                    </button>
+
+                    {/* Dropdown panel */}
+                    {parentOpen && (
+                      <div style={{
+                        position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:50,
+                        background:"#fff", border:"1.5px solid #e5e7eb", borderRadius:10,
+                        boxShadow:"0 8px 24px rgba(0,0,0,0.10)", overflow:"hidden",
+                      }}>
+                        {/* Search input */}
+                        <div style={{ padding:"8px 10px", borderBottom:"1px solid #f3f4f6" }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:6, background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:7, padding:"5px 10px" }}>
+                            <i className="ri-search-line" style={{ color:"#9ca3af", fontSize:13 }} />
+                            <input
+                              autoFocus
+                              type="text"
+                              placeholder="Search by name or code…"
+                              value={parentSearch}
+                              onChange={e => setParentSearch(e.target.value)}
+                              style={{ border:"none", outline:"none", background:"transparent", fontSize:13, color:"#111827", width:"100%" }}
+                            />
+                            {parentSearch && (
+                              <button onClick={() => setParentSearch("")} style={{ border:"none", background:"none", cursor:"pointer", color:"#9ca3af", padding:0, lineHeight:1 }}>
+                                <i className="ri-close-line" style={{ fontSize:13 }} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Options list */}
+                        <div style={{ maxHeight:200, overflowY:"auto" }}>
+                          {(() => {
+                            const q = parentSearch.toLowerCase();
+                            const filtered = validParents.filter(p =>
+                              !q || p.code.toLowerCase().includes(q) || getDisplayName(p).toLowerCase().includes(q)
+                            );
+                            if (filtered.length === 0) return (
+                              <div style={{ padding:"14px 14px", color:"#9ca3af", fontSize:13, textAlign:"center" }}>
+                                No units match &ldquo;{parentSearch}&rdquo;
+                              </div>
+                            );
+                            return filtered.map(p => {
+                              const isSelected = form.parentId === p.id;
+                              return (
+                                <button
+                                  key={p.id}
+                                  type="button"
+                                  onClick={() => { setForm(f => ({ ...f, parentId: p.id })); setParentOpen(false); setParentSearch(""); }}
+                                  style={{
+                                    display:"flex", alignItems:"center", justifyContent:"space-between",
+                                    width:"100%", padding:"9px 14px", border:"none", textAlign:"left",
+                                    background: isSelected ? "#eff6ff" : "transparent",
+                                    cursor:"pointer",
+                                  }}
+                                  onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
+                                  onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                                >
+                                  <span style={{ fontSize:13, color: isSelected ? "#1d4ed8" : "#111827" }}>
+                                    <span style={{ fontWeight:600, fontFamily:"monospace", marginRight:6 }}>{p.code}</span>
+                                    {getDisplayName(p)}
+                                  </span>
+                                  {isSelected && <i className="ri-check-line" style={{ color:"#1d4ed8", flexShrink:0 }} />}
+                                </button>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
 
               </div>
