@@ -59,7 +59,7 @@ export const RAIL_ITEMS: RailItem[] = [
         { label: "Question Library", href: "/questions",   icon: "ri-questionnaire-line"  },
         { label: "Audit Form",       href: "/audit-form",      icon: "ri-file-text-line"      },
         { label: "Edit Audit Form",  href: "/audit-form-edit", icon: "ri-edit-2-line"         },
-        { label: "Template Builder", href: "/templates",  icon: "ri-layout-3-line"       },
+        { label: "Audit Templates",  href: "/templates",  icon: "ri-layout-3-line"       },
         { label: "Bank-Zone Mapping",href: "/mappings",   icon: "ri-links-line"          },
       ],
     }],
