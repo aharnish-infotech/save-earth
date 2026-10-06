@@ -5,60 +5,75 @@ import { useRouter } from "next/navigation";
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────────────────────────────────────────
-interface Question { id: string; code: string; section: string; textEn: string; riskLevel: "HIGH" | "MEDIUM" | "LOW" }
+type PhotoReq = "Not Required" | "Always Required" | "Required if YES" | "Required if NO" | "Required if N/A";
+interface Question {
+  id: string; code: string; section: string;
+  textEn: string; textHi: string;
+  riskLevel: "HIGH" | "MEDIUM" | "LOW";
+  isMandatory: boolean; allowRecommendation: boolean;
+  photoReq: PhotoReq;
+}
 
 const ALL_QUESTIONS: Question[] = [
-  { id:"q001", code:"Q-001", section:"General", textEn:"Whether MCCBs/MCBs/ELCBs are provided with proper rating to cater the load", riskLevel:"HIGH" },
-  { id:"q002", code:"Q-002", section:"General", textEn:"Whether light and emergency light are provided in electrical rooms/operating areas", riskLevel:"HIGH" },
-  { id:"q003", code:"Q-003", section:"General", textEn:"Whether Pump room, DG set room, UPS room, electrical room etc. are maintained dry and in good condition", riskLevel:"HIGH" },
-  { id:"q004", code:"Q-004", section:"General", textEn:"Whether water seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc.", riskLevel:"HIGH" },
-  { id:"q005", code:"Q-005", section:"General", textEn:"Whether Earthing pits are provided and connected to the equipment body", riskLevel:"HIGH" },
-  { id:"q006", code:"Q-006", section:"General", textEn:"Whether the Earthing Pits are properly maintained", riskLevel:"HIGH" },
-  { id:"q007", code:"Q-007", section:"General", textEn:"Whether proper exhaust fan for ventilation of panel room/electrical room/UPS room is provided", riskLevel:"MEDIUM" },
-  { id:"q008", code:"Q-008", section:"General", textEn:"Whether penalty is being imposed in electricity bills on account of higher load/poor power factor", riskLevel:"MEDIUM" },
-  { id:"q009", code:"Q-009", section:"General", textEn:"Additional electrical load required if any (from Power Distribution Company)", riskLevel:"LOW" },
-  { id:"q010", code:"Q-010", section:"General", textEn:"Whether load is distributed in all 3 phases to avoid unbalancing of phases", riskLevel:"HIGH" },
-  { id:"q011", code:"Q-011", section:"General", textEn:"Whether isolating switches are provided for switching off non-essential loads during night", riskLevel:"MEDIUM" },
-  { id:"q012", code:"Q-012", section:"General", textEn:"Whether electrical equipments of Pantry etc. are properly connected to Iron socket box with MCBs", riskLevel:"MEDIUM" },
-  { id:"q013", code:"Q-013", section:"General", textEn:"Whether proper preventive maintenance of Panel boards and Distribution Boards is carried out by licensed electricians", riskLevel:"HIGH" },
-  { id:"q014", code:"Q-014", section:"General", textEn:"Whether appropriate timers used in changeover of Air conditioners for Server Room ACs and Signage Boards", riskLevel:"MEDIUM" },
-  { id:"q015", code:"Q-015", section:"General", textEn:"Whether preventive maintenance of electric installation and equipment is carried out by skilled license holder electricians", riskLevel:"HIGH" },
-  { id:"q016", code:"Q-016", section:"General", textEn:"General condition of electrical control panels, Main switch, electric meter board and changeover switch is good", riskLevel:"HIGH" },
-  { id:"q017", code:"Q-017", section:"General", textEn:"Whether contact numbers of electricians, power distribution company, Generator/UPS/AC vendors are displayed", riskLevel:"LOW" },
-  { id:"q018", code:"Q-018", section:"General", textEn:"Whether the Power Factor (PF) panel of appropriate rating is installed", riskLevel:"MEDIUM" },
-  { id:"q019", code:"Q-019", section:"Fire Prevention Measures", textEn:"All old disposable records, broken furniture etc. accumulated at the premises have been cleared", riskLevel:"HIGH" },
-  { id:"q020", code:"Q-020", section:"Fire Prevention Measures", textEn:"Combustible leaf, litter/waste papers in and around the branch are removed/cleaned periodically", riskLevel:"HIGH" },
-  { id:"q021", code:"Q-021", section:"Fire Prevention Measures", textEn:"No stationery/Records/old obsolete items are stored in the system/UPS room", riskLevel:"HIGH" },
-  { id:"q022", code:"Q-022", section:"Fire Prevention Measures", textEn:"Storage racks in Stationery/Record room are at safe distance of at least 3 ft from electrical points", riskLevel:"HIGH" },
-  { id:"q023", code:"Q-023", section:"Fire Prevention Measures", textEn:"In the pantry/canteen LPG is used", riskLevel:"MEDIUM" },
-  { id:"q024", code:"Q-024", section:"Server and UPS Room", textEn:"Server room has dual AC units having timer circuit device with independent circuit", riskLevel:"HIGH" },
-  { id:"q025", code:"Q-025", section:"Server and UPS Room", textEn:"Whether metal body exhaust fan is installed in UPS room", riskLevel:"MEDIUM" },
-  { id:"q026", code:"Q-026", section:"Server and UPS Room", textEn:"Whether all ceiling fans installed are of BLDC type", riskLevel:"LOW" },
-  { id:"q027", code:"Q-027", section:"Electrical Safety", textEn:"Power supply to record/stationery room is made through plug and socket arrangement", riskLevel:"HIGH" },
-  { id:"q028", code:"Q-028", section:"Electrical Safety", textEn:"Whether LED lights have been installed in all areas", riskLevel:"MEDIUM" },
-  { id:"q029", code:"Q-029", section:"Electrical Safety", textEn:"Whether motion sensors/occupancy sensors have been installed", riskLevel:"MEDIUM" },
-  { id:"q030", code:"Q-030", section:"Fire Protection", textEn:"Are fire extinguishers available in all required work areas, clearly marked and accessible?", riskLevel:"HIGH" },
-  { id:"q031", code:"Q-031", section:"DG Set / Generator", textEn:"DG Set / Generator is installed at the branch/office", riskLevel:"HIGH" },
-  { id:"q032", code:"Q-032", section:"DG Set / Generator", textEn:"At least two 6 Kg. ABC capacity fire extinguishers are placed near the diesel generator", riskLevel:"HIGH" },
-  { id:"q033", code:"Q-033", section:"DG Set / Generator", textEn:"Electrical safety and energy saving awareness meeting with staff was conducted post audit", riskLevel:"MEDIUM" },
-  { id:"q034", code:"Q-034", section:"Onsite ATM", textEn:"5 Kg ABC Automatic Modular Fire Extinguisher is provided and protected in the back room", riskLevel:"HIGH" },
-  { id:"q035", code:"Q-035", section:"Onsite ATM", textEn:"ATM room is having fire detector connected through branch AFDS", riskLevel:"HIGH" },
-  { id:"q036", code:"Q-036", section:"Onsite ATM", textEn:"Whether MCCB/MCB/ELCB are provided and apparently in working condition", riskLevel:"HIGH" },
-  { id:"q037", code:"Q-037", section:"Onsite ATM", textEn:"AC units are provided with timer circuit device", riskLevel:"MEDIUM" },
-  { id:"q038", code:"Q-038", section:"Onsite ATM", textEn:"Main supply switch/MCB to cut-off the electric supply of ATM has been marked", riskLevel:"HIGH" },
-  { id:"q039", code:"Q-039", section:"Onsite ATM", textEn:"Power supply to AC, UPS and ATM machines is through metal clad plug receptacle socket", riskLevel:"HIGH" },
-  { id:"q040", code:"Q-040", section:"Onsite ATM", textEn:"Electrical wires are properly covered/insulated to prevent exposure", riskLevel:"HIGH" },
-  { id:"q041", code:"Q-041", section:"Onsite ATM", textEn:"Is there any cooking stove/electric heater coil stove noticed in the ATM", riskLevel:"HIGH" },
-  { id:"q042", code:"Q-042", section:"Onsite ATM", textEn:"Is there any water accumulation/seepage in the premises or dripping on electrical gadgets", riskLevel:"HIGH" },
-  { id:"q043", code:"Q-043", section:"Onsite ATM", textEn:"Any combustible container provided in the ATM", riskLevel:"HIGH" },
-  { id:"q044", code:"Q-044", section:"Onsite ATM", textEn:"Steel dustbin container provided in the ATM", riskLevel:"MEDIUM" },
-  { id:"q045", code:"Q-045", section:"Onsite ATM", textEn:"No smoking board is provided in the ATM cabin", riskLevel:"LOW" },
-  { id:"q046", code:"Q-046", section:"Onsite ATM", textEn:"Main entrance shutter is in working condition", riskLevel:"MEDIUM" },
-  { id:"q047", code:"Q-047", section:"Onsite ATM", textEn:"Proper locking arrangement is there at the main shutter", riskLevel:"HIGH" },
-  { id:"q048", code:"Q-048", section:"Onsite ATM", textEn:"All electrical lights are in working condition", riskLevel:"MEDIUM" },
-  { id:"q049", code:"Q-049", section:"Onsite ATM", textEn:"ATM is provided with external CCTV camera", riskLevel:"HIGH" },
-  { id:"q050", code:"Q-050", section:"Onsite ATM", textEn:"CCTV is in working condition", riskLevel:"HIGH" },
+  { id:"q001", code:"Q-001", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether MCCBs/MCBs/ELCBs are provided with proper rating to cater the load",                                                textHi:"क्या MCCBs/MCBs/ELCBs को लोड पूरा करने के लिए उचित रेटिंग के साथ प्रदान किया गया है" },
+  { id:"q002", code:"Q-002", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether light and emergency light are provided in electrical rooms/operating areas",                                          textHi:"क्या विद्युत कक्षों/परिचालन क्षेत्रों में प्रकाश एवं आपातकालीन प्रकाश की व्यवस्था है" },
+  { id:"q003", code:"Q-003", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"Whether Pump room, DG set room, UPS room, electrical room etc. are maintained dry and in good condition",                     textHi:"क्या पंप रूम, डीजी सेट रूम, यूपीएस रूम, विद्युत कक्ष आदि सूखे और अच्छी स्थिति में रखे जाते हैं" },
+  { id:"q004", code:"Q-004", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"Whether water seepage is observed near any of the Electrical Panel, Distribution Boards, Electrical equipment etc.",          textHi:"क्या किसी विद्युत पैनल, वितरण बोर्ड, विद्युत उपकरण के पास पानी का रिसाव देखा गया है" },
+  { id:"q005", code:"Q-005", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether Earthing pits are provided and connected to the equipment body",                                                      textHi:"क्या अर्थिंग पिट प्रदान किए गए हैं और उपकरण के बॉडी से जुड़े हैं" },
+  { id:"q006", code:"Q-006", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether the Earthing Pits are properly maintained",                                                                           textHi:"क्या अर्थिंग पिट का उचित रखरखाव किया जाता है" },
+  { id:"q007", code:"Q-007", section:"General",                 riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether proper exhaust fan for ventilation of panel room/electrical room/UPS room is provided",                               textHi:"क्या पैनल रूम/विद्युत कक्ष/यूपीएस रूम के वेंटिलेशन के लिए उचित एग्जॉस्ट फैन प्रदान किया गया है" },
+  { id:"q008", code:"Q-008", section:"General",                 riskLevel:"MEDIUM", isMandatory:false, allowRecommendation:true,  photoReq:"Not Required",      textEn:"Whether penalty is being imposed in electricity bills on account of higher load/poor power factor",                           textHi:"क्या खराब पावर फैक्टर/अधिक लोड के कारण बिजली बिल में जुर्माना लगाया जा रहा है" },
+  { id:"q009", code:"Q-009", section:"General",                 riskLevel:"LOW",    isMandatory:false, allowRecommendation:false, photoReq:"Not Required",      textEn:"Additional electrical load required if any (from Power Distribution Company)",                                                textHi:"यदि कोई अतिरिक्त विद्युत भार आवश्यक है (बिजली वितरण कंपनी से)" },
+  { id:"q010", code:"Q-010", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether load is distributed in all 3 phases to avoid unbalancing of phases",                                                  textHi:"क्या चरण असंतुलन से बचने के लिए सभी 3 चरणों में भार वितरित किया गया है" },
+  { id:"q011", code:"Q-011", section:"General",                 riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether isolating switches are provided for switching off non-essential loads during night",                                   textHi:"क्या रात में गैर-आवश्यक भार बंद करने के लिए आइसोलेटिंग स्विच प्रदान किए गए हैं" },
+  { id:"q012", code:"Q-012", section:"General",                 riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether electrical equipments of Pantry etc. are properly connected to Iron socket box with MCBs",                            textHi:"क्या पैंट्री आदि के विद्युत उपकरण MCBs के साथ आयरन सॉकेट बॉक्स से जुड़े हैं" },
+  { id:"q013", code:"Q-013", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether proper preventive maintenance of Panel boards and Distribution Boards is carried out by licensed electricians",       textHi:"क्या लाइसेंस प्राप्त इलेक्ट्रीशियन द्वारा पैनल बोर्ड और वितरण बोर्डों का उचित रखरखाव किया जाता है" },
+  { id:"q014", code:"Q-014", section:"General",                 riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether appropriate timers used in changeover of Air conditioners for Server Room ACs and Signage Boards",                   textHi:"क्या सर्वर रूम एसी और साइनेज बोर्ड के चेंजओवर में उचित टाइमर उपयोग किए जाते हैं" },
+  { id:"q015", code:"Q-015", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether preventive maintenance of electric installation and equipment is carried out by skilled license holder electricians",  textHi:"क्या कुशल लाइसेंस धारक इलेक्ट्रीशियनों द्वारा विद्युत स्थापना एवं उपकरण का रखरखाव किया जाता है" },
+  { id:"q016", code:"Q-016", section:"General",                 riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"General condition of electrical control panels, Main switch, electric meter board and changeover switch is good",              textHi:"विद्युत नियंत्रण पैनल, मुख्य स्विच, विद्युत मीटर बोर्ड और चेंजओवर स्विच की सामान्य स्थिति अच्छी है" },
+  { id:"q017", code:"Q-017", section:"General",                 riskLevel:"LOW",    isMandatory:false, allowRecommendation:false, photoReq:"Not Required",      textEn:"Whether contact numbers of electricians, power distribution company, Generator/UPS/AC vendors are displayed",                 textHi:"क्या इलेक्ट्रीशियन, बिजली वितरण कंपनी, जनरेटर/यूपीएस/एसी विक्रेताओं के संपर्क नंबर प्रदर्शित हैं" },
+  { id:"q018", code:"Q-018", section:"General",                 riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether the Power Factor (PF) panel of appropriate rating is installed",                                                      textHi:"क्या उचित रेटिंग का पावर फैक्टर (PF) पैनल स्थापित है" },
+  { id:"q019", code:"Q-019", section:"Fire Prevention Measures",riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"All old disposable records, broken furniture etc. accumulated at the premises have been cleared",                           textHi:"क्या परिसर में जमा पुराने दस्तावेज़, टूटे फर्नीचर आदि को साफ किया गया है" },
+  { id:"q020", code:"Q-020", section:"Fire Prevention Measures",riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"Combustible leaf, litter/waste papers in and around the branch are removed/cleaned periodically",                           textHi:"क्या शाखा के अंदर और बाहर दहनशील पत्ते/रद्दी कागज नियमित रूप से हटाए/साफ किए जाते हैं" },
+  { id:"q021", code:"Q-021", section:"Fire Prevention Measures",riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"No stationery/Records/old obsolete items are stored in the system/UPS room",                                               textHi:"क्या सिस्टम/यूपीएस रूम में कोई स्टेशनरी/रिकॉर्ड/पुरानी वस्तुएं संग्रहीत नहीं हैं" },
+  { id:"q022", code:"Q-022", section:"Fire Prevention Measures",riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Storage racks in Stationery/Record room are at safe distance of at least 3 ft from electrical points",                     textHi:"क्या स्टेशनरी/रिकॉर्ड रूम में भंडारण रैक विद्युत बिंदुओं से कम से कम 3 फीट की दूरी पर हैं" },
+  { id:"q023", code:"Q-023", section:"Fire Prevention Measures",riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if YES",   textEn:"In the pantry/canteen LPG is used",                                                                                        textHi:"क्या पैंट्री/कैंटीन में एलपीजी का उपयोग किया जाता है" },
+  { id:"q024", code:"Q-024", section:"Server and UPS Room",     riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Server room has dual AC units having timer circuit device with independent circuit",                                          textHi:"सर्वर रूम में स्वतंत्र सर्किट के साथ टाइमर सर्किट डिवाइस वाली दोहरी एसी इकाइयां हैं" },
+  { id:"q025", code:"Q-025", section:"Server and UPS Room",     riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether metal body exhaust fan is installed in UPS room",                                                                    textHi:"क्या यूपीएस रूम में मेटल बॉडी एग्जॉस्ट फैन स्थापित है" },
+  { id:"q026", code:"Q-026", section:"Server and UPS Room",     riskLevel:"LOW",    isMandatory:false, allowRecommendation:true,  photoReq:"Not Required",      textEn:"Whether all ceiling fans installed are of BLDC type",                                                                        textHi:"क्या सभी सीलिंग फैन BLDC प्रकार के हैं" },
+  { id:"q027", code:"Q-027", section:"Electrical Safety",       riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Power supply to record/stationery room is made through plug and socket arrangement",                                         textHi:"रिकॉर्ड/स्टेशनरी रूम को प्लग और सॉकेट व्यवस्था के माध्यम से बिजली आपूर्ति की जाती है" },
+  { id:"q028", code:"Q-028", section:"Electrical Safety",       riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether LED lights have been installed in all areas",                                                                         textHi:"क्या सभी क्षेत्रों में एलईडी लाइट लगाई गई हैं" },
+  { id:"q029", code:"Q-029", section:"Electrical Safety",       riskLevel:"MEDIUM", isMandatory:false, allowRecommendation:true,  photoReq:"Not Required",      textEn:"Whether motion sensors/occupancy sensors have been installed",                                                               textHi:"क्या मोशन सेंसर/ऑक्यूपेंसी सेंसर स्थापित किए गए हैं" },
+  { id:"q030", code:"Q-030", section:"Fire Protection",         riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"Are fire extinguishers available in all required work areas, clearly marked and accessible?",                                textHi:"क्या सभी आवश्यक कार्य क्षेत्रों में अग्निशामक यंत्र उपलब्ध हैं, स्पष्ट रूप से चिह्नित और सुलभ हैं" },
+  { id:"q031", code:"Q-031", section:"DG Set / Generator",      riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:false, photoReq:"Always Required",   textEn:"DG Set / Generator is installed at the branch/office",                                                                       textHi:"डीजी सेट/जनरेटर शाखा/कार्यालय में स्थापित है" },
+  { id:"q032", code:"Q-032", section:"DG Set / Generator",      riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"At least two 6 Kg. ABC capacity fire extinguishers are placed near the diesel generator",                                    textHi:"डीजल जनरेटर के पास कम से कम दो 6 किग्रा ABC क्षमता के अग्निशामक यंत्र रखे गए हैं" },
+  { id:"q033", code:"Q-033", section:"DG Set / Generator",      riskLevel:"MEDIUM", isMandatory:false, allowRecommendation:false, photoReq:"Not Required",      textEn:"Electrical safety and energy saving awareness meeting with staff was conducted post audit",                                   textHi:"ऑडिट के बाद स्टाफ के साथ विद्युत सुरक्षा और ऊर्जा बचत जागरूकता बैठक आयोजित की गई" },
+  { id:"q034", code:"Q-034", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"5 Kg ABC Automatic Modular Fire Extinguisher is provided and protected in the back room",                                    textHi:"बैक रूम में 5 किग्रा ABC स्वचालित मॉड्यूलर अग्निशामक यंत्र प्रदान किया गया है और सुरक्षित है" },
+  { id:"q035", code:"Q-035", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"ATM room is having fire detector connected through branch AFDS (Applicable for Onsite ATMs only)",                          textHi:"एटीएम रूम में शाखा AFDS से जुड़ा अग्नि संसूचक है (केवल ऑनसाइट ATM के लिए)" },
+  { id:"q036", code:"Q-036", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Whether MCCB/MCB/ELCB are provided and apparently in working condition",                                                     textHi:"क्या MCCB/MCB/ELCB प्रदान किए गए हैं और स्पष्ट रूप से कार्यशील स्थिति में हैं" },
+  { id:"q037", code:"Q-037", section:"Onsite ATM",              riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"AC units are provided with timer circuit device",                                                                            textHi:"एसी इकाइयां टाइमर सर्किट डिवाइस से सुसज्जित हैं" },
+  { id:"q038", code:"Q-038", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Main supply switch/MCB to cut-off the electric supply of ATM has been marked",                                              textHi:"एटीएम की बिजली आपूर्ति काटने के लिए मुख्य आपूर्ति स्विच/MCB को चिह्नित किया गया है" },
+  { id:"q039", code:"Q-039", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Power supply to AC, UPS and ATM machines is through metal clad plug receptacle socket",                                     textHi:"एसी, यूपीएस और एटीएम मशीनों को मेटल क्लैड प्लग रिसेप्टेकल सॉकेट के माध्यम से बिजली आपूर्ति" },
+  { id:"q040", code:"Q-040", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Electrical wires are properly covered/insulated to prevent exposure",                                                        textHi:"विद्युत तार उचित रूप से ढके/इन्सुलेटेड हैं ताकि एक्सपोजर न हो" },
+  { id:"q041", code:"Q-041", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"Is there any cooking stove/electric heater coil stove noticed in the ATM",                                                  textHi:"क्या एटीएम में कोई कुकिंग स्टोव/इलेक्ट्रिक हीटर कॉइल स्टोव देखा गया है" },
+  { id:"q042", code:"Q-042", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"Is there any water accumulation/seepage in the premises or dripping on electrical gadgets",                                  textHi:"क्या परिसर में पानी जमाव/रिसाव या विद्युत उपकरणों पर टपकना देखा गया है" },
+  { id:"q043", code:"Q-043", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Always Required",   textEn:"Any combustible container provided in the ATM",                                                                              textHi:"क्या एटीएम में कोई दहनशील कंटेनर रखा गया है" },
+  { id:"q044", code:"Q-044", section:"Onsite ATM",              riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:false, photoReq:"Required if NO",    textEn:"Steel dustbin container provided in the ATM",                                                                                textHi:"एटीएम में स्टील डस्टबिन कंटेनर उपलब्ध है" },
+  { id:"q045", code:"Q-045", section:"Onsite ATM",              riskLevel:"LOW",    isMandatory:false, allowRecommendation:false, photoReq:"Required if NO",    textEn:"No smoking board is provided in the ATM cabin",                                                                             textHi:"एटीएम केबिन में नो स्मोकिंग बोर्ड लगा है" },
+  { id:"q046", code:"Q-046", section:"Onsite ATM",              riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Main entrance shutter is in working condition",                                                                              textHi:"मुख्य प्रवेश शटर कार्यशील स्थिति में है" },
+  { id:"q047", code:"Q-047", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"Proper locking arrangement is there at the main shutter",                                                                   textHi:"मुख्य शटर पर उचित लॉकिंग व्यवस्था है" },
+  { id:"q048", code:"Q-048", section:"Onsite ATM",              riskLevel:"MEDIUM", isMandatory:true,  allowRecommendation:false, photoReq:"Required if NO",    textEn:"All electrical lights are in working condition",                                                                             textHi:"सभी विद्युत लाइटें कार्यशील स्थिति में हैं" },
+  { id:"q049", code:"Q-049", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"ATM is provided with external CCTV camera",                                                                                 textHi:"एटीएम में बाहरी सीसीटीवी कैमरा लगा है" },
+  { id:"q050", code:"Q-050", section:"Onsite ATM",              riskLevel:"HIGH",   isMandatory:true,  allowRecommendation:true,  photoReq:"Required if NO",    textEn:"CCTV is in working condition",                                                                                              textHi:"सीसीटीवी कार्यशील स्थिति में है" },
 ];
+
+const PHOTO_CFG: Record<PhotoReq, { color: string; bg: string; icon: string; short: string }> = {
+  "Not Required":    { color:"#6b7280", bg:"#f3f4f6", icon:"ri-camera-off-line",  short:"Not Required"   },
+  "Always Required": { color:"#dc2626", bg:"#fee2e2", icon:"ri-camera-fill",      short:"Always Required"},
+  "Required if YES": { color:"#15803d", bg:"#dcfce7", icon:"ri-camera-line",      short:"If YES"         },
+  "Required if NO":  { color:"#c2410c", bg:"#ffedd5", icon:"ri-camera-line",      short:"If NO"          },
+  "Required if N/A": { color:"#7c3aed", bg:"#ede9fe", icon:"ri-camera-line",      short:"If N/A"         },
+};
 
 const SECTION_ORDER = ["General","Fire Prevention Measures","Server and UPS Room","Electrical Safety","Fire Protection","DG Set / Generator","Onsite ATM"];
 
@@ -279,8 +294,8 @@ export default function NewTemplatePage() {
                     <i className="ri-map-2-line" style={{ fontSize:15, color:"#fff" }}/>
                   </div>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:700, color:"#111827" }}>Mapped Circle(s) <span style={{ fontSize:11, fontWeight:500, color:"#9ca3af" }}>Select one or more</span></div>
-                    <div style={{ fontSize:12, color:"#9ca3af" }}>Circles covered by this template</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#111827" }}>Mapped Circle(s)</div>
+                    <div style={{ fontSize:11, color:"#6b7280" }}>Administrative Office (AO) / Circle Office (CO) / Module Office (MO)</div>
                   </div>
                 </div>
 
@@ -606,41 +621,96 @@ export default function NewTemplatePage() {
                       </button>
                     </div>
 
-                    {/* Question rows */}
-                    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                    {/* Question rows — detailed cards */}
+                    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                       {qs.map(q => {
-                        const isSel = selIds.includes(q.id);
-                        const risk  = RISK[q.riskLevel];
+                        const isSel  = selIds.includes(q.id);
+                        const risk   = RISK[q.riskLevel];
+                        const photoCfg = PHOTO_CFG[q.photoReq];
                         return (
                           <div key={q.id} onClick={() => toggleQ(q.id)} style={{
-                            display:"flex", alignItems:"flex-start", gap:14, padding:"12px 16px",
-                            borderRadius:10, cursor:"pointer",
-                            border:      isSel ? `1.5px solid ${cfg.color}` : "1.5px solid #e5e7eb",
-                            background:  isSel ? cfg.bg : "#fff",
+                            borderRadius:11, cursor:"pointer",
+                            border:     isSel ? `1.5px solid ${cfg.color}` : "1.5px solid #e5e7eb",
+                            background: isSel ? cfg.bg : "#fff",
                             transition:"all 0.12s",
-                            boxShadow: isSel ? `0 0 0 3px ${cfg.color}15` : "none",
+                            boxShadow:  isSel ? `0 0 0 3px ${cfg.color}12` : "0 1px 3px rgba(0,0,0,0.04)",
+                            overflow:"hidden",
                           }}
-                            onMouseEnter={e => { if (!isSel) (e.currentTarget as HTMLDivElement).style.borderColor="#d1d5db"; }}
-                            onMouseLeave={e => { if (!isSel) (e.currentTarget as HTMLDivElement).style.borderColor="#e5e7eb"; }}
+                            onMouseEnter={e => { if (!isSel) { (e.currentTarget as HTMLDivElement).style.borderColor="#d1d5db"; (e.currentTarget as HTMLDivElement).style.boxShadow="0 2px 8px rgba(0,0,0,0.08)"; }}}
+                            onMouseLeave={e => { if (!isSel) { (e.currentTarget as HTMLDivElement).style.borderColor="#e5e7eb"; (e.currentTarget as HTMLDivElement).style.boxShadow="0 1px 3px rgba(0,0,0,0.04)"; }}}
                           >
-                            {/* Custom checkbox */}
-                            <div style={{
-                              width:20, height:20, borderRadius:6, flexShrink:0, marginTop:1,
-                              border:     isSel ? `2px solid ${cfg.color}` : "2px solid #d1d5db",
-                              background: isSel ? cfg.color : "#fff",
-                              display:"flex", alignItems:"center", justifyContent:"center",
-                              transition:"all 0.12s",
-                            }}>
-                              {isSel && <i className="ri-check-line" style={{ fontSize:12, color:"#fff" }}/>}
-                            </div>
+                            {/* Top accent line when selected */}
+                            {isSel && <div style={{ height:3, background:cfg.color }}/>}
 
-                            <div style={{ flex:1, minWidth:0 }}>
-                              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
-                                <span style={{ fontSize:11, fontWeight:800, color:cfg.color, fontFamily:"monospace", background:`${cfg.color}15`, borderRadius:4, padding:"1px 6px" }}>{q.code}</span>
-                                <span style={{ fontSize:10, fontWeight:700, color:risk.color, background:risk.bg, borderRadius:4, padding:"1px 7px" }}>{q.riskLevel}</span>
+                            <div style={{ display:"flex", alignItems:"flex-start", gap:14, padding:"14px 16px" }}>
+                              {/* Checkbox */}
+                              <div style={{
+                                width:20, height:20, borderRadius:6, flexShrink:0, marginTop:2,
+                                border:     isSel ? `2px solid ${cfg.color}` : "2px solid #d1d5db",
+                                background: isSel ? cfg.color : "#fff",
+                                display:"flex", alignItems:"center", justifyContent:"center",
+                                transition:"all 0.12s",
+                              }}>
+                                {isSel && <i className="ri-check-line" style={{ fontSize:12, color:"#fff" }}/>}
                               </div>
-                              <div style={{ fontSize:13, color: isSel ? "#111827" : "#374151", lineHeight:1.5, fontWeight: isSel ? 500 : 400 }}>
-                                {q.textEn}
+
+                              <div style={{ flex:1, minWidth:0 }}>
+                                {/* Row 1: Code + Risk */}
+                                <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:6 }}>
+                                  <span style={{ fontSize:11, fontWeight:800, color:cfg.color, fontFamily:"monospace", background:`${cfg.color}15`, borderRadius:4, padding:"2px 7px" }}>{q.code}</span>
+                                  <span style={{ fontSize:10, fontWeight:700, color:risk.color, background:risk.bg, borderRadius:4, padding:"2px 7px" }}>{q.riskLevel}</span>
+                                </div>
+
+                                {/* Row 2: English text */}
+                                <div style={{ fontSize:13, fontWeight: isSel ? 600 : 500, color: isSel ? "#111827" : "#1f2937", lineHeight:1.5, marginBottom:4 }}>
+                                  {q.textEn}
+                                </div>
+
+                                {/* Row 3: Hindi text */}
+                                <div style={{ fontSize:12, color:"#6b7280", lineHeight:1.5, marginBottom:10, fontStyle:"italic" }}>
+                                  {q.textHi}
+                                </div>
+
+                                {/* Row 4: Meta chips */}
+                                <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:6 }}>
+                                  {/* Mandatory */}
+                                  <span style={{
+                                    display:"inline-flex", alignItems:"center", gap:4,
+                                    fontSize:10, fontWeight:700, borderRadius:5, padding:"3px 8px",
+                                    background: q.isMandatory ? "#dcfce7" : "#f3f4f6",
+                                    color:      q.isMandatory ? "#15803d" : "#9ca3af",
+                                    border:`1px solid ${q.isMandatory ? "#86efac" : "#e5e7eb"}`,
+                                  }}>
+                                    <i className={q.isMandatory ? "ri-checkbox-circle-fill" : "ri-checkbox-blank-circle-line"} style={{ fontSize:11 }}/>
+                                    Mandatory
+                                  </span>
+
+                                  {/* Allow Recommendation */}
+                                  <span style={{
+                                    display:"inline-flex", alignItems:"center", gap:4,
+                                    fontSize:10, fontWeight:700, borderRadius:5, padding:"3px 8px",
+                                    background: q.allowRecommendation ? "#eff6ff" : "#f3f4f6",
+                                    color:      q.allowRecommendation ? "#2563eb" : "#9ca3af",
+                                    border:`1px solid ${q.allowRecommendation ? "#bfdbfe" : "#e5e7eb"}`,
+                                  }}>
+                                    <i className={q.allowRecommendation ? "ri-lightbulb-fill" : "ri-lightbulb-line"} style={{ fontSize:11 }}/>
+                                    Recommendation
+                                  </span>
+
+                                  {/* Divider */}
+                                  <span style={{ width:1, height:14, background:"#e5e7eb", display:"inline-block" }}/>
+
+                                  {/* Photo requirement */}
+                                  <span style={{
+                                    display:"inline-flex", alignItems:"center", gap:4,
+                                    fontSize:10, fontWeight:700, borderRadius:5, padding:"3px 8px",
+                                    background: photoCfg.bg, color: photoCfg.color,
+                                    border:`1px solid ${photoCfg.color}30`,
+                                  }}>
+                                    <i className={photoCfg.icon} style={{ fontSize:11 }}/>
+                                    Photo: {photoCfg.short}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
