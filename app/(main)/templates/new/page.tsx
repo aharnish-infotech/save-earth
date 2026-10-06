@@ -93,6 +93,15 @@ const RISK: Record<string, { color: string; bg: string }> = {
   LOW:    { color:"#15803d", bg:"#dcfce7" },
 };
 
+// Active templates per circle — used for conflict validation on "Save as Active"
+const ACTIVE_CIRCLE_MAP: Record<string, string> = {
+  "SBI Gujarat Circle":      "SBI Standard Branch Audit",
+  "BOB Gujarat Circle":      "BOB Branch Infrastructure Audit",
+  "UCO East Circle":         "UCO Bank East Circle Audit",
+  "Canara South Circle":     "Canara Bank Standard Audit",
+  "Indian Bank South Circle":"Indian Bank Urban Branch Audit",
+};
+
 const BANK_CIRCLES: Record<string, string[]> = {
   "State Bank of India":  ["SBI Gujarat Circle","SBI MP Circle","SBI Rajasthan Circle","SBI Punjab Circle","SBI UP Circle"],
   "Bank of Baroda":       ["BOB Gujarat Circle","BOB Rajasthan Circle","BOB Maharashtra Circle"],
@@ -128,6 +137,7 @@ export default function NewTemplatePage() {
   const [secFilter,   setSecFilter]  = useState("All");
   const [circleOpen,  setCircleOpen] = useState(false);
   const [circleSearch,setCircleSearch]= useState("");
+  const [conflictModal, setConflictModal] = useState<{ show: boolean; existingName: string }>({ show: false, existingName: "" });
   const circleDropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -232,7 +242,15 @@ export default function NewTemplatePage() {
               Next <i className="ri-arrow-right-line"/>
             </button>
           ) : (
-            <button onClick={() => router.back()} disabled={selIds.length === 0} style={{ padding:"7px 18px", border:"none", borderRadius:8, fontSize:13, fontWeight:700, cursor:selIds.length>0?"pointer":"not-allowed", background:selIds.length>0?"#15803d":"#e5e7eb", color:selIds.length>0?"#fff":"#9ca3af", display:"flex", alignItems:"center", gap:5 }}>
+            <button onClick={() => {
+              if (selIds.length === 0) return;
+              if (saveAs === "Active" && circle && ACTIVE_CIRCLE_MAP[circle]) {
+                setConflictModal({ show: true, existingName: ACTIVE_CIRCLE_MAP[circle] });
+                return;
+              }
+              alert(`Template "${name}" saved as ${saveAs} with ${selIds.length} questions.`);
+              router.back();
+            }} disabled={selIds.length === 0} style={{ padding:"7px 18px", border:"none", borderRadius:8, fontSize:13, fontWeight:700, cursor:selIds.length>0?"pointer":"not-allowed", background:selIds.length>0?"#15803d":"#e5e7eb", color:selIds.length>0?"#fff":"#9ca3af", display:"flex", alignItems:"center", gap:5 }}>
               <i className="ri-save-line"/> Save Template
             </button>
           )}
@@ -485,16 +503,50 @@ export default function NewTemplatePage() {
           {/* ── LEFT: Filters + Summary ── */}
           <div style={{ width:256, borderRight:"1px solid #e5e7eb", background:"#fff", display:"flex", flexDirection:"column", flexShrink:0 }}>
 
-            {/* Bank badge */}
+            {/* Template summary card */}
             {bm && (
-              <div style={{ padding:"16px 18px", borderBottom:"1px solid #f3f4f6" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:bm.light, borderRadius:10, border:`1px solid ${bm.accent}30` }}>
-                  <div style={{ width:28, height:28, borderRadius:7, background:bm.accent, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                    <span style={{ fontSize:8, fontWeight:800, color:"#fff" }}>{bm.code}</span>
+              <div style={{ padding:"16px", borderBottom:"1px solid #f3f4f6" }}>
+                <div style={{ background:bm.light, borderRadius:12, border:`1px solid ${bm.accent}25`, overflow:"hidden" }}>
+                  {/* Bank header */}
+                  <div style={{ padding:"10px 12px", background:bm.accent, display:"flex", alignItems:"center", gap:9 }}>
+                    <div style={{ width:26, height:26, borderRadius:6, background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                      <span style={{ fontSize:8, fontWeight:800, color:"#fff", letterSpacing:"0.05em" }}>{bm.code}</span>
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:11, fontWeight:800, color:"#fff", letterSpacing:"0.01em" }}>{bank}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize:11, fontWeight:700, color:bm.accent }}>{bank}</div>
-                    <div style={{ fontSize:10, color:"#9ca3af" }}>{name}</div>
+                  {/* Template details */}
+                  <div style={{ padding:"10px 12px", display:"flex", flexDirection:"column", gap:8 }}>
+                    {/* Template Name */}
+                    <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                      <span style={{ fontSize:9, fontWeight:700, color:bm.accent, textTransform:"uppercase", letterSpacing:"0.07em", opacity:0.7 }}>Template</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:"#111827", lineHeight:1.4, wordBreak:"break-word" as const }}>{name || "—"}</span>
+                    </div>
+                    {/* Circle */}
+                    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                      <span style={{ fontSize:9, fontWeight:700, color:bm.accent, textTransform:"uppercase", letterSpacing:"0.07em", opacity:0.7 }}>Mapped Circle</span>
+                      {circle ? (
+                        <span style={{ display:"inline-flex", alignItems:"center", gap:5, fontSize:10, fontWeight:700, color:bm.accent, background:"rgba(255,255,255,0.7)", borderRadius:6, padding:"3px 8px", border:`1px solid ${bm.accent}30`, alignSelf:"flex-start" }}>
+                          <i className="ri-map-pin-2-fill" style={{ fontSize:10 }}/>{circle}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize:10, color:"#d1d5db", fontStyle:"italic" }}>Not selected</span>
+                      )}
+                    </div>
+                    {/* Save As badge */}
+                    <div style={{ display:"flex", alignItems:"center", gap:6, paddingTop:4, borderTop:`1px dashed ${bm.accent}25` }}>
+                      <span style={{ fontSize:9, fontWeight:700, color:bm.accent, textTransform:"uppercase", letterSpacing:"0.07em", opacity:0.7 }}>Status</span>
+                      <span style={{
+                        fontSize:10, fontWeight:800, borderRadius:5, padding:"2px 8px",
+                        background: saveAs === "Active" ? "#dcfce7" : "#fef9c3",
+                        color:      saveAs === "Active" ? "#15803d" : "#92400e",
+                        border:     saveAs === "Active" ? "1px solid #86efac" : "1px solid #fde68a",
+                        display:"inline-flex", alignItems:"center", gap:4,
+                      }}>
+                        <i className={saveAs === "Active" ? "ri-checkbox-circle-fill" : "ri-draft-line"} style={{ fontSize:9 }}/>{saveAs}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -556,9 +608,13 @@ export default function NewTemplatePage() {
               )}
 
               <button onClick={() => {
-                // Build and "save"
                 if (selIds.length === 0) return;
-                alert(`Template "${name}" saved with ${selIds.length} questions.`);
+                // Active conflict check
+                if (saveAs === "Active" && circle && ACTIVE_CIRCLE_MAP[circle]) {
+                  setConflictModal({ show: true, existingName: ACTIVE_CIRCLE_MAP[circle] });
+                  return;
+                }
+                alert(`Template "${name}" saved as ${saveAs} with ${selIds.length} questions.`);
                 router.back();
               }} disabled={selIds.length === 0} style={{
                 width:"100%", marginTop:14, padding:"10px 0", border:"none", borderRadius:9, fontSize:13, fontWeight:700,
@@ -720,6 +776,99 @@ export default function NewTemplatePage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          CONFLICT MODAL — Active template already exists for this circle
+      ══════════════════════════════════════════════════════════════════════ */}
+      {conflictModal.show && (
+        <div style={{
+          position:"fixed", inset:0, zIndex:9999,
+          background:"rgba(0,0,0,0.45)", backdropFilter:"blur(4px)",
+          display:"flex", alignItems:"center", justifyContent:"center", padding:24,
+        }}>
+          <div style={{
+            background:"#fff", borderRadius:18, width:"100%", maxWidth:480,
+            boxShadow:"0 24px 64px rgba(0,0,0,0.22)", overflow:"hidden",
+          }}>
+            {/* Header */}
+            <div style={{ padding:"24px 28px 0" }}>
+              <div style={{ display:"flex", alignItems:"flex-start", gap:14 }}>
+                <div style={{ width:44, height:44, borderRadius:12, background:"#fff7ed", border:"1.5px solid #fed7aa", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <i className="ri-alert-line" style={{ fontSize:22, color:"#c2410c" }}/>
+                </div>
+                <div>
+                  <div style={{ fontSize:16, fontWeight:800, color:"#111827", marginBottom:5 }}>Circle Already Has an Active Template</div>
+                  <div style={{ fontSize:13, color:"#6b7280", lineHeight:1.6 }}>
+                    The circle <strong style={{ color:"#374151" }}>{circle}</strong> already has an active audit template:{" "}
+                    <strong style={{ color:"#2563eb" }}>{conflictModal.existingName}</strong>.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding:"18px 28px", margin:"0 28px", marginTop:18, background:"#f8fafc", borderRadius:10, border:"1px solid #e5e7eb" }}>
+              <div style={{ fontSize:12, color:"#6b7280", lineHeight:1.7 }}>
+                Having multiple active templates for the same circle may cause conflicts during audit assignments.
+                Only one template can be active per circle at a time.
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ padding:"20px 28px 24px", display:"flex", flexDirection:"column", gap:10 }}>
+              <button
+                onClick={() => {
+                  setConflictModal({ show: false, existingName: "" });
+                  setSaveAs("Draft");
+                  alert(`Template "${name}" saved as Draft with ${selIds.length} questions.`);
+                  router.back();
+                }}
+                style={{
+                  padding:"12px 20px", border:"none", borderRadius:10, fontSize:13, fontWeight:700,
+                  background:"#2563eb", color:"#fff", cursor:"pointer", textAlign:"left",
+                  display:"flex", alignItems:"center", gap:10,
+                  boxShadow:"0 4px 12px rgba(37,99,235,0.3)",
+                }}
+              >
+                <i className="ri-draft-line" style={{ fontSize:16 }}/>
+                <div>
+                  <div>Save as Draft Instead</div>
+                  <div style={{ fontSize:11, fontWeight:400, opacity:0.8 }}>Come back and activate once the existing template is deactivated</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setConflictModal({ show: false, existingName: "" });
+                  alert(`Existing template "${conflictModal.existingName}" deactivated. Template "${name}" saved as Active with ${selIds.length} questions.`);
+                  router.back();
+                }}
+                style={{
+                  padding:"12px 20px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:13, fontWeight:700,
+                  background:"#fff", color:"#374151", cursor:"pointer", textAlign:"left",
+                  display:"flex", alignItems:"center", gap:10,
+                }}
+              >
+                <i className="ri-toggle-line" style={{ fontSize:16, color:"#9ca3af" }}/>
+                <div>
+                  <div>Deactivate Existing &amp; Activate This One</div>
+                  <div style={{ fontSize:11, fontWeight:400, color:"#9ca3af" }}>The current active template will be set to Draft</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setConflictModal({ show: false, existingName: "" })}
+                style={{
+                  padding:"10px 20px", border:"none", borderRadius:10, fontSize:12, fontWeight:600,
+                  background:"transparent", color:"#9ca3af", cursor:"pointer",
+                }}
+              >
+                Cancel — Go Back and Edit
+              </button>
             </div>
           </div>
         </div>
