@@ -41,7 +41,7 @@ const BANK_ACCENT: Record<string, { accent: string; lightBg: string }> = {
 // EXISTING TEMPLATES SEED
 // ─────────────────────────────────────────────────────────────────────────────
 const SEED: Template[] = [
-  { id:"T-001", name:"SBI Standard Branch Audit",       bank:"State Bank of India",  bankCode:"SBI",  circles:["SBI Gujarat Circle","SBI MP Circle"], version:"v2.3", description:"Comprehensive audit template for SBI urban and metro branches covering all compliance parameters.", status:"Active",   createdBy:"Admin", createdOn:"15 Jan 2024", lastUsed:"20 Jul 2024", usedCount:42, totalQ:28, sections:[{name:"General",questions:8,weightage:30},{name:"Fire Prevention Measures",questions:6,weightage:25},{name:"Electrical Safety",questions:4,weightage:15},{name:"DG Set / Generator",questions:5,weightage:20},{name:"Onsite ATM",questions:5,weightage:10}] },
+  { id:"T-001", name:"SBI Standard Branch Audit",       bank:"State Bank of India",  bankCode:"SBI",  circles:["SBI Gujarat Circle"], version:"v2.3", description:"Comprehensive audit template for SBI urban and metro branches covering all compliance parameters.", status:"Active",   createdBy:"Admin", createdOn:"15 Jan 2024", lastUsed:"20 Jul 2024", usedCount:42, totalQ:28, sections:[{name:"General",questions:8,weightage:30},{name:"Fire Prevention Measures",questions:6,weightage:25},{name:"Electrical Safety",questions:4,weightage:15},{name:"DG Set / Generator",questions:5,weightage:20},{name:"Onsite ATM",questions:5,weightage:10}] },
   { id:"T-006", name:"SBI Rural Branch Lite",           bank:"State Bank of India",  bankCode:"SBI",  circles:["SBI Rajasthan Circle"], version:"v1.1", description:"Simplified audit template for SBI rural and semi-urban branches with reduced scope.", status:"Archived", createdBy:"Admin", createdOn:"01 Nov 2023", lastUsed:"01 Mar 2024", usedCount:15, totalQ:14, sections:[{name:"General",questions:4,weightage:35},{name:"Fire Prevention Measures",questions:4,weightage:35},{name:"Onsite ATM",questions:6,weightage:30}] },
   { id:"T-002", name:"BOB Branch Infrastructure Audit", bank:"Bank of Baroda",       bankCode:"BOB",  circles:["BOB Gujarat Circle"],   version:"v1.5", description:"Tailored template for Bank of Baroda branch infrastructure assessments per RBO guidelines.", status:"Active",   createdBy:"Admin", createdOn:"20 Jan 2024", lastUsed:"18 Jul 2024", usedCount:18, totalQ:24, sections:[{name:"General",questions:7,weightage:35},{name:"Fire Prevention Measures",questions:5,weightage:25},{name:"Server and UPS Room",questions:4,weightage:20},{name:"Onsite ATM",questions:4,weightage:10},{name:"DG Set / Generator",questions:4,weightage:10}] },
   { id:"T-003", name:"UCO Bank East Circle Audit",      bank:"UCO Bank",             bankCode:"UCO",  circles:["UCO East Circle"],      version:"v1.0", description:"Audit checklist designed for UCO Bank branches in eastern India circles.", status:"Active",   createdBy:"Admin", createdOn:"25 Jan 2024", lastUsed:"15 Jul 2024", usedCount:9,  totalQ:20, sections:[{name:"General",questions:6,weightage:30},{name:"Fire Prevention Measures",questions:4,weightage:20},{name:"Electrical Safety",questions:3,weightage:15},{name:"Server and UPS Room",questions:4,weightage:20},{name:"Onsite ATM",questions:3,weightage:15}] },
@@ -235,12 +235,10 @@ export default function AuditTemplatesPage() {
                             ))}
                           </div>
                           {t.circles && t.circles.length > 0 && (
-                            <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:12 }}>
-                              {t.circles.map(c => (
-                                <span key={c} style={{ fontSize:10, fontWeight:600, color:"#374151", background:"#f3f4f6", borderRadius:5, padding:"2px 8px", border:"1px solid #e5e7eb" }}>
-                                  <i className="ri-map-pin-line" style={{ marginRight:3, fontSize:9 }}/>{c}
-                                </span>
-                              ))}
+                            <div style={{ marginBottom:12 }}>
+                              <span style={{ fontSize:10, fontWeight:600, color:"#374151", background:"#f3f4f6", borderRadius:5, padding:"3px 10px", border:"1px solid #e5e7eb", display:"inline-flex", alignItems:"center", gap:4 }}>
+                                <i className="ri-map-pin-line" style={{ fontSize:10, color:"#9ca3af" }}/>{t.circles[0]}
+                              </span>
                             </div>
                           )}
                           <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:14 }}>
