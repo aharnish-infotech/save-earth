@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,17 +102,42 @@ const BANK_META: Record<string, { code: string; accent: string; light: string }>
 export default function NewTemplatePage() {
   const router = useRouter();
 
-  const [step,     setStep]     = useState<1|2>(1);
-  const [bank,     setBank]     = useState("");
-  const [circles,  setCircles]  = useState<string[]>([]);
-  const [name,     setName]     = useState("");
-  const [desc,     setDesc]     = useState("");
-  const [saveAs,   setSaveAs]   = useState<"Draft"|"Active">("Draft");
-  const [selIds,   setSelIds]   = useState<string[]>([]);
-  const [qSearch,  setQSearch]  = useState("");
-  const [secFilter,setSecFilter]= useState("All");
+  const [step,        setStep]       = useState<1|2>(1);
+  const [bank,        setBank]       = useState("");
+  const [circles,     setCircles]    = useState<string[]>([]);
+  const [name,        setName]       = useState("");
+  const [desc,        setDesc]       = useState("");
+  const [saveAs,      setSaveAs]     = useState<"Draft"|"Active">("Draft");
+  const [selIds,      setSelIds]     = useState<string[]>([]);
+  const [qSearch,     setQSearch]    = useState("");
+  const [secFilter,   setSecFilter]  = useState("All");
+  const [circleOpen,  setCircleOpen] = useState(false);
+  const [circleSearch,setCircleSearch]= useState("");
+  const circleDropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (circleDropRef.current && !circleDropRef.current.contains(e.target as Node))
+        setCircleOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Reset circles + dropdown when bank changes
+  const handleBankSelect = (b: string) => {
+    setBank(b);
+    setCircles([]);
+    setCircleOpen(false);
+    setCircleSearch("");
+  };
 
   const bm = BANK_META[bank];
+
+  const filteredCircles = useMemo(() => {
+    const q = circleSearch.toLowerCase();
+    return (BANK_CIRCLES[bank] ?? []).filter(c => !q || c.toLowerCase().includes(q));
+  }, [bank, circleSearch]);
 
   const filteredQs = useMemo(() => {
     const q = qSearch.toLowerCase();
@@ -223,7 +248,7 @@ export default function NewTemplatePage() {
                   const m   = BANK_META[b];
                   const sel = bank === b;
                   return (
-                    <button key={b} onClick={() => { setBank(b); setCircles([]); }} style={{
+                    <button key={b} onClick={() => handleBankSelect(b)} style={{
                       padding:"14px 16px", borderRadius:11, cursor:"pointer", textAlign:"left",
                       border:      sel ? `2px solid ${m.accent}` : "1.5px solid #e5e7eb",
                       background:  sel ? m.light : "#fafafa",
@@ -246,7 +271,7 @@ export default function NewTemplatePage() {
               </div>
             </div>
 
-            {/* ── Circle selection (shows after bank picked) ── */}
+            {/* ── Circle selection — searchable dropdown (shows after bank picked) ── */}
             {bank && (
               <div style={{ background:"#fff", borderRadius:14, border:`1.5px solid ${bm!.accent}30`, padding:"24px", marginBottom:20, boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
@@ -254,26 +279,121 @@ export default function NewTemplatePage() {
                     <i className="ri-map-2-line" style={{ fontSize:15, color:"#fff" }}/>
                   </div>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:700, color:"#111827" }}>Mapped Circles</div>
-                    <div style={{ fontSize:12, color:"#9ca3af" }}>Select one or more circles covered by this template</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#111827" }}>Mapped Circle(s) <span style={{ fontSize:11, fontWeight:500, color:"#9ca3af" }}>Select one or more</span></div>
+                    <div style={{ fontSize:12, color:"#9ca3af" }}>Circles covered by this template</div>
                   </div>
                 </div>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:9 }}>
-                  {(BANK_CIRCLES[bank] ?? []).map(c => {
-                    const isSel = circles.includes(c);
-                    return (
-                      <button key={c} onClick={() => setCircles(prev => isSel ? prev.filter(x => x !== c) : [...prev, c])} style={{
-                        padding:"8px 16px", borderRadius:24, cursor:"pointer", fontSize:12, fontWeight:600,
-                        border:      isSel ? `2px solid ${bm!.accent}` : "1.5px solid #d1d5db",
-                        background:  isSel ? bm!.accent : "#fff",
-                        color:       isSel ? "#fff" : "#6b7280",
-                        display:"flex", alignItems:"center", gap:6, transition:"all 0.15s",
-                      }}>
-                        {isSel ? <i className="ri-check-line" style={{ fontSize:12 }}/> : <i className="ri-map-pin-line" style={{ fontSize:12 }}/>}
-                        {c}
-                      </button>
-                    );
-                  })}
+
+                {/* Dropdown trigger */}
+                <div ref={circleDropRef} style={{ position:"relative" }}>
+                  <div
+                    onClick={() => setCircleOpen(o => !o)}
+                    style={{
+                      minHeight:44, border:`1.5px solid ${circleOpen ? bm!.accent : "#e5e7eb"}`,
+                      borderRadius:10, padding:"8px 12px", cursor:"pointer", background:"#fff",
+                      display:"flex", alignItems:"flex-start", gap:8, flexWrap:"wrap",
+                      transition:"border-color 0.15s", boxShadow: circleOpen ? `0 0 0 3px ${bm!.accent}15` : "none",
+                    }}
+                  >
+                    {circles.length === 0 ? (
+                      <span style={{ fontSize:13, color:"#9ca3af", lineHeight:"26px" }}>Search or select circle(s)…</span>
+                    ) : (
+                      circles.map(c => (
+                        <span key={c} style={{
+                          display:"inline-flex", alignItems:"center", gap:5,
+                          background:bm!.accent, color:"#fff",
+                          fontSize:11, fontWeight:600, borderRadius:6,
+                          padding:"3px 10px 3px 8px",
+                        }}>
+                          <i className="ri-map-pin-2-fill" style={{ fontSize:10 }}/>
+                          {c}
+                          <button
+                            onClick={e => { e.stopPropagation(); setCircles(prev => prev.filter(x => x !== c)); }}
+                            style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.8)", padding:0, marginLeft:2, fontSize:13, lineHeight:1, display:"flex", alignItems:"center" }}
+                          >×</button>
+                        </span>
+                      ))
+                    )}
+                    <i className={`ri-arrow-${circleOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:16, marginLeft:"auto", alignSelf:"center", flexShrink:0 }}/>
+                  </div>
+
+                  {/* Dropdown panel */}
+                  {circleOpen && (
+                    <div style={{
+                      position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:50,
+                      background:"#fff", border:"1.5px solid #e5e7eb", borderRadius:10,
+                      boxShadow:"0 8px 24px rgba(0,0,0,0.12)", overflow:"hidden",
+                    }}>
+                      {/* Search input */}
+                      <div style={{ padding:"10px 12px", borderBottom:"1px solid #f3f4f6", display:"flex", alignItems:"center", gap:8 }}>
+                        <i className="ri-search-line" style={{ color:"#9ca3af", fontSize:14, flexShrink:0 }}/>
+                        <input
+                          autoFocus
+                          value={circleSearch}
+                          onChange={e => setCircleSearch(e.target.value)}
+                          placeholder="Search circles…"
+                          onClick={e => e.stopPropagation()}
+                          style={{ border:"none", outline:"none", fontSize:13, color:"#374151", background:"transparent", width:"100%", fontFamily:"inherit" }}
+                        />
+                        {circleSearch && (
+                          <button onClick={e => { e.stopPropagation(); setCircleSearch(""); }} style={{ background:"none", border:"none", cursor:"pointer", color:"#9ca3af", padding:0, fontSize:14 }}>×</button>
+                        )}
+                      </div>
+
+                      {/* Group header */}
+                      <div style={{ padding:"8px 14px 4px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em", background:"#fafafa" }}>
+                        {bm!.code} CIRCLES
+                      </div>
+
+                      {/* Circle list */}
+                      <div style={{ maxHeight:220, overflowY:"auto" }}>
+                        {filteredCircles.length === 0 ? (
+                          <div style={{ padding:"16px 14px", fontSize:13, color:"#9ca3af", textAlign:"center" }}>No circles match</div>
+                        ) : filteredCircles.map(c => {
+                          const isSel = circles.includes(c);
+                          return (
+                            <div
+                              key={c}
+                              onClick={e => {
+                                e.stopPropagation();
+                                setCircles(prev => isSel ? prev.filter(x => x !== c) : [...prev, c]);
+                              }}
+                              style={{
+                                padding:"11px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:12,
+                                background: isSel ? `${bm!.accent}08` : "#fff",
+                                borderLeft: isSel ? `3px solid ${bm!.accent}` : "3px solid transparent",
+                                transition:"all 0.1s",
+                              }}
+                              onMouseEnter={e => { if(!isSel)(e.currentTarget as HTMLDivElement).style.background="#f9fafb"; }}
+                              onMouseLeave={e => { if(!isSel)(e.currentTarget as HTMLDivElement).style.background="#fff"; }}
+                            >
+                              {/* Checkbox */}
+                              <div style={{
+                                width:18, height:18, borderRadius:5, flexShrink:0,
+                                border:     isSel ? `2px solid ${bm!.accent}` : "2px solid #d1d5db",
+                                background: isSel ? bm!.accent : "#fff",
+                                display:"flex", alignItems:"center", justifyContent:"center",
+                                transition:"all 0.1s",
+                              }}>
+                                {isSel && <i className="ri-check-line" style={{ fontSize:11, color:"#fff" }}/>}
+                              </div>
+                              <i className="ri-map-pin-line" style={{ fontSize:14, color: isSel ? bm!.accent : "#9ca3af", flexShrink:0 }}/>
+                              <span style={{ fontSize:13, fontWeight: isSel ? 600 : 400, color: isSel ? bm!.accent : "#374151", flex:1 }}>{c}</span>
+                              {isSel && <i className="ri-checkbox-circle-fill" style={{ fontSize:15, color:bm!.accent, flexShrink:0 }}/>}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Footer */}
+                      {circles.length > 0 && (
+                        <div style={{ padding:"8px 14px", borderTop:"1px solid #f3f4f6", display:"flex", alignItems:"center", justifyContent:"space-between", background:"#fafafa" }}>
+                          <span style={{ fontSize:11, color:"#6b7280" }}><strong style={{ color:bm!.accent }}>{circles.length}</strong> circle{circles.length !== 1 ? "s" : ""} selected</span>
+                          <button onClick={e => { e.stopPropagation(); setCircles([]); }} style={{ fontSize:11, fontWeight:600, color:"#dc2626", background:"none", border:"none", cursor:"pointer", padding:0 }}>Clear all</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
