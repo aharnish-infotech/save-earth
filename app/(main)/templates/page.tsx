@@ -301,8 +301,8 @@ export default function AuditTemplatesPage() {
             <table style={{ width:"100%", borderCollapse:"collapse" }}>
               <thead>
                 <tr style={{ background:"#f9fafb" }}>
-                  {["","Template","Bank","Version","Sections","Questions","Used","Created On","Status","Actions"].map((h,i) => (
-                    <th key={i} style={{ padding:"11px 16px", fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.06em", borderBottom:"1px solid #e5e7eb", textAlign: i===0?"center":i>=4?"center":"left", whiteSpace:"nowrap" as const }}>{h}</th>
+                  {["","Template","Bank","Circle","Version","Sections","Questions","Used","Created On","Status","Actions"].map((h,i) => (
+                    <th key={i} style={{ padding:"11px 16px", fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.06em", borderBottom:"1px solid #e5e7eb", textAlign: i===0?"center":i>=5?"center":"left", whiteSpace:"nowrap" as const }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -331,6 +331,15 @@ export default function AuditTemplatesPage() {
                             <span style={{ fontSize:12, color:"#374151", fontWeight:600 }}>{t.bank}</span>
                           </div>
                         </td>
+                        <td style={{ padding:"12px 16px", verticalAlign:"middle" }}>
+                          {t.circles && t.circles[0] ? (
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, fontWeight:600, color:"#374151", background:"#f3f4f6", borderRadius:6, padding:"3px 10px", border:"1px solid #e5e7eb", whiteSpace:"nowrap" as const }}>
+                              <i className="ri-map-pin-line" style={{ fontSize:10, color:"#9ca3af" }}/>{t.circles[0]}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize:11, color:"#d1d5db" }}>—</span>
+                          )}
+                        </td>
                         <td style={{ padding:"12px 16px", textAlign:"center", verticalAlign:"middle" }}>
                           <span style={{ fontSize:11, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:5, padding:"2px 8px" }}>{t.version}</span>
                         </td>
@@ -357,7 +366,7 @@ export default function AuditTemplatesPage() {
                       </tr>
                       {isEx && (
                         <tr>
-                          <td colSpan={10} style={{ padding:"0 16px 16px 52px", background:"#fafafa", borderBottom:"1px solid #f3f4f6" }}>
+                          <td colSpan={11} style={{ padding:"0 16px 16px 52px", background:"#fafafa", borderBottom:"1px solid #f3f4f6" }}>
                             <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:10, marginTop:12 }}>Section Breakdown</div>
                             <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
                               {t.sections.map(sec => {
