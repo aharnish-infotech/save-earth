@@ -110,26 +110,12 @@ export default function AuditTemplatesPage() {
             Audit Questions &rsaquo; <span style={{ color:"#2563eb", fontWeight:600 }}>Audit Templates</span>
           </div>
         </div>
-        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-          <div style={{ display:"flex", background:"#f3f4f6", borderRadius:8, padding:3, gap:2 }}>
-            {(["grid","list"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} style={{
-                padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer", fontSize:12, fontWeight:600,
-                background: view===v ? "#fff" : "transparent", color: view===v ? "#111827" : "#9ca3af",
-                boxShadow: view===v ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition:"all 0.15s",
-              }}>
-                <i className={v==="grid" ? "ri-layout-grid-line" : "ri-list-unordered"} style={{ marginRight:5 }}/>
-                {v==="grid" ? "Grid" : "List"}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => router.push("/templates/new")}
-            style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"8px 18px", background:"#2563eb", color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", boxShadow:"0 2px 8px rgba(37,99,235,0.35)" }}
-          >
-            <i className="ri-add-line"/>New Template
-          </button>
-        </div>
+        <button
+          onClick={() => router.push("/templates/new")}
+          style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"8px 18px", background:"#2563eb", color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", boxShadow:"0 2px 8px rgba(37,99,235,0.35)" }}
+        >
+          <i className="ri-add-line"/>New Template
+        </button>
       </div>
 
       {/* ── Stat cards ── */}
@@ -172,7 +158,21 @@ export default function AuditTemplatesPage() {
           ))}
         </div>
         <div style={{ flex:1 }}/>
-        <span style={{ fontSize:12, color:"#9ca3af" }}><strong style={{ color:"#374151" }}>{filtered.length}</strong> template{filtered.length!==1?"s":""}</span>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <span style={{ fontSize:12, color:"#9ca3af" }}><strong style={{ color:"#374151" }}>{filtered.length}</strong> template{filtered.length!==1?"s":""}</span>
+          <div style={{ display:"flex", background:"#f3f4f6", borderRadius:8, padding:3, gap:2 }}>
+            {(["grid","list"] as const).map(v => (
+              <button key={v} onClick={() => setView(v)} style={{
+                padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer", fontSize:12, fontWeight:600,
+                background: view===v ? "#fff" : "transparent", color: view===v ? "#111827" : "#9ca3af",
+                boxShadow: view===v ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition:"all 0.15s",
+              }}>
+                <i className={v==="grid" ? "ri-layout-grid-line" : "ri-list-unordered"} style={{ marginRight:5 }}/>
+                {v==="grid" ? "Grid" : "List"}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ── Empty state ── */}
@@ -250,7 +250,7 @@ export default function AuditTemplatesPage() {
                             })}
                           </div>
                           <div style={{ borderTop:"1px solid #f3f4f6", paddingTop:12, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                            <div style={{ fontSize:11, color:"#9ca3af" }}>{t.lastUsed ? <>Last used <strong style={{ color:"#374151" }}>{t.lastUsed}</strong></> : <span style={{ color:"#d1d5db" }}>Never used</span>}</div>
+                            <div style={{ fontSize:11, color:"#9ca3af" }}>Created On: <strong style={{ color:"#374151" }}>{t.createdOn}</strong></div>
                             <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                               <button onClick={()=>setExpanded(isEx?null:t.id)} style={{ width:28, height:28, borderRadius:6, border:"1px solid #e5e7eb", background:"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#9ca3af" }} title={isEx?"Collapse":"View sections"}>
                                 <i className={isEx?"ri-arrow-up-s-line":"ri-eye-line"} style={{ fontSize:14 }}/>
@@ -303,7 +303,7 @@ export default function AuditTemplatesPage() {
             <table style={{ width:"100%", borderCollapse:"collapse" }}>
               <thead>
                 <tr style={{ background:"#f9fafb" }}>
-                  {["","Template","Bank","Version","Sections","Questions","Used","Last Used","Status","Actions"].map((h,i) => (
+                  {["","Template","Bank","Version","Sections","Questions","Used","Created On","Status","Actions"].map((h,i) => (
                     <th key={i} style={{ padding:"11px 16px", fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.06em", borderBottom:"1px solid #e5e7eb", textAlign: i===0?"center":i>=4?"center":"left", whiteSpace:"nowrap" as const }}>{h}</th>
                   ))}
                 </tr>
@@ -341,7 +341,7 @@ export default function AuditTemplatesPage() {
                         <td style={{ padding:"12px 16px", textAlign:"center", verticalAlign:"middle" }}>
                           <span style={{ fontSize:13, fontWeight:700, color:t.usedCount>0?"#7c3aed":"#d1d5db" }}>{t.usedCount}</span>
                         </td>
-                        <td style={{ padding:"12px 16px", textAlign:"center", fontSize:12, color:"#6b7280", verticalAlign:"middle" }}>{t.lastUsed||"—"}</td>
+                        <td style={{ padding:"12px 16px", textAlign:"center", fontSize:12, color:"#6b7280", verticalAlign:"middle" }}>{t.createdOn}</td>
                         <td style={{ padding:"12px 16px", textAlign:"center", verticalAlign:"middle" }}>
                           <span style={{ fontSize:10, fontWeight:700, color:sc.color, background:sc.bg, border:`1px solid ${sc.border}`, borderRadius:20, padding:"3px 10px", display:"inline-flex", alignItems:"center", gap:4 }}>
                             <span style={{ width:5, height:5, borderRadius:"50%", background:sc.dot, display:"inline-block" }}/>{t.status}
