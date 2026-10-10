@@ -1078,9 +1078,9 @@ CREATE INDEX idx_load_types_load_type ON load_types (load_type);`;
 // ── AC Tonnage Panel ──────────────────────────────────────────────────────────
 interface TonnageEntry {
   id: number;
-  value: number;         // e.g. 0.75
-  label: string;         // e.g. "0.75 TR"
-  watts: number;         // derived: value × 3517
+  value: number;
+  label: string;
+  watts: number;
   status: "Active" | "Inactive";
 }
 
@@ -1096,18 +1096,16 @@ const DEFAULT_TONNAGES: TonnageEntry[] = [
 ];
 
 function AcTonnagePanel() {
-  const [rows,    setRows]    = useState<TonnageEntry[]>(DEFAULT_TONNAGES);
-  const [val,     setVal]     = useState("");
-  const [editId,  setEditId]  = useState<number|null>(null);
-  const [status,  setStatus]  = useState<"Active"|"Inactive">("Active");
-  const [payloadOpen, setPayloadOpen] = useState(true);
-  const [copied,  setCopied]  = useState(false);
+  const [rows,   setRows]   = useState<TonnageEntry[]>(DEFAULT_TONNAGES);
+  const [val,    setVal]    = useState("");
+  const [editId, setEditId] = useState<number|null>(null);
+  const [status, setStatus] = useState<"Active"|"Inactive">("Active");
+  const [search, setSearch] = useState("");
 
-  const parsedVal  = parseFloat(val);
-  const isValid    = !isNaN(parsedVal) && parsedVal > 0;
-  const derivedW   = isValid ? Math.round(parsedVal * 3517) : 0;
-  const derivedLbl = isValid ? `${parsedVal} TR` : "";
-
+  const parsedVal   = parseFloat(val);
+  const isValid     = !isNaN(parsedVal) && parsedVal > 0;
+  const derivedW    = isValid ? Math.round(parsedVal * 3517) : 0;
+  const derivedLbl  = isValid ? `${parsedVal} TR` : "";
   const isDuplicate = isValid && rows.some(r => r.id !== editId && r.value === parsedVal);
 
   const handleSave = () => {
@@ -1126,239 +1124,222 @@ function AcTonnagePanel() {
     setVal(String(r.value)); setStatus(r.status); setEditId(r.id);
   };
 
-  const handleDelete = (id: number) => setRows(prev => prev.filter(r => r.id !== id));
-
+  const cancelEdit = () => { setEditId(null); setVal(""); setStatus("Active"); };
+  const handleDelete = (id: number) => { if (editId === id) cancelEdit(); setRows(prev => prev.filter(r => r.id !== id)); };
   const toggleStatus = (id: number) =>
     setRows(prev => prev.map(r => r.id === id ? { ...r, status: r.status === "Active" ? "Inactive" : "Active" } : r));
 
-  const payloadObj = {
-    id:        editId ?? "(uuid — auto-generated)",
-    value_tr:  isValid ? parsedVal : "(empty)",
-    label:     derivedLbl || "(empty)",
-    watts_w:   derivedW || "(empty)",
-    status,
-    created_at:"(auto — timestamptz)",
-    updated_at:"(auto — timestamptz)",
-  };
+  const filtered = rows.filter(r => r.label.toLowerCase().includes(search.toLowerCase()) || String(r.value).includes(search));
 
   const TH: React.CSSProperties = {
-    padding:"10px 14px", fontSize:11, fontWeight:700, color:"#6b7280",
-    textTransform:"uppercase" as const, letterSpacing:"0.05em", background:"#f9fafb",
-    borderBottom:"1px solid #e5e7eb", textAlign:"left" as const, whiteSpace:"nowrap" as const,
+    padding:"11px 16px", fontSize:11, fontWeight:700, color:"#6b7280",
+    textTransform:"uppercase" as const, letterSpacing:"0.05em",
+    background:"#f9fafb", borderBottom:"1px solid #e5e7eb",
+    textAlign:"left" as const, whiteSpace:"nowrap" as const,
   };
   const TD: React.CSSProperties = {
-    padding:"12px 14px", fontSize:13, color:"#374151",
+    padding:"13px 16px", fontSize:13, color:"#374151",
     borderBottom:"1px solid #f3f4f6", verticalAlign:"middle",
   };
 
-  const activeCount   = rows.filter(r => r.status === "Active").length;
-  const inactiveCount = rows.filter(r => r.status === "Inactive").length;
+  const isEditMode = editId !== null;
 
   return (
     <div style={{ display:"grid", gridTemplateColumns:"300px 1fr", gap:16, alignItems:"start" }}>
 
-      {/* ── Left: Form ── */}
-      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+      {/* ── Left: Form card ── */}
+      <div style={{ background:"var(--custom-white)", borderRadius:12, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
 
-        {/* Stat pills */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-          {[
-            { label:"Active",   value:activeCount,   color:"#15803d", bg:"#dcfce7", border:"#86efac", icon:"ri-checkbox-circle-line" },
-            { label:"Inactive", value:inactiveCount, color:"#6b7280", bg:"#f3f4f6", border:"#e5e7eb", icon:"ri-close-circle-line" },
-          ].map(s => (
-            <div key={s.label} style={{ background:s.bg, borderRadius:10, padding:"10px 14px", border:`1px solid ${s.border}` }}>
-              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:3 }}>
-                <i className={s.icon} style={{ fontSize:13, color:s.color }}/>
-                <span style={{ fontSize:10, fontWeight:700, color:s.color, textTransform:"uppercase", letterSpacing:"0.06em" }}>{s.label}</span>
-              </div>
-              <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.value}</div>
-            </div>
-          ))}
+        {/* Accent bar + header */}
+        <div style={{ borderTop:`3px solid ${isEditMode ? "#f59e0b" : "#2563eb"}`, padding:"16px 18px 12px", borderBottom:"1px solid #f3f4f6" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+            <i className={isEditMode ? "ri-edit-line" : "ri-temp-cold-line"}
+               style={{ fontSize:16, color: isEditMode ? "#f59e0b" : "#2563eb" }}/>
+            <span style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)" }}>
+              {isEditMode ? "Edit AC tonnage" : "Add AC tonnage"}
+            </span>
+          </div>
+          <p style={{ fontSize:12, color:"#9ca3af", margin:0, lineHeight:1.4 }}>
+            {isEditMode ? "Update the selected tonnage value" : "This is what the auditor picks in the Load Sheet"}
+          </p>
         </div>
 
-        {/* Form card */}
-        <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-          <div style={{ padding:"14px 18px", borderBottom:"1px solid #f3f4f6", background: editId !== null ? "#fffbeb" : "#eff6ff" }}>
-            <div style={{ fontSize:14, fontWeight:800, color:"#111827", display:"flex", alignItems:"center", gap:7 }}>
-              <i className={editId !== null ? "ri-edit-line" : "ri-add-circle-line"} style={{ fontSize:15, color: editId !== null ? "#d97706" : "#2563eb" }}/>
-              {editId !== null ? "Edit Tonnage Value" : "Add Tonnage Value"}
+        <div style={{ padding:"18px", display:"flex", flexDirection:"column", gap:16 }}>
+
+          {/* Tonnage value */}
+          <div>
+            <label style={FS12}>TONNAGE VALUE (TR) <span style={{ color:"#dc2626" }}>*</span></label>
+            <div style={{ position:"relative" }}>
+              <input
+                type="number" step="0.25" min="0.25" max="20"
+                value={val}
+                onChange={e => setVal(e.target.value)}
+                placeholder="e.g. 1.5"
+                style={{ ...INP, paddingRight:46 }}
+              />
+              <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:12, fontWeight:700, color:"#6b7280" }}>TR</span>
             </div>
-            <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>Manages the dropdown in the Load Sheet AC section</div>
+            {isDuplicate && (
+              <p style={{ fontSize:11, color:"#dc2626", margin:"5px 0 0", display:"flex", alignItems:"center", gap:4 }}>
+                <i className="ri-error-warning-line" style={{ fontSize:12 }}/>{derivedLbl} already exists
+              </p>
+            )}
+            {val && !isValid && (
+              <p style={{ fontSize:11, color:"#dc2626", margin:"5px 0 0" }}>Enter a valid positive number</p>
+            )}
           </div>
 
-          <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:14 }}>
+          {/* Auto-generated label — read-only display */}
+          <div>
+            <label style={FS12}>DROPDOWN LABEL <span style={{ fontSize:10, color:"#9ca3af", fontWeight:500, textTransform:"none" }}>(auto-generated)</span></label>
+            <div style={{ ...INP, background:"#f9fafb", color: derivedLbl ? "#374151" : "#d1d5db", display:"flex", alignItems:"center", userSelect:"none" as const }}>
+              {derivedLbl || "Will be set automatically"}
+            </div>
+          </div>
 
-            {/* Tonnage input */}
-            <div>
-              <label style={FS12}>TONNAGE (TR) <span style={{ color:"#dc2626" }}>*</span></label>
-              <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                <input
-                  type="number" step="0.25" min="0.25" max="20"
-                  value={val}
-                  onChange={e => setVal(e.target.value)}
-                  placeholder="e.g. 1.5"
-                  style={{ ...INP, flex:1 }}
-                />
-                <span style={{ display:"flex", alignItems:"center", fontSize:13, fontWeight:700, color:"#2563eb", background:"#dbeafe", borderRadius:8, padding:"0 12px", height:38, flexShrink:0 }}>TR</span>
+          {/* Wattage equivalent — read-only */}
+          <div>
+            <label style={FS12}>WATTAGE EQUIVALENT <span style={{ fontSize:10, color:"#9ca3af", fontWeight:500, textTransform:"none" }}>(1 TR = 3,517 W)</span></label>
+            <div style={{ position:"relative" }}>
+              <div style={{ ...INP, background:"#f9fafb", color: derivedW ? "#374151" : "#d1d5db", display:"flex", alignItems:"center", userSelect:"none" as const, paddingRight:32 }}>
+                {derivedW ? derivedW.toLocaleString() : "Auto-calculated"}
               </div>
-              {isDuplicate && (
-                <p style={{ fontSize:11, color:"#dc2626", margin:"5px 0 0", display:"flex", alignItems:"center", gap:4 }}>
-                  <i className="ri-error-warning-line"/>{derivedLbl} already exists
-                </p>
+              {derivedW > 0 && (
+                <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:12, fontWeight:700, color:"#6b7280" }}>W</span>
               )}
             </div>
+          </div>
 
-            {/* Preview */}
-            {isValid && (
-              <div style={{ background:"#f0f9ff", borderRadius:10, border:"1px solid #bae6fd", padding:"12px 14px" }}>
-                <div style={{ fontSize:10, fontWeight:700, color:"#0284c7", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:8 }}>Preview</div>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <div>
-                    <div style={{ fontSize:10, color:"#6b7280", fontWeight:600, marginBottom:2 }}>Dropdown Label</div>
-                    <div style={{ fontSize:20, fontWeight:800, color:"#0c4a6e" }}>{derivedLbl}</div>
-                  </div>
-                  <div style={{ width:1, height:40, background:"#bae6fd" }}/>
-                  <div style={{ textAlign:"right" }}>
-                    <div style={{ fontSize:10, color:"#6b7280", fontWeight:600, marginBottom:2 }}>Wattage Equivalent</div>
-                    <div style={{ fontSize:18, fontWeight:800, color:"#0369a1" }}>{derivedW.toLocaleString()} <span style={{ fontSize:12, fontWeight:600 }}>W</span></div>
-                    <div style={{ fontSize:10, color:"#94a3b8", marginTop:1 }}>1 TR = 3,517 W</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Status toggle */}
-            <div>
-              <label style={FS12}>STATUS</label>
-              <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
-                {(["Active","Inactive"] as const).map((s, i) => {
-                  const sel = status === s;
-                  const col = s === "Active" ? "#16a34a" : "#dc2626";
-                  return (
-                    <button key={s} onClick={() => setStatus(s)}
-                      style={{ flex:1, padding:"8px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background: sel ? col : "#fff", color: sel ? "#fff" : col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
-                      <i className={s === "Active" ? "ri-checkbox-circle-line" : "ri-close-circle-line"} style={{ fontSize:13 }}/>{s}
-                    </button>
-                  );
-                })}
-              </div>
+          {/* Status */}
+          <div>
+            <label style={FS12}>STATUS</label>
+            <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+              {(["Active","Inactive"] as const).map((s, i) => {
+                const sel = status === s;
+                return (
+                  <button key={s} onClick={() => setStatus(s)}
+                    style={{ flex:1, padding:"9px 0", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700,
+                      background: sel ? (s === "Active" ? "#16a34a" : "#6b7280") : "#fff",
+                      color: sel ? "#fff" : (s === "Active" ? "#16a34a" : "#6b7280"),
+                      transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                    <i className={s === "Active" ? "ri-checkbox-circle-line" : "ri-close-circle-line"} style={{ fontSize:13 }}/>{s}
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Save */}
-            <button onClick={handleSave} disabled={!isValid || isDuplicate}
-              style={{ width:"100%", padding:"10px", borderRadius:8, border:"none", background: (!isValid || isDuplicate) ? "#e5e7eb" : editId !== null ? "#2563eb" : "#16a34a", color: (!isValid || isDuplicate) ? "#9ca3af" : "#fff", cursor: (!isValid || isDuplicate) ? "not-allowed" : "pointer", fontWeight:700, fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
-              <i className={editId !== null ? "ri-save-line" : "ri-add-circle-line"}/>
-              {editId !== null ? "Update Tonnage" : "Add Tonnage"}
+          {/* Submit */}
+          <button onClick={handleSave} disabled={!isValid || isDuplicate}
+            style={{ width:"100%", padding:"10px", borderRadius:8, border:"none",
+              background: (!isValid || isDuplicate) ? "#e5e7eb" : isEditMode ? "#2563eb" : "#111827",
+              color: (!isValid || isDuplicate) ? "#9ca3af" : "#fff",
+              cursor: (!isValid || isDuplicate) ? "not-allowed" : "pointer",
+              fontWeight:700, fontSize:13 }}>
+            {isEditMode ? "Update AC tonnage" : "Add AC tonnage"}
+          </button>
+
+          {isEditMode && (
+            <button onClick={cancelEdit}
+              style={{ width:"100%", padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#6b7280", cursor:"pointer", fontWeight:600, fontSize:12 }}>
+              Cancel
             </button>
-            {editId !== null && (
-              <button onClick={() => { setEditId(null); setVal(""); setStatus("Active"); }}
-                style={{ width:"100%", padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                <i className="ri-close-line"/>Cancel Edit
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* API Payload */}
-        <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
-          <div onClick={() => setPayloadOpen(o => !o)}
-            style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", borderBottom:payloadOpen?"1px solid #e5e7eb":"none" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:32, height:32, borderRadius:9, background:"#f0f9ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <i className="ri-braces-line" style={{ fontSize:16, color:"#0284c7" }}/>
-              </div>
-              <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>API Payload</span>
-              <span style={{ fontSize:10, color:"#0284c7", background:"#e0f2fe", borderRadius:20, padding:"1px 8px", fontWeight:700 }}>POST /api/ac-tonnage</span>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              {payloadOpen && (
-                <button onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(JSON.stringify(payloadObj,null,2)); setCopied(true); setTimeout(()=>setCopied(false),2000); }}
-                  style={{ fontSize:11, fontWeight:700, color:copied?"#16a34a":"#6b7280", background:copied?"#dcfce7":"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
-                  <i className={copied?"ri-check-line":"ri-file-copy-line"}/>{copied?"Copied!":"Copy"}
-                </button>
-              )}
-              <i className={`ri-arrow-${payloadOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
-            </div>
-          </div>
-          {payloadOpen && (
-            <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:200, overflowY:"auto" }}>
-              <pre style={{ margin:0, fontSize:11, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.6, whiteSpace:"pre" }}>
-                {colorizeJsonLT(JSON.stringify(payloadObj,null,2))}
-              </pre>
-            </div>
           )}
         </div>
       </div>
 
       {/* ── Right: Table ── */}
-      <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-        <div style={{ padding:"14px 18px", borderBottom:"1px solid var(--default-border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div>
-            <span style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)" }}>AC Tonnage Values</span>
-            <span style={{ marginLeft:8, fontSize:11, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:10, padding:"2px 8px" }}>{rows.length} entries</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ fontSize:11, color:"#9ca3af" }}>Sorted by tonnage ↑</span>
-            <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, fontWeight:700, color:"#0284c7", background:"#e0f2fe", borderRadius:6, padding:"3px 10px" }}>
-              <i className="ri-temp-cold-line" style={{ fontSize:11 }}/>Used in Load Sheet → AC section
-            </span>
+      <div style={{ background:"var(--custom-white)", borderRadius:12, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
+
+        {/* Table header */}
+        <div style={{ padding:"14px 18px", borderBottom:"1px solid var(--default-border)", display:"flex", alignItems:"center", gap:12 }}>
+          <span style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)", marginRight:4 }}>
+            AC tonnage values
+          </span>
+          <span style={{ fontSize:12, color:"#6b7280" }}>
+            {filtered.length} of {rows.length}
+          </span>
+          <div style={{ flex:1 }}/>
+          {/* Search */}
+          <div style={{ position:"relative" }}>
+            <i className="ri-search-line" style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#9ca3af" }}/>
+            <input
+              type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search"
+              style={{ ...INP, paddingLeft:32, width:160, height:34, fontSize:12 }}
+            />
           </div>
         </div>
+
+        {/* Table */}
         <div style={{ overflowX:"auto" }}>
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead>
               <tr>
-                <th style={{ ...TH, width:36 }}>#</th>
-                <th style={TH}>Dropdown Label</th>
-                <th style={{ ...TH, textAlign:"center" as const }}>Tonnage</th>
-                <th style={{ ...TH, textAlign:"center" as const }}>Wattage Equivalent</th>
-                <th style={{ ...TH, textAlign:"center" as const }}>Status</th>
-                <th style={{ ...TH, textAlign:"center" as const }}>Actions</th>
+                <th style={TH}>LABEL</th>
+                <th style={{ ...TH, textAlign:"center" as const }}>TONNAGE</th>
+                <th style={{ ...TH, textAlign:"center" as const }}>WATTAGE</th>
+                <th style={{ ...TH, textAlign:"center" as const }}>STATUS</th>
+                <th style={{ ...TH, textAlign:"center" as const }}>ACTION</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
-                <tr key={r.id}
-                  onMouseEnter={e => (e.currentTarget.style.background="#f9fafb")}
-                  onMouseLeave={e => (e.currentTarget.style.background = editId===r.id ? "#eff6ff" : "transparent")}
-                  style={{ transition:"background 0.1s", background: editId===r.id ? "#eff6ff" : "transparent", opacity: r.status === "Inactive" ? 0.55 : 1 }}>
-                  <td style={{ ...TD, color:"#d1d5db", fontSize:12 }}>{i+1}</td>
-                  <td style={TD}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <div style={{ width:36, height:36, borderRadius:9, background:"#eff6ff", border:"1.5px solid #bfdbfe", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                        <i className="ri-temp-cold-line" style={{ fontSize:16, color:"#2563eb" }}/>
-                      </div>
-                      <span style={{ fontSize:16, fontWeight:800, color:"#111827", fontFamily:"monospace" }}>{r.label}</span>
-                    </div>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ ...TD, textAlign:"center", color:"#9ca3af", padding:"32px" }}>
+                    No entries found
                   </td>
+                </tr>
+              ) : filtered.map(r => (
+                <tr key={r.id}
+                  onMouseEnter={e => { if (editId !== r.id) e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = editId === r.id ? "#eff6ff" : "transparent"; }}
+                  style={{ background: editId === r.id ? "#eff6ff" : "transparent", transition:"background 0.1s" }}>
+
+                  {/* Label */}
+                  <td style={TD}>
+                    <div style={{ fontWeight:600, color:"#111827" }}>{r.label}</div>
+                    <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>Appears in Load Sheet → AC</div>
+                  </td>
+
+                  {/* Tonnage badge */}
                   <td style={{ ...TD, textAlign:"center" as const }}>
-                    <span style={{ fontSize:14, fontWeight:800, color:"#2563eb", background:"#dbeafe", borderRadius:8, padding:"4px 14px", fontFamily:"monospace" }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:"#1d4ed8", background:"#dbeafe", borderRadius:6, padding:"3px 12px" }}>
                       {r.value} TR
                     </span>
                   </td>
+
+                  {/* Wattage */}
                   <td style={{ ...TD, textAlign:"center" as const }}>
-                    <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
-                      <span style={{ fontSize:13, fontWeight:700, color:"#374151" }}>{r.watts.toLocaleString()} W</span>
-                      <span style={{ fontSize:10, color:"#9ca3af" }}>({(r.watts/1000).toFixed(2)} kW)</span>
-                    </div>
+                    <div style={{ fontSize:13, fontWeight:600, color:"#374151" }}>{r.watts.toLocaleString()} W</div>
+                    <div style={{ fontSize:11, color:"#9ca3af" }}>{(r.watts/1000).toFixed(2)} kW</div>
                   </td>
+
+                  {/* Status chip — click to toggle */}
                   <td style={{ ...TD, textAlign:"center" as const }}>
-                    <button onClick={() => toggleStatus(r.id)} style={{
-                      fontSize:11, fontWeight:700, borderRadius:20, padding:"3px 12px", border:"none", cursor:"pointer", transition:"all 0.15s",
-                      color: r.status==="Active"?"#15803d":"#6b7280",
-                      background: r.status==="Active"?"#dcfce7":"#f3f4f6",
-                    }}>
-                      <i className={r.status==="Active" ? "ri-checkbox-circle-line" : "ri-close-circle-line"} style={{ marginRight:4, fontSize:11 }}/>
+                    <span onClick={() => toggleStatus(r.id)}
+                      title="Click to toggle"
+                      style={{ cursor:"pointer", fontSize:11, fontWeight:700, borderRadius:20, padding:"3px 12px", display:"inline-block",
+                        color:  r.status === "Active" ? "#15803d" : "#6b7280",
+                        background: r.status === "Active" ? "#dcfce7" : "#f3f4f6" }}>
                       {r.status}
-                    </button>
+                    </span>
                   </td>
+
+                  {/* Actions */}
                   <td style={{ ...TD, textAlign:"center" as const }}>
                     <div style={{ display:"flex", gap:6, justifyContent:"center" }}>
-                      <button onClick={() => handleEdit(r)} title="Edit" style={{ width:30, height:30, borderRadius:7, border:"1px solid #dbeafe", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#2563eb" }}>
-                        <i className="ri-pencil-line" style={{ fontSize:13 }}/>
+                      <button onClick={() => handleEdit(r)} title="Edit"
+                        style={{ width:28, height:28, borderRadius:6, border:"none", background:"transparent", cursor:"pointer", color:"#6b7280", display:"flex", alignItems:"center", justifyContent:"center" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#2563eb"; (e.currentTarget as HTMLButtonElement).style.background = "#eff6ff"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#6b7280"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+                        <i className="ri-pencil-line" style={{ fontSize:14 }}/>
                       </button>
-                      <button onClick={() => handleDelete(r.id)} title="Delete" style={{ width:30, height:30, borderRadius:7, border:"1px solid #fecaca", background:"#fff5f5", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#dc2626" }}>
-                        <i className="ri-delete-bin-line" style={{ fontSize:13 }}/>
+                      <button onClick={() => handleDelete(r.id)} title="Delete"
+                        style={{ width:28, height:28, borderRadius:6, border:"none", background:"transparent", cursor:"pointer", color:"#6b7280", display:"flex", alignItems:"center", justifyContent:"center" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#dc2626"; (e.currentTarget as HTMLButtonElement).style.background = "#fef2f2"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#6b7280"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+                        <i className="ri-delete-bin-line" style={{ fontSize:14 }}/>
                       </button>
                     </div>
                   </td>
@@ -1366,15 +1347,6 @@ function AcTonnagePanel() {
               ))}
             </tbody>
           </table>
-        </div>
-
-        {/* Info footer */}
-        <div style={{ padding:"12px 18px", borderTop:"1px solid #f3f4f6", background:"#f9fafb", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ fontSize:11, color:"#9ca3af", display:"flex", alignItems:"center", gap:5 }}>
-            <i className="ri-information-line" style={{ fontSize:13 }}/>
-            Wattage is auto-calculated using the standard conversion: <strong style={{ color:"#374151", marginLeft:3 }}>1 TR = 3,517 W</strong>
-          </div>
-          <div style={{ fontSize:11, fontWeight:700, color:"#0284c7" }}>{activeCount} active / {rows.length} total</div>
         </div>
       </div>
     </div>
