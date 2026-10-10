@@ -253,7 +253,7 @@ export default function AuditTemplatesPage() {
                               <button onClick={()=>setExpanded(isEx?null:t.id)} style={{ width:28, height:28, borderRadius:6, border:"1px solid #e5e7eb", background:"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#9ca3af" }} title={isEx?"Collapse":"View sections"}>
                                 <i className={isEx?"ri-arrow-up-s-line":"ri-eye-line"} style={{ fontSize:14 }}/>
                               </button>
-                              <button style={{ width:28, height:28, borderRadius:6, border:"1px solid #dbeafe", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#2563eb" }} title="Edit">
+                              <button onClick={() => router.push(`/templates/${t.id}`)} style={{ width:28, height:28, borderRadius:6, border:"1px solid #dbeafe", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#2563eb" }} title="Edit Template">
                                 <i className="ri-edit-line" style={{ fontSize:13 }}/>
                               </button>
                               {t.status==="Draft" && <button onClick={()=>activateDraft(t.id)} style={{ padding:"4px 10px", borderRadius:6, border:"none", background:"#15803d", color:"#fff", cursor:"pointer", fontSize:11, fontWeight:700 }}>Activate</button>}
@@ -356,7 +356,7 @@ export default function AuditTemplatesPage() {
                         </td>
                         <td style={{ padding:"12px 16px", textAlign:"center", verticalAlign:"middle" }}>
                           <div style={{ display:"flex", gap:5, justifyContent:"center" }}>
-                            <button style={{ width:28, height:28, borderRadius:6, border:"1px solid #dbeafe", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#2563eb" }}><i className="ri-edit-line" style={{ fontSize:13 }}/></button>
+                            <button onClick={() => router.push(`/templates/${t.id}`)} style={{ width:28, height:28, borderRadius:6, border:"1px solid #dbeafe", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#2563eb" }} title="Edit Template"><i className="ri-edit-line" style={{ fontSize:13 }}/></button>
                             {t.status==="Draft" && <button onClick={()=>activateDraft(t.id)} style={{ padding:"4px 10px", borderRadius:6, border:"none", background:"#15803d", color:"#fff", cursor:"pointer", fontSize:11, fontWeight:700 }}>Activate</button>}
                             {t.status!=="Draft" && <button onClick={()=>toggleArchive(t.id)} style={{ width:28, height:28, borderRadius:6, border:"1px solid #e5e7eb", background:"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#9ca3af" }}>
                               <i className={t.status==="Archived"?"ri-refresh-line":"ri-archive-line"} style={{ fontSize:13 }}/>
