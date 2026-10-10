@@ -769,13 +769,23 @@ function StatusMasterPanel() {
 }
 
 // ── Load Type Panel ───────────────────────────────────────────────────────────
-const LOAD_TYPE_OPTIONS = ["Lighting","Fans","AC","Air Conditioning","Computer","IT Equipment","Other Equipment"];
+const LOAD_CATEGORY_OPTIONS = [
+  "Lighting Load","Fan Load","AC Load","Computer Load","IT Equipment","Power Load","Other Equipment",
+];
 
 interface LoadTypeEntry {
-  id: number; loadType: string; equipmentType: string; wattage: string; status: "Active"|"Inactive";
+  id: number;
+  loadType: string;
+  equipmentName: string;
+  nameHindi: string;
+  wattage: string;
+  appearsOn: ("branch"|"atm")[];
+  status: "Active"|"Inactive";
 }
 
-const BLANK_LT: Omit<LoadTypeEntry,"id"> = { loadType:"", equipmentType:"", wattage:"", status:"Active" };
+const BLANK_LT: Omit<LoadTypeEntry,"id"> = {
+  loadType:"", equipmentName:"", nameHindi:"", wattage:"", appearsOn:["branch"], status:"Active",
+};
 
 // ── JSON syntax highlighter (shared) ──────────────────────────────────────────
 function colorizeJsonLT(json: string): React.ReactNode[] {
@@ -795,17 +805,25 @@ function colorizeJsonLT(json: string): React.ReactNode[] {
 }
 
 function LoadTypePanel() {
-  const [rows, setRows]         = useState<LoadTypeEntry[]>([]);
-  const [form, setForm]         = useState<Omit<LoadTypeEntry,"id">>(BLANK_LT);
-  const [editId, setEditId]     = useState<number|null>(null);
-  const [payloadOpen, setPayloadOpen] = useState(true);
-  const [sqlOpen, setSqlOpen]   = useState(false);
-  const [copied, setCopied]     = useState(false);
+  const [rows,   setRows]   = useState<LoadTypeEntry[]>([]);
+  const [form,   setForm]   = useState<Omit<LoadTypeEntry,"id">>(BLANK_LT);
+  const [editId, setEditId] = useState<number|null>(null);
+  const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState("");
 
   const F = (k: keyof typeof form, v: string) => setForm(prev => ({ ...prev, [k]: v }));
 
+  const toggleAppears = (key: "branch"|"atm") => {
+    setForm(prev => {
+      const has = prev.appearsOn.includes(key);
+      // "branch" is always required — can't uncheck it
+      if (key === "branch" && has) return prev;
+      return { ...prev, appearsOn: has ? prev.appearsOn.filter(x => x !== key) : [...prev.appearsOn, key] };
+    });
+  };
+
   const handleSave = () => {
-    if (!form.loadType) return;
+    if (!form.loadType || !form.equipmentName) return;
     if (editId !== null) {
       setRows(prev => prev.map(r => r.id === editId ? { ...r, ...form } : r));
       setEditId(null);
@@ -816,257 +834,270 @@ function LoadTypePanel() {
   };
 
   const handleEdit = (r: LoadTypeEntry) => {
-    setForm({ loadType:r.loadType, equipmentType:r.equipmentType, wattage:r.wattage, status:r.status });
+    setForm({ loadType:r.loadType, equipmentName:r.equipmentName, nameHindi:r.nameHindi, wattage:r.wattage, appearsOn:r.appearsOn, status:r.status });
     setEditId(r.id);
   };
 
-  const handleDelete = (id: number) => setRows(prev => prev.filter(r => r.id !== id));
+  const cancelEdit = () => { setEditId(null); setForm(BLANK_LT); };
+  const handleDelete = (id: number) => { if (editId === id) cancelEdit(); setRows(prev => prev.filter(r => r.id !== id)); };
 
-  const payloadObj = {
-    id: editId ?? "(uuid — auto-generated on save)",
-    load_type: form.loadType || "(empty)",
-    equipment_type: form.equipmentType || "(empty)",
-    wattage_w: form.wattage ? Number(form.wattage) : "(empty)",
-    status: form.status,
-    created_at: "(auto — timestamptz)",
-    updated_at: "(auto — timestamptz)",
-  };
-  const payloadStr = JSON.stringify(payloadObj, null, 2);
+  const filtered = rows.filter(r => {
+    const matchCat = !catFilter || r.loadType === catFilter;
+    const matchQ   = !search || r.equipmentName.toLowerCase().includes(search.toLowerCase()) || r.nameHindi.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchQ;
+  });
 
-  const SQL_SCHEMA = `CREATE TABLE load_types (
-  id             UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-  load_type      VARCHAR(50)   NOT NULL,
-  equipment_type VARCHAR(150),
-  wattage_w      NUMERIC(8,2),
-  status         VARCHAR(10)   NOT NULL DEFAULT 'Active',
-  created_at     TIMESTAMPTZ   NOT NULL DEFAULT now(),
-  updated_at     TIMESTAMPTZ   NOT NULL DEFAULT now(),
-  CONSTRAINT chk_load_type_status
-    CHECK (status IN ('Active','Inactive')),
-  CONSTRAINT chk_load_type_name
-    CHECK (load_type IN (
-      'Lighting','Fans','AC','Air Conditioning',
-      'Computer','IT Equipment','Other Equipment'
-    ))
-);
-
--- Indexes
-CREATE INDEX idx_load_types_status    ON load_types (status);
-CREATE INDEX idx_load_types_load_type ON load_types (load_type);`;
-
-  const SQL_KW   = /\b(CREATE|TABLE|PRIMARY|KEY|DEFAULT|NOT|NULL|CHECK|IN|OR|IS|INDEX|ON|AND|CONSTRAINT)\b/g;
-  const SQL_TYPE = /\b(UUID|VARCHAR|TEXT|NUMERIC|TIMESTAMPTZ|BOOLEAN|INT|SMALLINT)\b/g;
-  const SQL_FN   = /\b(gen_random_uuid|now)\b/g;
-  const tokenizeSQL = (s: string): React.ReactNode[] => {
-    const parts = s.split(/(--[^\n]*|\b(?:CREATE|TABLE|PRIMARY|KEY|DEFAULT|NOT|NULL|CHECK|IN|OR|IS|INDEX|ON|AND|CONSTRAINT|UUID|VARCHAR|TEXT|NUMERIC|TIMESTAMPTZ|BOOLEAN|INT|SMALLINT|gen_random_uuid|now)\b|'[^']*'|\d+)/g);
-    return parts.map((t, i) => {
-      if (!t) return null;
-      if (t.startsWith("--"))           return <span key={i} style={{ color:"#6a9955" }}>{t}</span>;
-      if (SQL_KW.test(t))  { SQL_KW.lastIndex=0;   return <span key={i} style={{ color:"#569cd6", fontWeight:700 }}>{t}</span>; }
-      if (SQL_TYPE.test(t)){ SQL_TYPE.lastIndex=0;  return <span key={i} style={{ color:"#4ec9b0" }}>{t}</span>; }
-      if (SQL_FN.test(t))  { SQL_FN.lastIndex=0;    return <span key={i} style={{ color:"#dcdcaa" }}>{t}</span>; }
-      if (t.startsWith("'"))            return <span key={i} style={{ color:"#ce9178" }}>{t}</span>;
-      if (/^\d+$/.test(t))              return <span key={i} style={{ color:"#b5cea8" }}>{t}</span>;
-      return <span key={i} style={{ color:"#d4d4d4" }}>{t}</span>;
-    });
-  };
+  const isEditMode = editId !== null;
+  const canSave    = !!form.loadType && !!form.equipmentName;
 
   const TH: React.CSSProperties = {
-    padding:"10px 14px", fontSize:11, fontWeight:700, color:"#6b7280",
-    textTransform:"uppercase", letterSpacing:"0.05em", background:"#f9fafb",
-    borderBottom:"1px solid #e5e7eb", textAlign:"left", whiteSpace:"nowrap",
+    padding:"11px 16px", fontSize:11, fontWeight:700, color:"#6b7280",
+    textTransform:"uppercase" as const, letterSpacing:"0.05em", background:"#f9fafb",
+    borderBottom:"1px solid #e5e7eb", textAlign:"left" as const, whiteSpace:"nowrap" as const,
   };
   const TD: React.CSSProperties = {
-    padding:"12px 14px", fontSize:13, color:"#374151",
+    padding:"13px 16px", fontSize:13, color:"#374151",
     borderBottom:"1px solid #f3f4f6", verticalAlign:"middle",
   };
 
   return (
     <div style={{ display:"grid", gridTemplateColumns:"320px 1fr", gap:16, alignItems:"start" }}>
 
-      {/* ── Left: Form + API Payload + DB Schema ── */}
-      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+      {/* ── Left: Form card ── */}
+      <div style={{ background:"var(--custom-white)", borderRadius:12, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
 
-        {/* Form card */}
-        <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-          <div style={{ padding:"14px 18px", borderBottom:"1px solid #f3f4f6", background: editId !== null ? "#fffbeb" : "#f0fdf4" }}>
-            <div style={{ fontSize:14, fontWeight:800, color:"#111827", display:"flex", alignItems:"center", gap:7 }}>
-              <i className={editId !== null ? "ri-edit-line" : "ri-flashlight-line"} style={{ fontSize:15, color: editId !== null ? "#d97706" : "#16a34a" }}/>
-              {editId !== null ? "Edit Load Type" : "Add Load Type"}
-            </div>
-            <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>Fill details and save to register</div>
+        {/* Header */}
+        <div style={{ borderTop:`3px solid ${isEditMode ? "#f59e0b" : "#16a34a"}`, padding:"16px 18px 12px", borderBottom:"1px solid #f3f4f6" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+            <i className={isEditMode ? "ri-edit-line" : "ri-flashlight-line"}
+               style={{ fontSize:16, color: isEditMode ? "#f59e0b" : "#16a34a" }}/>
+            <span style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)" }}>
+              {isEditMode ? "Edit load type" : "Add load type"}
+            </span>
+          </div>
+          <p style={{ fontSize:12, color:"#9ca3af", margin:0 }}>
+            This is what the auditor picks on the load sheet
+          </p>
+        </div>
+
+        <div style={{ padding:"18px", display:"flex", flexDirection:"column", gap:15 }}>
+
+          {/* Load Category */}
+          <div>
+            <label style={FS12}>LOAD CATEGORY <span style={{ color:"#dc2626" }}>*</span></label>
+            <select value={form.loadType} onChange={e => F("loadType", e.target.value)} style={SEL}>
+              <option value="">— Select a category —</option>
+              {LOAD_CATEGORY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <p style={{ fontSize:11, color:"#9ca3af", margin:"5px 0 0" }}>
+              From the API&#39;s own list — never typed by hand
+            </p>
           </div>
 
-          <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:13 }}>
-            {/* Load Type dropdown */}
-            <div>
-              <label style={FS12}>LOAD TYPE <span style={{ color:"#dc2626" }}>*</span></label>
-              <select value={form.loadType} onChange={e => F("loadType", e.target.value)} style={SEL}>
-                <option value="">— Select Load Type —</option>
-                {LOAD_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
+          {/* Equipment Name */}
+          <div>
+            <label style={FS12}>EQUIPMENT NAME <span style={{ color:"#dc2626" }}>*</span></label>
+            <input value={form.equipmentName} onChange={e => F("equipmentName", e.target.value)}
+              placeholder="e.g. LED Tube Light (4ft)"
+              style={INP}/>
+          </div>
 
-            {/* Equipment Type */}
-            <div>
-              <label style={FS12}>EQUIPMENT TYPE</label>
-              <input value={form.equipmentType} onChange={e => F("equipmentType", e.target.value)}
-                placeholder={form.loadType ? "e.g. LED Tube Light" : "Select a load type first"}
-                disabled={!form.loadType}
-                style={{ ...INP, opacity: form.loadType ? 1 : 0.45, cursor: form.loadType ? "text" : "not-allowed" }}/>
-            </div>
+          {/* Name (Hindi) */}
+          <div>
+            <label style={FS12}>NAME (HINDI)</label>
+            <input value={form.nameHindi} onChange={e => F("nameHindi", e.target.value)}
+              placeholder="एलईडी ट्यूब लाइट"
+              style={INP}/>
+          </div>
 
-            {/* Wattage Rating */}
-            <div>
-              <label style={FS12}>WATTAGE RATING</label>
-              <div style={{ display:"flex", gap:8 }}>
-                <input type="number" value={form.wattage} onChange={e => F("wattage", e.target.value)}
-                  placeholder="e.g. 36" disabled={!form.loadType}
-                  style={{ ...INP, flex:1, opacity: form.loadType ? 1 : 0.45, cursor: form.loadType ? "text" : "not-allowed" }}/>
-                <span style={{ display:"flex", alignItems:"center", fontSize:13, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:8, padding:"0 12px" }}>W</span>
-              </div>
+          {/* Default Wattage */}
+          <div>
+            <label style={FS12}>DEFAULT WATTAGE</label>
+            <div style={{ position:"relative" }}>
+              <input type="number" value={form.wattage} onChange={e => F("wattage", e.target.value)}
+                placeholder="leave blank if unknown"
+                style={{ ...INP, paddingRight:40 }}/>
+              <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:12, fontWeight:700, color:"#6b7280" }}>W</span>
             </div>
+            <p style={{ fontSize:11, color:"#9ca3af", margin:"5px 0 0", lineHeight:1.5 }}>
+              Blank is stored as &ldquo;not established&rdquo;, so the load sheet leaves the box empty instead of pre-filling a zero.
+            </p>
+          </div>
 
-            {/* Status — theme style */}
-            <div>
-              <label style={FS12}>STATUS</label>
-              <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
-                {(["Active","Inactive"] as const).map((s, i) => {
-                  const sel = form.status === s;
-                  const col = s === "Active" ? "#16a34a" : "#dc2626";
-                  return (
-                    <button key={s} onClick={() => F("status", s)}
-                      style={{ flex:1, padding:"8px", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, background: sel ? col : "#fff", color: sel ? "#fff" : col, transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
-                      <i className={s==="Active" ? "ri-checkbox-circle-line" : "ri-close-circle-line"} style={{ fontSize:13 }}/>
-                      {s}
-                    </button>
-                  );
-                })}
-              </div>
+          {/* Appears On */}
+          <div>
+            <label style={FS12}>APPEARS ON</label>
+            <div style={{ display:"flex", gap:10 }}>
+              {([
+                { key:"branch" as const, label:"Branch sheet" },
+                { key:"atm"    as const, label:"ATM sheet"    },
+              ]).map(opt => {
+                const checked = form.appearsOn.includes(opt.key);
+                return (
+                  <button key={opt.key} onClick={() => toggleAppears(opt.key)}
+                    style={{ display:"flex", alignItems:"center", gap:7, padding:"8px 14px", borderRadius:8, cursor: opt.key === "branch" ? "default" : "pointer", fontSize:12, fontWeight:600, transition:"all 0.15s",
+                      border: checked ? "1.5px solid #2563eb" : "1.5px solid #e5e7eb",
+                      background: checked ? "#eff6ff" : "#fff",
+                      color: checked ? "#2563eb" : "#6b7280" }}>
+                    <i className={checked ? "ri-checkbox-line" : "ri-checkbox-blank-line"} style={{ fontSize:15 }}/>
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
+            <p style={{ fontSize:11, color:"#9ca3af", margin:"6px 0 0", lineHeight:1.5 }}>
+              The ATM sheet is a different list — its lighting is a subset of the branch&#39;s and its machine load appears nowhere else.
+            </p>
+          </div>
 
-            {/* Save / Cancel */}
-            <button onClick={handleSave} disabled={!form.loadType}
-              style={{ width:"100%", padding:"10px", borderRadius:8, border:"none", background: !form.loadType ? "#9ca3af" : editId !== null ? "#2563eb" : "#16a34a", color:"#fff", cursor: !form.loadType ? "not-allowed" : "pointer", fontWeight:700, fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
-              <i className={editId !== null ? "ri-save-line" : "ri-add-circle-line"}/>
-              {editId !== null ? `UPDATE AS ${form.status.toUpperCase()}` : `SAVE AS ${form.status.toUpperCase()}`}
+          {/* Status */}
+          <div>
+            <label style={FS12}>STATUS</label>
+            <div style={{ display:"flex", border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+              {(["Active","Inactive"] as const).map((s, i) => {
+                const sel = form.status === s;
+                return (
+                  <button key={s} onClick={() => F("status", s)}
+                    style={{ flex:1, padding:"9px 0", border:"none", borderRight:i<1?"1px solid #e5e7eb":"none", cursor:"pointer", fontSize:12, fontWeight:700, transition:"all 0.15s",
+                      background: sel ? (s === "Active" ? "#16a34a" : "#6b7280") : "#fff",
+                      color: sel ? "#fff" : (s === "Active" ? "#16a34a" : "#dc2626"),
+                      display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                    <i className={s === "Active" ? "ri-checkbox-circle-line" : "ri-close-circle-line"} style={{ fontSize:13 }}/>{s}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button onClick={handleSave} disabled={!canSave}
+            style={{ width:"100%", padding:"10px", borderRadius:8, border:"none",
+              background: !canSave ? "#e5e7eb" : isEditMode ? "#2563eb" : "#111827",
+              color: !canSave ? "#9ca3af" : "#fff",
+              cursor: !canSave ? "not-allowed" : "pointer",
+              fontWeight:700, fontSize:13 }}>
+            {isEditMode ? "Update load type" : "Add load type"}
+          </button>
+
+          {isEditMode && (
+            <button onClick={cancelEdit}
+              style={{ width:"100%", padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#6b7280", cursor:"pointer", fontWeight:600, fontSize:12 }}>
+              Cancel
             </button>
-            {editId !== null && (
-              <button onClick={() => { setEditId(null); setForm(BLANK_LT); }}
-                style={{ width:"100%", padding:"9px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", cursor:"pointer", fontWeight:600, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                <i className="ri-close-line"/>Clear
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* API Payload card */}
-        <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
-          <div onClick={() => setPayloadOpen(o=>!o)}
-            style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", borderBottom: payloadOpen?"1px solid #e5e7eb":"none" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:32, height:32, borderRadius:9, background:"#f0f9ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <i className="ri-braces-line" style={{ fontSize:16, color:"#0284c7" }}/>
-              </div>
-              <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>API Payload</span>
-              <span style={{ fontSize:10, color:"#0284c7", background:"#e0f2fe", borderRadius:20, padding:"1px 8px", fontWeight:700 }}>POST /api/load-types</span>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              {payloadOpen && (
-                <button onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(payloadStr); setCopied(true); setTimeout(()=>setCopied(false),2000); }}
-                  style={{ fontSize:11, fontWeight:700, color:copied?"#16a34a":"#6b7280", background:copied?"#dcfce7":"#f3f4f6", border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
-                  <i className={copied?"ri-check-line":"ri-file-copy-line"}/>{copied?"Copied!":"Copy"}
-                </button>
-              )}
-              <i className={`ri-arrow-${payloadOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
-            </div>
-          </div>
-          {payloadOpen && (
-            <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:240, overflowY:"auto" }}>
-              <pre style={{ margin:0, fontSize:11, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.6, whiteSpace:"pre" }}>
-                {colorizeJsonLT(payloadStr)}
-              </pre>
-            </div>
-          )}
-        </div>
-
-        {/* Database Schema card */}
-        <div style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
-          <div onClick={() => setSqlOpen(o=>!o)}
-            style={{ padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", borderBottom: sqlOpen?"1px solid #e5e7eb":"none" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:32, height:32, borderRadius:9, background:"#fdf4ff", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <i className="ri-database-2-line" style={{ fontSize:16, color:"#9333ea" }}/>
-              </div>
-              <span style={{ fontSize:13, fontWeight:800, color:"#111827" }}>Database Schema</span>
-              <span style={{ fontSize:10, color:"#9333ea", background:"#faf5ff", borderRadius:20, padding:"1px 8px", fontWeight:700 }}>load_types</span>
-            </div>
-            <i className={`ri-arrow-${sqlOpen?"up":"down"}-s-line`} style={{ color:"#9ca3af", fontSize:18 }}/>
-          </div>
-          {sqlOpen && (
-            <div style={{ background:"#1e1e1e", padding:"14px 16px", overflowX:"auto", maxHeight:280, overflowY:"auto" }}>
-              <pre style={{ margin:0, fontSize:11, fontFamily:"'Cascadia Code','Fira Code',monospace", lineHeight:1.6, whiteSpace:"pre" }}>
-                {tokenizeSQL(SQL_SCHEMA)}
-              </pre>
-            </div>
           )}
         </div>
       </div>
 
       {/* ── Right: Table ── */}
-      <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-        <div style={{ padding:"14px 18px", borderBottom:"1px solid var(--default-border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div>
-            <span style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)" }}>Load Types</span>
-            <span style={{ marginLeft:8, fontSize:11, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:10, padding:"2px 8px" }}>{rows.length} entries</span>
+      <div style={{ background:"var(--custom-white)", borderRadius:12, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
+
+        {/* Table header */}
+        <div style={{ padding:"14px 18px", borderBottom:"1px solid var(--default-border)", display:"flex", alignItems:"center", gap:12 }}>
+          <span style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)" }}>Load types</span>
+          <span style={{ fontSize:12, color:"#6b7280" }}>{filtered.length} of {rows.length}</span>
+          <div style={{ flex:1 }}/>
+          {/* Search */}
+          <div style={{ position:"relative" }}>
+            <i className="ri-search-line" style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#9ca3af" }}/>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search"
+              style={{ ...INP, paddingLeft:32, width:160, height:34, fontSize:12 }}/>
           </div>
+          {/* Category filter */}
+          <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+            style={{ ...SEL, width:160, height:34, fontSize:12, padding:"0 12px" }}>
+            <option value="">All categories</option>
+            {LOAD_CATEGORY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
         </div>
+
+        {/* Table */}
         <div style={{ overflowX:"auto" }}>
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead>
               <tr>
-                <th style={{ ...TH, width:36 }}>#</th>
-                <th style={TH}>Load Type</th>
-                <th style={TH}>Equipment Type</th>
-                <th style={{ ...TH, textAlign:"center" }}>Wattage</th>
-                <th style={{ ...TH, textAlign:"center" }}>Status</th>
-                <th style={{ ...TH, textAlign:"center" }}>Action</th>
+                <th style={TH}>CATEGORY</th>
+                <th style={TH}>EQUIPMENT</th>
+                <th style={{ ...TH, textAlign:"center" as const }}>WATTAGE</th>
+                <th style={{ ...TH, textAlign:"center" as const }}>SHEETS</th>
+                <th style={{ ...TH, textAlign:"center" as const }}>STATUS</th>
+                <th style={{ ...TH, textAlign:"center" as const }}>ACTION</th>
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 && (
-                <tr><td colSpan={6} style={{ ...TD, textAlign:"center", color:"var(--text-muted)", padding:"40px" }}>
-                  No load types added yet. Add one using the form.
-                </td></tr>
-              )}
-              {rows.map((r, i) => (
-                <tr key={r.id}
-                  onMouseEnter={e => (e.currentTarget.style.background="#f9fafb")}
-                  onMouseLeave={e => (e.currentTarget.style.background = editId===r.id ? "#eff6ff" : "transparent")}
-                  style={{ transition:"background 0.1s", background: editId===r.id ? "#eff6ff" : "transparent" }}>
-                  <td style={{ ...TD, color:"#d1d5db", fontSize:12 }}>{i+1}</td>
-                  <td style={{ ...TD, fontWeight:600 }}>{r.loadType}</td>
-                  <td style={{ ...TD, color:"#6b7280" }}>{r.equipmentType || "—"}</td>
-                  <td style={{ ...TD, textAlign:"center" }}>
-                    {r.wattage
-                      ? <span style={{ fontWeight:700, color:"#2563eb", background:"#dbeafe", borderRadius:8, padding:"3px 10px", fontSize:12 }}>{r.wattage} W</span>
-                      : <span style={{ color:"#d1d5db" }}>—</span>}
-                  </td>
-                  <td style={{ ...TD, textAlign:"center" }}>
-                    <span style={{ fontSize:11, fontWeight:700, borderRadius:20, padding:"3px 12px",
-                      color: r.status==="Active"?"#16a34a":"#dc2626",
-                      background: r.status==="Active"?"#dcfce7":"#fee2e2" }}>
-                      {r.status}
-                    </span>
-                  </td>
-                  <td style={{ ...TD, textAlign:"center" }}>
-                    <div style={{ display:"flex", gap:6, justifyContent:"center" }}>
-                      <button onClick={() => handleEdit(r)} style={{ background:"none", border:"none", cursor:"pointer", color:"#2563eb", fontSize:15 }}><i className="ri-pencil-line"/></button>
-                      <button onClick={() => handleDelete(r.id)} style={{ background:"none", border:"none", cursor:"pointer", color:"#dc2626", fontSize:15 }}><i className="ri-delete-bin-line"/></button>
-                    </div>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ ...TD, textAlign:"center", color:"#9ca3af", padding:"40px" }}>
+                    No load types added yet. Use the form to add one.
                   </td>
                 </tr>
-              ))}
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ ...TD, textAlign:"center", color:"#9ca3af", padding:"32px" }}>
+                    No results match your search
+                  </td>
+                </tr>
+              ) : filtered.map(r => {
+                const inactive = r.status === "Inactive";
+                const sheets   = r.appearsOn.includes("atm") ? "BRANCH + ATM" : "BRANCH";
+                return (
+                  <tr key={r.id}
+                    onMouseEnter={e => { if (editId !== r.id) e.currentTarget.style.background = "#f9fafb"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = editId === r.id ? "#eff6ff" : "transparent"; }}
+                    style={{ background: editId === r.id ? "#eff6ff" : "transparent", opacity: inactive ? 0.6 : 1, transition:"background 0.1s" }}>
+
+                    {/* Category */}
+                    <td style={TD}>
+                      <span style={{ fontSize:13, color:"#374151" }}>{r.loadType}</span>
+                    </td>
+
+                    {/* Equipment + Hindi */}
+                    <td style={TD}>
+                      <div style={{ fontWeight:600, color:"#111827" }}>{r.equipmentName}</div>
+                      {r.nameHindi && <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>{r.nameHindi}</div>}
+                    </td>
+
+                    {/* Wattage */}
+                    <td style={{ ...TD, textAlign:"center" as const }}>
+                      {r.wattage
+                        ? <span style={{ fontSize:12, fontWeight:700, color:"#1d4ed8", background:"#dbeafe", borderRadius:6, padding:"3px 10px" }}>{r.wattage} W</span>
+                        : <span style={{ fontSize:12, color:"#9ca3af" }}>not set</span>}
+                    </td>
+
+                    {/* Sheets */}
+                    <td style={{ ...TD, textAlign:"center" as const }}>
+                      <span style={{ fontSize:11, fontWeight:600, color:"#374151", letterSpacing:"0.02em" }}>{sheets}</span>
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ ...TD, textAlign:"center" as const }}>
+                      <span style={{ fontSize:11, fontWeight:700, borderRadius:20, padding:"3px 12px", display:"inline-block",
+                        color:    r.status === "Active" ? "#15803d" : "#dc2626",
+                        background: r.status === "Active" ? "#dcfce7" : "#fee2e2" }}>
+                        {r.status}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td style={{ ...TD, textAlign:"center" as const }}>
+                      <div style={{ display:"flex", gap:4, justifyContent:"center" }}>
+                        <button onClick={() => handleEdit(r)} title="Edit"
+                          style={{ width:28, height:28, border:"none", background:"transparent", cursor:"pointer", color:"#93c5fd", display:"flex", alignItems:"center", justifyContent:"center", borderRadius:6 }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#2563eb"; (e.currentTarget as HTMLButtonElement).style.background = "#eff6ff"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#93c5fd"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+                          <i className="ri-pencil-line" style={{ fontSize:15 }}/>
+                        </button>
+                        <button onClick={() => handleDelete(r.id)} title="Delete"
+                          style={{ width:28, height:28, border:"none", background:"transparent", cursor:"pointer", color:"#fca5a5", display:"flex", alignItems:"center", justifyContent:"center", borderRadius:6 }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#dc2626"; (e.currentTarget as HTMLButtonElement).style.background = "#fef2f2"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fca5a5"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+                          <i className="ri-delete-bin-line" style={{ fontSize:15 }}/>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
