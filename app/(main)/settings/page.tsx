@@ -787,6 +787,34 @@ const BLANK_LT: Omit<LoadTypeEntry,"id"> = {
   loadType:"", equipmentName:"", nameHindi:"", wattage:"", appearsOn:["branch"], status:"Active",
 };
 
+const SEED_LOAD_TYPES: LoadTypeEntry[] = [
+  { id:1,  loadType:"Lighting Load",   equipmentName:"Flush Lights 2×2",         nameHindi:"फ्लश लाइट 2×2",           wattage:"36",  appearsOn:["branch","atm"], status:"Active"   },
+  { id:2,  loadType:"Lighting Load",   equipmentName:"Down Lights",               nameHindi:"डाउन लाइट",               wattage:"12",  appearsOn:["branch","atm"], status:"Active"   },
+  { id:3,  loadType:"Lighting Load",   equipmentName:"LED Tube Light (4ft)",      nameHindi:"एलईडी ट्यूब लाइट (4 फुट)", wattage:"18",  appearsOn:["branch","atm"], status:"Active"   },
+  { id:4,  loadType:"Lighting Load",   equipmentName:"LED Tube Light (2ft)",      nameHindi:"एलईडी ट्यूब लाइट (2 फुट)", wattage:"",    appearsOn:["branch"],       status:"Active"   },
+  { id:5,  loadType:"Lighting Load",   equipmentName:"LED Bulbs",                 nameHindi:"एलईडी बल्ब",               wattage:"9",   appearsOn:["branch"],       status:"Active"   },
+  { id:6,  loadType:"Lighting Load",   equipmentName:"CFL / PL Lights",           nameHindi:"सीएफएल / पीएल लाइट",      wattage:"",    appearsOn:["branch"],       status:"Active"   },
+  { id:7,  loadType:"Lighting Load",   equipmentName:"LED Bulb",                  nameHindi:"एलईडी बल्ब",               wattage:"9",   appearsOn:["branch"],       status:"Inactive" },
+  { id:8,  loadType:"Lighting Load",   equipmentName:"LED Panel Lights",          nameHindi:"एलईडी पैनल लाइट",          wattage:"18",  appearsOn:["branch","atm"], status:"Active"   },
+  { id:9,  loadType:"Lighting Load",   equipmentName:"LED Tube Light",            nameHindi:"एलईडी ट्यूब लाइट",         wattage:"40",  appearsOn:["branch"],       status:"Inactive" },
+  { id:10, loadType:"Lighting Load",   equipmentName:"Spotlights",                nameHindi:"स्पॉटलाइट",               wattage:"",    appearsOn:["branch"],       status:"Active"   },
+  { id:11, loadType:"Lighting Load",   equipmentName:"Emergency Lights",          nameHindi:"इमरजेंसी लाइट",            wattage:"8",   appearsOn:["branch","atm"], status:"Active"   },
+  { id:12, loadType:"Fan Load",        equipmentName:"Ceiling Fan",               nameHindi:"सीलिंग फैन",               wattage:"75",  appearsOn:["branch"],       status:"Active"   },
+  { id:13, loadType:"Fan Load",        equipmentName:"Exhaust Fan",               nameHindi:"एग्जॉस्ट फैन",             wattage:"35",  appearsOn:["branch"],       status:"Active"   },
+  { id:14, loadType:"Fan Load",        equipmentName:"Pedestal Fan",              nameHindi:"पेडेस्टल फैन",             wattage:"55",  appearsOn:["branch"],       status:"Active"   },
+  { id:15, loadType:"AC Load",         equipmentName:"Split AC (1.5 TR)",         nameHindi:"स्प्लिट एसी (1.5 टीआर)",   wattage:"1500",appearsOn:["branch","atm"], status:"Active"   },
+  { id:16, loadType:"AC Load",         equipmentName:"Cassette AC (2 TR)",        nameHindi:"कैसेट एसी (2 टीआर)",       wattage:"2000",appearsOn:["branch"],       status:"Active"   },
+  { id:17, loadType:"AC Load",         equipmentName:"Window AC (1 TR)",          nameHindi:"विंडो एसी (1 टीआर)",       wattage:"900", appearsOn:["branch"],       status:"Inactive" },
+  { id:18, loadType:"Computer Load",   equipmentName:"Desktop Computer",          nameHindi:"डेस्कटॉप कंप्यूटर",        wattage:"200", appearsOn:["branch","atm"], status:"Active"   },
+  { id:19, loadType:"Computer Load",   equipmentName:"Laptop",                    nameHindi:"लैपटॉप",                   wattage:"65",  appearsOn:["branch","atm"], status:"Active"   },
+  { id:20, loadType:"IT Equipment",    equipmentName:"UPS (1 KVA)",               nameHindi:"यूपीएस (1 केवीए)",         wattage:"600", appearsOn:["branch","atm"], status:"Active"   },
+  { id:21, loadType:"IT Equipment",    equipmentName:"Network Switch",            nameHindi:"नेटवर्क स्विच",            wattage:"15",  appearsOn:["branch","atm"], status:"Active"   },
+  { id:22, loadType:"IT Equipment",    equipmentName:"CCTV DVR",                  nameHindi:"सीसीटीवी डीवीआर",          wattage:"25",  appearsOn:["branch","atm"], status:"Active"   },
+  { id:23, loadType:"Power Load",      equipmentName:"Geyser / Water Heater",     nameHindi:"गीज़र / वाटर हीटर",        wattage:"2000",appearsOn:["branch"],       status:"Active"   },
+  { id:24, loadType:"Power Load",      equipmentName:"Water Cooler / Dispenser",  nameHindi:"वाटर कूलर / डिस्पेंसर",   wattage:"150", appearsOn:["branch"],       status:"Active"   },
+  { id:25, loadType:"Other Equipment", equipmentName:"Digital Signage Display",   nameHindi:"डिजिटल साइनेज डिस्प्ले",   wattage:"120", appearsOn:["branch","atm"], status:"Active"   },
+];
+
 // ── JSON syntax highlighter (shared) ──────────────────────────────────────────
 function colorizeJsonLT(json: string): React.ReactNode[] {
   const TOKEN = /("(?:[^"\\]|\\.)*"\s*:)|("(?:[^"\\]|\\.)*")|(true|false|null)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
@@ -805,10 +833,10 @@ function colorizeJsonLT(json: string): React.ReactNode[] {
 }
 
 function LoadTypePanel() {
-  const [rows,   setRows]   = useState<LoadTypeEntry[]>([]);
-  const [form,   setForm]   = useState<Omit<LoadTypeEntry,"id">>(BLANK_LT);
-  const [editId, setEditId] = useState<number|null>(null);
-  const [search, setSearch] = useState("");
+  const [rows,      setRows]      = useState<LoadTypeEntry[]>(SEED_LOAD_TYPES);
+  const [form,      setForm]      = useState<Omit<LoadTypeEntry,"id">>(BLANK_LT);
+  const [editId,    setEditId]    = useState<number|null>(null);
+  const [search,    setSearch]    = useState("");
   const [catFilter, setCatFilter] = useState("");
 
   const F = (k: keyof typeof form, v: string) => setForm(prev => ({ ...prev, [k]: v }));
