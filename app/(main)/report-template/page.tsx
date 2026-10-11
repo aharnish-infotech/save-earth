@@ -320,7 +320,7 @@ export default function ReportTemplatePage() {
         </div>
         <button onClick={() => router.push("/report-template/new")}
           style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 20px", borderRadius:9, border:"none", background:"#111827", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer" }}>
-          <i className="ri-add-line" style={{ fontSize:15 }}/>+ New Template
+          <i className="ri-add-line" style={{ fontSize:15 }}/>New Template
         </button>
       </div>
 
