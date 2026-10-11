@@ -14,6 +14,77 @@ const BANKS = [
   { code:"IB",   name:"Indian Bank",           color:"#be123c", abbr:"IB"   },
 ];
 
+interface CircleEntry { code:string; name:string }
+const BANK_CIRCLES: Record<string, CircleEntry[]> = {
+  SBI: [
+    { code:"LHO-AMR", name:"Amravati"       },
+    { code:"LHO-BHO", name:"Bhopal"         },
+    { code:"LHO-BAN", name:"Bangalore"      },
+    { code:"LHO-BHU", name:"Bhubaneswar"    },
+    { code:"LHO-BOM", name:"Mumbai"         },
+    { code:"LHO-CHD", name:"Chandigarh"     },
+    { code:"LHO-CHE", name:"Chennai"        },
+    { code:"LHO-DEL", name:"Delhi"          },
+    { code:"LHO-GAN", name:"Gandhinagar"    },
+    { code:"LHO-HYD", name:"Hyderabad"      },
+    { code:"LHO-JAI", name:"Jaipur"         },
+    { code:"LHO-KOL", name:"Kolkata"        },
+    { code:"LHO-LUC", name:"Lucknow"        },
+    { code:"LHO-PAT", name:"Patna"          },
+    { code:"LHO-THI", name:"Thiruvananthapuram" },
+  ],
+  BOB: [
+    { code:"ZO-AHM", name:"Ahmedabad"       },
+    { code:"ZO-BAN", name:"Bangalore"       },
+    { code:"ZO-BHO", name:"Bhopal"          },
+    { code:"ZO-CHE", name:"Chennai"         },
+    { code:"ZO-DEL", name:"Delhi"           },
+    { code:"ZO-HYD", name:"Hyderabad"       },
+    { code:"ZO-KOL", name:"Kolkata"         },
+    { code:"ZO-LUC", name:"Lucknow"         },
+    { code:"ZO-MUM", name:"Mumbai"          },
+    { code:"ZO-PAT", name:"Patna"           },
+  ],
+  UCO: [
+    { code:"ZO-CHE", name:"Chennai"         },
+    { code:"ZO-DEL", name:"Delhi"           },
+    { code:"ZO-KOL", name:"Kolkata"         },
+    { code:"ZO-MUM", name:"Mumbai"          },
+    { code:"ZO-BAN", name:"Bangalore"       },
+    { code:"ZO-HYD", name:"Hyderabad"       },
+  ],
+  PNB: [
+    { code:"ZO-AMR", name:"Amritsar"        },
+    { code:"ZO-BAN", name:"Bangalore"       },
+    { code:"ZO-CHD", name:"Chandigarh"      },
+    { code:"ZO-CHE", name:"Chennai"         },
+    { code:"ZO-DEL", name:"Delhi"           },
+    { code:"ZO-HYD", name:"Hyderabad"       },
+    { code:"ZO-JAI", name:"Jaipur"          },
+    { code:"ZO-KOL", name:"Kolkata"         },
+    { code:"ZO-LUC", name:"Lucknow"         },
+    { code:"ZO-MUM", name:"Mumbai"          },
+    { code:"ZO-PAT", name:"Patna"           },
+  ],
+  CNRB: [
+    { code:"ZO-BAN", name:"Bangalore"       },
+    { code:"ZO-CHE", name:"Chennai"         },
+    { code:"ZO-DEL", name:"Delhi"           },
+    { code:"ZO-HYD", name:"Hyderabad"       },
+    { code:"ZO-KOL", name:"Kolkata"         },
+    { code:"ZO-MUM", name:"Mumbai"          },
+    { code:"ZO-MYS", name:"Mysuru"          },
+  ],
+  IB: [
+    { code:"ZO-CHE", name:"Chennai"         },
+    { code:"ZO-COI", name:"Coimbatore"      },
+    { code:"ZO-DEL", name:"Delhi"           },
+    { code:"ZO-MUM", name:"Mumbai"          },
+    { code:"ZO-TRI", name:"Tiruchirapalli"  },
+    { code:"ZO-MDU", name:"Madurai"         },
+  ],
+};
+
 // ── Step-2 block builder data (from PDF report) ───────────────────────────────
 interface BlockItem  { id:string; label:string; visible:boolean }
 interface ReportBlock {
@@ -164,10 +235,13 @@ export default function NewReportTemplatePage() {
   const [step, setStep] = useState<1|2>(1);
 
   // Step 1 state
-  const [selectedBank, setSelectedBank] = useState("");
-  const [name,         setName]         = useState("");
-  const [description,  setDescription]  = useState("");
-  const [saveAs,       setSaveAs]       = useState<"Draft"|"Active">("Draft");
+  const [selectedBank,   setSelectedBank]   = useState("");
+  const [selectedCircle, setSelectedCircle] = useState<CircleEntry|null>(null);
+  const [circleSearch,   setCircleSearch]   = useState("");
+  const [circleOpen,     setCircleOpen]     = useState(false);
+  const [name,           setName]           = useState("");
+  const [description,    setDescription]    = useState("");
+  const [saveAs,         setSaveAs]         = useState<"Draft"|"Active">("Draft");
 
   // Step 2 state
   const [blocks,     setBlocks]     = useState<ReportBlock[]>(INITIAL_BLOCKS);
@@ -175,8 +249,20 @@ export default function NewReportTemplatePage() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
 
-  const bankObj     = BANKS.find(b => b.code === selectedBank);
-  const step1Valid  = !!selectedBank && name.trim().length > 0;
+  const bankObj      = BANKS.find(b => b.code === selectedBank);
+  const circleList   = selectedBank ? (BANK_CIRCLES[selectedBank] ?? []) : [];
+  const filteredCircles = circleList.filter(c =>
+    c.name.toLowerCase().includes(circleSearch.toLowerCase()) ||
+    c.code.toLowerCase().includes(circleSearch.toLowerCase())
+  );
+  const step1Valid   = !!selectedBank && !!selectedCircle && name.trim().length > 0;
+
+  const handleBankSelect = (code: string) => {
+    setSelectedBank(code);
+    setSelectedCircle(null);
+    setCircleSearch("");
+    setCircleOpen(true);
+  };
 
   // ── Block ops ──
   const moveBlock = useCallback((idx: number, dir: -1|1) => {
@@ -285,7 +371,7 @@ export default function NewReportTemplatePage() {
               {BANKS.map(b => {
                 const sel = selectedBank === b.code;
                 return (
-                  <button key={b.code} onClick={() => setSelectedBank(b.code)}
+                  <button key={b.code} onClick={() => handleBankSelect(b.code)}
                     style={{ padding:"18px 20px", borderRadius:10, border: sel ? `2px solid ${b.color}` : "1.5px solid #e5e7eb", background: sel ? `${b.color}0d` : "#fff", cursor:"pointer", display:"flex", alignItems:"center", gap:14, transition:"all 0.15s", textAlign:"left" as const }}>
                     <div style={{ width:44, height:44, borderRadius:10, background:b.color, color:"#fff", fontSize:11, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                       {b.abbr}
@@ -296,6 +382,78 @@ export default function NewReportTemplatePage() {
               })}
             </div>
           </div>
+
+          {/* Mapped Circle — shown after bank selection */}
+          {selectedBank && (
+            <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", padding:"24px 28px", marginBottom:20 }}>
+              <div style={{ display:"flex", alignItems:"flex-start", gap:12, marginBottom:16 }}>
+                <div style={{ width:36, height:36, borderRadius:9, background:"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <i className="ri-building-4-line" style={{ fontSize:17, color:"#2563eb" }}/>
+                </div>
+                <div>
+                  <div style={{ fontSize:15, fontWeight:800, color:"#111827" }}>Mapped Circle <span style={{ color:"#dc2626" }}>*</span></div>
+                  <div style={{ fontSize:12, color:"#9ca3af", marginTop:2 }}>Local Head Office (LHO) / Zonal Office (ZO) / Field General Manager&apos;s Office (FGMO)</div>
+                </div>
+              </div>
+
+              {/* Selected pill */}
+              {selectedCircle && (
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:7, background:bankObj ? `${bankObj.color}10` : "#f0fdf4", border:`1px solid ${bankObj ? `${bankObj.color}30` : "#bbf7d0"}`, borderRadius:8, padding:"7px 12px" }}>
+                    <i className="ri-checkbox-circle-fill" style={{ fontSize:14, color:bankObj?.color ?? "#16a34a" }}/>
+                    <span style={{ fontSize:13, fontWeight:700, color:bankObj?.color ?? "#15803d" }}>{selectedCircle.code}</span>
+                    <span style={{ fontSize:13, color:"#374151" }}>—</span>
+                    <span style={{ fontSize:13, color:"#374151" }}>{selectedCircle.name}</span>
+                    <button onClick={() => { setSelectedCircle(null); setCircleOpen(true); setCircleSearch(""); }}
+                      style={{ marginLeft:4, border:"none", background:"transparent", cursor:"pointer", color:"#9ca3af", padding:0, display:"flex", alignItems:"center" }}>
+                      <i className="ri-close-line" style={{ fontSize:15 }}/>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Search input */}
+              {(!selectedCircle || circleOpen) && (
+                <div style={{ position:"relative" as const }}>
+                  <div style={{ display:"flex", alignItems:"center", border:"1.5px solid #2563eb", borderRadius:8, overflow:"hidden", background:"#fff" }}>
+                    <i className="ri-search-line" style={{ fontSize:14, color:"#9ca3af", padding:"0 12px", flexShrink:0 }}/>
+                    <input
+                      autoFocus
+                      value={circleSearch}
+                      onChange={e => { setCircleSearch(e.target.value); setCircleOpen(true); }}
+                      onFocus={() => setCircleOpen(true)}
+                      placeholder="Search or select a circle..."
+                      style={{ flex:1, padding:"10px 0", border:"none", outline:"none", fontSize:13, color:"#374151" }}
+                    />
+                    <i className="ri-search-2-line" style={{ fontSize:14, color:"#2563eb", padding:"0 12px", flexShrink:0 }}/>
+                  </div>
+
+                  {/* Dropdown */}
+                  {circleOpen && (
+                    <div style={{ position:"absolute" as const, top:"calc(100% + 4px)", left:0, right:0, background:"#fff", border:"1px solid #e5e7eb", borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:50, overflow:"hidden" }}>
+                      <div style={{ padding:"8px 14px 6px", fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" as const, letterSpacing:"0.07em", borderBottom:"1px solid #f3f4f6", background:"#fafafa" }}>
+                        Local Head Office (LHO) / Zonal Office (ZO) / FGMO
+                      </div>
+                      <div style={{ maxHeight:220, overflowY:"auto" as const }}>
+                        {filteredCircles.length === 0 ? (
+                          <div style={{ padding:"16px 14px", fontSize:13, color:"#9ca3af", textAlign:"center" as const }}>No circles found</div>
+                        ) : filteredCircles.map(c => (
+                          <button key={c.code}
+                            onClick={() => { setSelectedCircle(c); setCircleOpen(false); setCircleSearch(""); }}
+                            style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 14px", border:"none", background:"transparent", cursor:"pointer", textAlign:"left" as const, borderBottom:"1px solid #f9fafb" }}
+                            onMouseEnter={e => (e.currentTarget.style.background="#f0f9ff")}
+                            onMouseLeave={e => (e.currentTarget.style.background="transparent")}>
+                            <span style={{ fontSize:12, fontWeight:700, color:"#2563eb", fontFamily:"monospace", minWidth:80 }}>{c.code}</span>
+                            <span style={{ fontSize:13, color:"#374151" }}>— {c.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Template Details */}
           <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e5e7eb", padding:"24px 28px", marginBottom:20 }}>
@@ -359,8 +517,9 @@ export default function NewReportTemplatePage() {
               </div>
               <div>
                 <div style={{ fontSize:14, fontWeight:700, color:"#111827" }}>{name}</div>
-                <div style={{ fontSize:12, color:"#9ca3af", display:"flex", gap:8, marginTop:2 }}>
+                <div style={{ fontSize:12, color:"#9ca3af", display:"flex", gap:8, marginTop:2, flexWrap:"wrap" as const }}>
                   <span>{bankObj.name}</span>
+                  {selectedCircle && <><span>·</span><span style={{ color:"#374151", fontWeight:600 }}>{selectedCircle.code} — {selectedCircle.name}</span></>}
                   <span>·</span>
                   <span style={{ color: saveAs==="Active"?"#16a34a":"#2563eb", fontWeight:600 }}>{saveAs}</span>
                 </div>
