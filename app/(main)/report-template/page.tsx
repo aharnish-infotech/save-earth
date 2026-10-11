@@ -270,6 +270,10 @@ export default function ReportTemplatePage() {
         </td>
         <td style={{ ...TD, textAlign:"center" as const }}>
           <div style={{ display:"flex", gap:4, justifyContent:"center" }}>
+            <button onClick={() => router.push(`/report-template/${t.id}/view`)}
+              style={{ width:28, height:28, border:"none", background:"transparent", cursor:"pointer", color:"#6b7280", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ri-eye-line" style={{ fontSize:14 }}/>
+            </button>
             <button onClick={() => router.push(`/report-template/${t.id}`)}
               style={{ width:28, height:28, border:"none", background:"transparent", cursor:"pointer", color:"#6b7280", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
               <i className="ri-pencil-line" style={{ fontSize:14 }}/>
