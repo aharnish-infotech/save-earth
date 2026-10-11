@@ -290,6 +290,12 @@ export default function NewReportTemplatePage() {
 
   const visibleBlocks = blocks.filter(b=>b.visible).length;
 
+  // ── Drag state ──
+  const [dragBlockIdx, setDragBlockIdx] = useState<number|null>(null);
+  const [dragOverIdx,  setDragOverIdx]  = useState<number|null>(null);
+  const [dragItemKey,  setDragItemKey]  = useState<string|null>(null);
+  const [dragItemOver, setDragItemOver] = useState<string|null>(null);
+
   // ── Render ──
   return (
     <div style={{ minHeight:"100%", background:"var(--default-background,#f8f9fa)" }}>
@@ -336,12 +342,6 @@ export default function NewReportTemplatePage() {
             style={{ padding:"7px 16px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", fontWeight:600, fontSize:13, cursor:"pointer" }}>
             Cancel
           </button>
-          {step===1 && (
-            <button onClick={() => { if (step1Valid) setStep(2); }} disabled={!step1Valid}
-              style={{ padding:"7px 20px", borderRadius:8, border:"none", background: step1Valid ? "#2563eb" : "#e5e7eb", color: step1Valid ? "#fff" : "#9ca3af", fontWeight:700, fontSize:13, cursor: step1Valid ? "pointer" : "not-allowed", display:"flex", alignItems:"center", gap:6 }}>
-              Next <i className="ri-arrow-right-line"/>
-            </button>
-          )}
           {step===2 && (
             <>
               <button onClick={() => setStep(1)}
@@ -502,6 +502,26 @@ export default function NewReportTemplatePage() {
               })}
             </div>
           </div>
+
+          {/* ── Bottom navigation ── */}
+          <div style={{ marginTop:28, paddingBottom:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <button onClick={() => router.push("/report-template")}
+              style={{ padding:"10px 22px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", fontWeight:600, fontSize:13, cursor:"pointer" }}>
+              Cancel
+            </button>
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6 }}>
+              {!step1Valid && (
+                <span style={{ fontSize:11, color:"#9ca3af" }}>
+                  {!selectedBank ? "Select a bank" : !selectedCircle ? "Select a circle" : "Enter template name"} to continue
+                </span>
+              )}
+              <button onClick={() => { if (step1Valid) setStep(2); }} disabled={!step1Valid}
+                style={{ padding:"11px 28px", borderRadius:8, border:"none", background:step1Valid?"#2563eb":"#e5e7eb", color:step1Valid?"#fff":"#9ca3af", fontWeight:700, fontSize:14, cursor:step1Valid?"pointer":"not-allowed", display:"flex", alignItems:"center", gap:8, transition:"background 0.15s" }}>
+                Continue to Block Configuration
+                <i className="ri-arrow-right-line" style={{ fontSize:16 }}/>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -560,92 +580,125 @@ export default function NewReportTemplatePage() {
             ))}
           </div>
 
-          {/* Block list */}
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {/* Block list — drag & drop */}
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {blocks.map((block, idx) => {
-              const tc       = TYPE_COLORS[block.type];
-              const visItems = block.items.filter(i=>i.visible).length;
+              const tc         = TYPE_COLORS[block.type];
+              const visItems   = block.items.filter(i=>i.visible).length;
+              const isDragging = dragBlockIdx === idx;
+              const isOver     = dragOverIdx  === idx && dragBlockIdx !== idx;
               return (
-                <div key={block.id} style={{ background:"#fff", borderRadius:12, border:`1px solid ${block.visible?"#e5e7eb":"#f3f4f6"}`, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.05)", opacity:block.visible?1:0.6, transition:"opacity 0.2s" }}>
+                <div key={block.id}
+                  draggable
+                  onDragStart={() => setDragBlockIdx(idx)}
+                  onDragEnd={() => { setDragBlockIdx(null); setDragOverIdx(null); }}
+                  onDragOver={e => { e.preventDefault(); if(dragOverIdx!==idx) setDragOverIdx(idx); }}
+                  onDrop={e => {
+                    e.preventDefault();
+                    if(dragBlockIdx===null||dragBlockIdx===idx){setDragOverIdx(null);return;}
+                    setBlocks(prev=>{ const n=[...prev];const[rem]=n.splice(dragBlockIdx,1);n.splice(idx,0,rem);return n; });
+                    setDragBlockIdx(null); setDragOverIdx(null);
+                  }}
+                  style={{ background:"#fff", borderRadius:12, border:isOver?"2px dashed #2563eb":"1px solid #e5e7eb", overflow:"hidden", boxShadow:isOver?"0 0 0 4px #dbeafe":"0 1px 3px rgba(0,0,0,0.05)", opacity:isDragging?0.3:block.visible?1:0.55, transition:"box-shadow 0.15s,border 0.1s,opacity 0.15s" }}>
+
                   {/* Block header */}
                   <div style={{ display:"flex", alignItems:"center", borderLeft:`4px solid ${block.visible?block.color:"#d1d5db"}` }}>
-                    <div style={{ width:48, display:"flex", alignItems:"center", justifyContent:"center", padding:"18px 0", flexShrink:0 }}>
-                      <span style={{ width:26, height:26, borderRadius:7, background:block.visible?block.bg:"#f3f4f6", color:block.visible?block.color:"#9ca3af", fontSize:12, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" }}>{idx+1}</span>
+                    {/* Drag grip */}
+                    <div style={{ cursor:"grab", padding:"0 10px 0 14px", color:"#c4c9d4", flexShrink:0, display:"flex", alignItems:"center" }}>
+                      <i className="ri-draggable" style={{ fontSize:18 }}/>
                     </div>
-                    <div style={{ width:42, height:42, borderRadius:10, background:block.visible?block.bg:"#f3f4f6", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginRight:14 }}>
+                    {/* Number badge */}
+                    <div style={{ width:32, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                      <span style={{ width:24, height:24, borderRadius:6, background:block.visible?block.bg:"#f3f4f6", color:block.visible?block.color:"#9ca3af", fontSize:11, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" }}>{idx+1}</span>
+                    </div>
+                    {/* Icon */}
+                    <div style={{ width:40, height:40, borderRadius:10, background:block.visible?block.bg:"#f3f4f6", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, margin:"14px 14px 14px 10px" }}>
                       <i className={block.icon} style={{ fontSize:18, color:block.visible?block.color:"#9ca3af" }}/>
                     </div>
+                    {/* Title */}
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
-                        <span style={{ fontSize:13, fontWeight:700, color:block.visible?"var(--default-text-color)":"#9ca3af" }}>{block.title}</span>
+                      <div style={{ display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" as const }}>
+                        <span style={{ fontSize:13, fontWeight:700, color:block.visible?"#111827":"#9ca3af" }}>{block.title}</span>
                         <span style={{ fontSize:10, fontWeight:700, borderRadius:20, padding:"2px 8px", color:tc.color, background:tc.bg }}>{TYPE_LABELS[block.type]}</span>
                         {!block.visible && <span style={{ fontSize:10, fontWeight:700, color:"#9ca3af", background:"#f3f4f6", borderRadius:20, padding:"2px 8px" }}>Hidden</span>}
                       </div>
                       <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>{block.subtitle}</div>
                     </div>
-                    <span style={{ fontSize:11, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:20, padding:"3px 10px", marginRight:12, flexShrink:0 }}>
+                    {/* Count */}
+                    <span style={{ fontSize:11, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:20, padding:"3px 10px", marginRight:10, flexShrink:0 }}>
                       {visItems}/{block.items.length}
                     </span>
-                    <div style={{ display:"flex", alignItems:"center", gap:2, paddingRight:14, flexShrink:0 }}>
-                      {[
-                        { icon:"ri-arrow-up-s-line",   disabled:idx===0,               onClick:()=>moveBlock(idx,-1),        title:"Move up"   },
-                        { icon:"ri-arrow-down-s-line",  disabled:idx===blocks.length-1, onClick:()=>moveBlock(idx,1),         title:"Move down" },
-                      ].map((btn,bi) => (
-                        <button key={bi} onClick={btn.onClick} disabled={btn.disabled} title={btn.title}
-                          style={{ width:28, height:28, border:"none", background:"transparent", cursor:btn.disabled?"not-allowed":"pointer", color:btn.disabled?"#e5e7eb":"#6b7280", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          <i className={btn.icon} style={{ fontSize:17 }}/>
-                        </button>
-                      ))}
-                      <div style={{ width:1, height:18, background:"#e5e7eb", margin:"0 3px" }}/>
-                      <button onClick={()=>toggleBlockVis(block.id)} title={block.visible?"Hide":"Show"}
-                        style={{ width:28, height:28, border:"none", background:"transparent", cursor:"pointer", color:block.visible?"#16a34a":"#9ca3af", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    {/* Controls */}
+                    <div style={{ display:"flex", alignItems:"center", gap:4, paddingRight:14, flexShrink:0 }}>
+                      <button onClick={()=>toggleBlockVis(block.id)} title={block.visible?"Hide block":"Show block"}
+                        style={{ width:32, height:32, border:"none", background:block.visible?"#f0fdf4":"#f9fafb", cursor:"pointer", color:block.visible?"#16a34a":"#9ca3af", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center" }}>
                         <i className={block.visible?"ri-eye-line":"ri-eye-off-line"} style={{ fontSize:15 }}/>
                       </button>
-                      <div style={{ width:1, height:18, background:"#e5e7eb", margin:"0 3px" }}/>
-                      <button onClick={()=>toggleExpanded(block.id)} title={block.expanded?"Collapse":"Expand"}
-                        style={{ width:28, height:28, border:"none", background:"transparent", cursor:"pointer", color:"#6b7280", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        <i className={block.expanded?"ri-arrow-up-s-line":"ri-arrow-down-s-line"} style={{ fontSize:17 }}/>
+                      <button onClick={()=>toggleExpanded(block.id)} title={block.expanded?"Collapse":"Expand items"}
+                        style={{ width:32, height:32, border:"none", background:block.expanded?"#eff6ff":"#f9fafb", cursor:"pointer", color:block.expanded?"#2563eb":"#6b7280", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        <i className={block.expanded?"ri-arrow-up-s-line":"ri-arrow-down-s-line"} style={{ fontSize:18 }}/>
                       </button>
                     </div>
                   </div>
 
-                  {/* Expanded items */}
+                  {/* Expanded items — card rows with DnD */}
                   {block.expanded && (
                     <div style={{ borderTop:"1px solid #f3f4f6" }}>
-                      <div style={{ padding:"9px 18px 9px 66px", background:"#fafafa", borderBottom:"1px solid #f3f4f6", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                        <span style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" as const, letterSpacing:"0.06em" }}>
-                          {TYPE_LABELS[block.type]} inside this block
+                      <div style={{ padding:"10px 16px", background:"#fafafa", borderBottom:"1px solid #f3f4f6", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                        <span style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase" as const, letterSpacing:"0.06em", display:"flex", alignItems:"center", gap:5 }}>
+                          <i className="ri-draggable" style={{ fontSize:12 }}/>Drag to reorder · {TYPE_LABELS[block.type]}
                         </span>
-                        <div style={{ display:"flex", gap:8 }}>
+                        <div style={{ display:"flex", gap:6 }}>
                           <button onClick={() => setBlocks(prev=>prev.map(b=>b.id!==block.id?b:{...b,items:b.items.map(it=>({...it,visible:true}))}))}
                             style={{ fontSize:11, fontWeight:700, color:"#16a34a", background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:6, padding:"3px 10px", cursor:"pointer" }}>Show all</button>
                           <button onClick={() => setBlocks(prev=>prev.map(b=>b.id!==block.id?b:{...b,items:b.items.map(it=>({...it,visible:false}))}))}
                             style={{ fontSize:11, fontWeight:700, color:"#dc2626", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:6, padding:"3px 10px", cursor:"pointer" }}>Hide all</button>
                         </div>
                       </div>
-                      {block.items.map((item, iIdx) => (
-                        <div key={item.id} style={{ display:"flex", alignItems:"center", borderBottom:iIdx<block.items.length-1?"1px solid #f9fafb":"none", background:item.visible?"transparent":"#fafafa", opacity:item.visible?1:0.5, transition:"all 0.15s" }}>
-                          <div style={{ width:66, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"flex-end", paddingRight:14 }}>
-                            <span style={{ fontSize:11, color:"#d1d5db", fontWeight:600, fontFamily:"monospace" }}>{String(iIdx+1).padStart(2,"0")}</span>
-                          </div>
-                          <div style={{ width:8, height:8, borderRadius:"50%", background:item.visible?block.color:"#d1d5db", flexShrink:0, marginRight:12 }}/>
-                          <span style={{ flex:1, fontSize:13, color:item.visible?"#374151":"#9ca3af", padding:"11px 0" }}>{item.label}</span>
-                          <div style={{ display:"flex", alignItems:"center", gap:2, paddingRight:14, flexShrink:0 }}>
-                            <button onClick={()=>moveItem(block.id,iIdx,-1)} disabled={iIdx===0}
-                              style={{ width:24, height:24, border:"none", background:"transparent", cursor:iIdx===0?"not-allowed":"pointer", color:iIdx===0?"#e5e7eb":"#9ca3af", borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                              <i className="ri-arrow-up-s-line" style={{ fontSize:14 }}/>
-                            </button>
-                            <button onClick={()=>moveItem(block.id,iIdx,1)} disabled={iIdx===block.items.length-1}
-                              style={{ width:24, height:24, border:"none", background:"transparent", cursor:iIdx===block.items.length-1?"not-allowed":"pointer", color:iIdx===block.items.length-1?"#e5e7eb":"#9ca3af", borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                              <i className="ri-arrow-down-s-line" style={{ fontSize:14 }}/>
-                            </button>
-                            <button onClick={()=>toggleItemVis(block.id,item.id)}
-                              style={{ width:24, height:24, border:"none", background:"transparent", cursor:"pointer", color:item.visible?"#16a34a":"#d1d5db", borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                              <i className={item.visible?"ri-eye-line":"ri-eye-off-line"} style={{ fontSize:13 }}/>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                      {/* Item cards */}
+                      <div style={{ padding:"10px 12px", display:"flex", flexDirection:"column", gap:6 }}>
+                        {block.items.map((item, iIdx) => {
+                          const dKey       = `${block.id}__${iIdx}`;
+                          const isItemDrag = dragItemKey  === dKey;
+                          const isItemOver = dragItemOver === dKey && dragItemKey !== dKey;
+                          return (
+                            <div key={item.id}
+                              draggable
+                              onDragStart={e => { e.stopPropagation(); setDragItemKey(dKey); }}
+                              onDragEnd={e => { e.stopPropagation(); setDragItemKey(null); setDragItemOver(null); }}
+                              onDragOver={e => { e.preventDefault(); e.stopPropagation(); if(dragItemOver!==dKey) setDragItemOver(dKey); }}
+                              onDrop={e => {
+                                e.preventDefault(); e.stopPropagation();
+                                if(!dragItemKey||dragItemKey===dKey){setDragItemOver(null);return;}
+                                const[fromBId,fromIdxStr]=dragItemKey.split("__");
+                                if(fromBId!==block.id){setDragItemOver(null);return;}
+                                const fromIdx=parseInt(fromIdxStr);
+                                setBlocks(prev=>prev.map(b=>{
+                                  if(b.id!==block.id)return b;
+                                  const items=[...b.items];const[rem]=items.splice(fromIdx,1);items.splice(iIdx,0,rem);return{...b,items};
+                                }));
+                                setDragItemKey(null); setDragItemOver(null);
+                              }}
+                              style={{ display:"flex", alignItems:"center", background:isItemOver?"#eff6ff":item.visible?"#fff":"#fafafa", border:isItemOver?"1.5px dashed #2563eb":"1px solid #e8eaed", borderRadius:8, opacity:isItemDrag?0.3:item.visible?1:0.5, boxShadow:isItemOver?"0 0 0 3px #dbeafe":"0 1px 2px rgba(0,0,0,0.04)", transition:"all 0.1s", cursor:"default" }}>
+                              {/* Grip */}
+                              <div style={{ cursor:"grab", padding:"12px 10px", color:"#c4c9d4", flexShrink:0 }}>
+                                <i className="ri-draggable" style={{ fontSize:15 }}/>
+                              </div>
+                              {/* Number */}
+                              <span style={{ fontSize:11, color:"#c4c9d4", fontWeight:700, fontFamily:"monospace", minWidth:24, flexShrink:0 }}>{String(iIdx+1).padStart(2,"0")}</span>
+                              {/* Status dot */}
+                              <div style={{ width:7, height:7, borderRadius:"50%", background:item.visible?block.color:"#d1d5db", flexShrink:0, margin:"0 12px" }}/>
+                              {/* Label */}
+                              <span style={{ flex:1, fontSize:13, color:item.visible?"#1f2937":"#9ca3af", fontWeight:item.visible?500:400, padding:"12px 0" }}>{item.label}</span>
+                              {/* Eye */}
+                              <button onClick={()=>toggleItemVis(block.id,item.id)}
+                                style={{ width:30, height:30, border:"none", background:item.visible?"#f0fdf4":"transparent", cursor:"pointer", color:item.visible?"#16a34a":"#d1d5db", borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", marginRight:8, flexShrink:0 }}>
+                                <i className={item.visible?"ri-eye-line":"ri-eye-off-line"} style={{ fontSize:14 }}/>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
