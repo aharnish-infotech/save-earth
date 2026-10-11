@@ -589,9 +589,6 @@ export default function NewReportTemplatePage() {
               const isOver     = dragOverIdx  === idx && dragBlockIdx !== idx;
               return (
                 <div key={block.id}
-                  draggable
-                  onDragStart={() => setDragBlockIdx(idx)}
-                  onDragEnd={() => { setDragBlockIdx(null); setDragOverIdx(null); }}
                   onDragOver={e => { e.preventDefault(); if(dragOverIdx!==idx) setDragOverIdx(idx); }}
                   onDrop={e => {
                     e.preventDefault();
@@ -603,8 +600,12 @@ export default function NewReportTemplatePage() {
 
                   {/* Block header */}
                   <div style={{ display:"flex", alignItems:"center", borderLeft:`4px solid ${block.visible?block.color:"#d1d5db"}` }}>
-                    {/* Drag grip */}
-                    <div style={{ cursor:"grab", padding:"0 10px 0 14px", color:"#c4c9d4", flexShrink:0, display:"flex", alignItems:"center" }}>
+                    {/* Drag grip — only handle initiates drag */}
+                    <div
+                      draggable
+                      onDragStart={() => setDragBlockIdx(idx)}
+                      onDragEnd={() => { setDragBlockIdx(null); setDragOverIdx(null); }}
+                      style={{ cursor:"grab", padding:"0 10px 0 14px", color:"#c4c9d4", flexShrink:0, display:"flex", alignItems:"center" }}>
                       <i className="ri-draggable" style={{ fontSize:18 }}/>
                     </div>
                     {/* Number badge */}
@@ -663,9 +664,6 @@ export default function NewReportTemplatePage() {
                           const isItemOver = dragItemOver === dKey && dragItemKey !== dKey;
                           return (
                             <div key={item.id}
-                              draggable
-                              onDragStart={e => { e.stopPropagation(); setDragItemKey(dKey); }}
-                              onDragEnd={e => { e.stopPropagation(); setDragItemKey(null); setDragItemOver(null); }}
                               onDragOver={e => { e.preventDefault(); e.stopPropagation(); if(dragItemOver!==dKey) setDragItemOver(dKey); }}
                               onDrop={e => {
                                 e.preventDefault(); e.stopPropagation();
@@ -680,8 +678,12 @@ export default function NewReportTemplatePage() {
                                 setDragItemKey(null); setDragItemOver(null);
                               }}
                               style={{ display:"flex", alignItems:"center", background:isItemOver?"#eff6ff":item.visible?"#fff":"#fafafa", border:isItemOver?"1.5px dashed #2563eb":"1px solid #e8eaed", borderRadius:8, opacity:isItemDrag?0.3:item.visible?1:0.5, boxShadow:isItemOver?"0 0 0 3px #dbeafe":"0 1px 2px rgba(0,0,0,0.04)", transition:"all 0.1s", cursor:"default" }}>
-                              {/* Grip */}
-                              <div style={{ cursor:"grab", padding:"12px 10px", color:"#c4c9d4", flexShrink:0 }}>
+                              {/* Grip — only handle initiates drag */}
+                              <div
+                                draggable
+                                onDragStart={e => { e.stopPropagation(); setDragItemKey(dKey); }}
+                                onDragEnd={e => { e.stopPropagation(); setDragItemKey(null); setDragItemOver(null); }}
+                                style={{ cursor:"grab", padding:"12px 10px", color:"#c4c9d4", flexShrink:0 }}>
                                 <i className="ri-draggable" style={{ fontSize:15 }}/>
                               </div>
                               {/* Number */}

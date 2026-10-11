@@ -403,9 +403,6 @@ export default function EditReportTemplatePage() {
               const isOver     = dragOverIdx  === idx && dragBlockIdx !== idx;
               return (
                 <div key={block.id}
-                  draggable
-                  onDragStart={() => setDragBlockIdx(idx)}
-                  onDragEnd={() => { setDragBlockIdx(null); setDragOverIdx(null); }}
                   onDragOver={e => { e.preventDefault(); if(dragOverIdx!==idx) setDragOverIdx(idx); }}
                   onDrop={e => {
                     e.preventDefault();
@@ -416,8 +413,12 @@ export default function EditReportTemplatePage() {
                   style={{ background:"#fff", borderRadius:12, border:isOver?"2px dashed #2563eb":"1px solid #e5e7eb", overflow:"hidden", boxShadow:isOver?"0 0 0 4px #dbeafe":"0 1px 3px rgba(0,0,0,0.05)", opacity:isDragging?0.3:block.visible?1:0.55, transition:"box-shadow 0.15s,border 0.1s,opacity 0.15s" }}>
 
                   <div style={{ display:"flex", alignItems:"center", borderLeft:`4px solid ${block.visible?block.color:"#d1d5db"}` }}>
-                    {/* Grip */}
-                    <div style={{ cursor:"grab", padding:"0 10px 0 14px", color:"#c4c9d4", flexShrink:0, display:"flex", alignItems:"center" }}>
+                    {/* Grip — only handle initiates drag */}
+                    <div
+                      draggable
+                      onDragStart={() => setDragBlockIdx(idx)}
+                      onDragEnd={() => { setDragBlockIdx(null); setDragOverIdx(null); }}
+                      style={{ cursor:"grab", padding:"0 10px 0 14px", color:"#c4c9d4", flexShrink:0, display:"flex", alignItems:"center" }}>
                       <i className="ri-draggable" style={{ fontSize:18 }}/>
                     </div>
                     <div style={{ width:32, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -469,9 +470,6 @@ export default function EditReportTemplatePage() {
                           const isItemOver = dragItemOver === dKey && dragItemKey !== dKey;
                           return (
                             <div key={item.id}
-                              draggable
-                              onDragStart={e => { e.stopPropagation(); setDragItemKey(dKey); }}
-                              onDragEnd={e => { e.stopPropagation(); setDragItemKey(null); setDragItemOver(null); }}
                               onDragOver={e => { e.preventDefault(); e.stopPropagation(); if(dragItemOver!==dKey) setDragItemOver(dKey); }}
                               onDrop={e => {
                                 e.preventDefault(); e.stopPropagation();
@@ -486,7 +484,12 @@ export default function EditReportTemplatePage() {
                                 setDragItemKey(null); setDragItemOver(null);
                               }}
                               style={{ display:"flex", alignItems:"center", background:isItemOver?"#eff6ff":item.visible?"#fff":"#fafafa", border:isItemOver?"1.5px dashed #2563eb":"1px solid #e8eaed", borderRadius:8, opacity:isItemDrag?0.3:item.visible?1:0.5, boxShadow:isItemOver?"0 0 0 3px #dbeafe":"0 1px 2px rgba(0,0,0,0.04)", transition:"all 0.1s", cursor:"default" }}>
-                              <div style={{ cursor:"grab", padding:"12px 10px", color:"#c4c9d4", flexShrink:0 }}>
+                              {/* Grip — only handle initiates drag */}
+                              <div
+                                draggable
+                                onDragStart={e => { e.stopPropagation(); setDragItemKey(dKey); }}
+                                onDragEnd={e => { e.stopPropagation(); setDragItemKey(null); setDragItemOver(null); }}
+                                style={{ cursor:"grab", padding:"12px 10px", color:"#c4c9d4", flexShrink:0 }}>
                                 <i className="ri-draggable" style={{ fontSize:15 }}/>
                               </div>
                               <span style={{ fontSize:11, color:"#c4c9d4", fontWeight:700, fontFamily:"monospace", minWidth:24, flexShrink:0 }}>{String(iIdx+1).padStart(2,"0")}</span>
