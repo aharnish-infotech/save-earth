@@ -1139,19 +1139,18 @@ interface TonnageEntry {
   id: number;
   value: number;
   label: string;
-  watts: number;
   status: "Active" | "Inactive";
 }
 
 const DEFAULT_TONNAGES: TonnageEntry[] = [
-  { id:1, value:0.75, label:"0.75 TR", watts:2638,  status:"Active" },
-  { id:2, value:1,    label:"1 TR",    watts:3517,  status:"Active" },
-  { id:3, value:1.5,  label:"1.5 TR",  watts:5275,  status:"Active" },
-  { id:4, value:2,    label:"2 TR",    watts:7034,  status:"Active" },
-  { id:5, value:2.5,  label:"2.5 TR",  watts:8792,  status:"Active" },
-  { id:6, value:3,    label:"3 TR",    watts:10551, status:"Active" },
-  { id:7, value:4,    label:"4 TR",    watts:14068, status:"Active" },
-  { id:8, value:5,    label:"5 TR",    watts:17585, status:"Active" },
+  { id:1, value:0.75, label:"0.75 TR", status:"Active" },
+  { id:2, value:1,    label:"1 TR",    status:"Active" },
+  { id:3, value:1.5,  label:"1.5 TR",  status:"Active" },
+  { id:4, value:2,    label:"2 TR",    status:"Active" },
+  { id:5, value:2.5,  label:"2.5 TR",  status:"Active" },
+  { id:6, value:3,    label:"3 TR",    status:"Active" },
+  { id:7, value:4,    label:"4 TR",    status:"Active" },
+  { id:8, value:5,    label:"5 TR",    status:"Active" },
 ];
 
 function AcTonnagePanel() {
@@ -1163,13 +1162,12 @@ function AcTonnagePanel() {
 
   const parsedVal   = parseFloat(val);
   const isValid     = !isNaN(parsedVal) && parsedVal > 0;
-  const derivedW    = isValid ? Math.round(parsedVal * 3517) : 0;
   const derivedLbl  = isValid ? `${parsedVal} TR` : "";
   const isDuplicate = isValid && rows.some(r => r.id !== editId && r.value === parsedVal);
 
   const handleSave = () => {
     if (!isValid || isDuplicate) return;
-    const entry: TonnageEntry = { id: editId ?? Date.now(), value: parsedVal, label: derivedLbl, watts: derivedW, status };
+    const entry: TonnageEntry = { id: editId ?? Date.now(), value: parsedVal, label: derivedLbl, status };
     if (editId !== null) {
       setRows(prev => prev.map(r => r.id === editId ? entry : r).sort((a,b) => a.value - b.value));
       setEditId(null);
@@ -1256,19 +1254,6 @@ function AcTonnagePanel() {
             </div>
           </div>
 
-          {/* Wattage equivalent — read-only */}
-          <div>
-            <label style={FS12}>WATTAGE EQUIVALENT <span style={{ fontSize:10, color:"#9ca3af", fontWeight:500, textTransform:"none" }}>(1 TR = 3,517 W)</span></label>
-            <div style={{ position:"relative" }}>
-              <div style={{ ...INP, background:"#f9fafb", color: derivedW ? "#374151" : "#d1d5db", display:"flex", alignItems:"center", userSelect:"none" as const, paddingRight:32 }}>
-                {derivedW ? derivedW.toLocaleString() : "Auto-calculated"}
-              </div>
-              {derivedW > 0 && (
-                <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:12, fontWeight:700, color:"#6b7280" }}>W</span>
-              )}
-            </div>
-          </div>
-
           {/* Status */}
           <div>
             <label style={FS12}>STATUS</label>
@@ -1337,7 +1322,6 @@ function AcTonnagePanel() {
               <tr>
                 <th style={TH}>LABEL</th>
                 <th style={{ ...TH, textAlign:"center" as const }}>TONNAGE</th>
-                <th style={{ ...TH, textAlign:"center" as const }}>WATTAGE</th>
                 <th style={{ ...TH, textAlign:"center" as const }}>STATUS</th>
                 <th style={{ ...TH, textAlign:"center" as const }}>ACTION</th>
               </tr>
@@ -1345,7 +1329,7 @@ function AcTonnagePanel() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ ...TD, textAlign:"center", color:"#9ca3af", padding:"32px" }}>
+                  <td colSpan={4} style={{ ...TD, textAlign:"center", color:"#9ca3af", padding:"32px" }}>
                     No entries found
                   </td>
                 </tr>
@@ -1366,12 +1350,6 @@ function AcTonnagePanel() {
                     <span style={{ fontSize:12, fontWeight:700, color:"#1d4ed8", background:"#dbeafe", borderRadius:6, padding:"3px 12px" }}>
                       {r.value} TR
                     </span>
-                  </td>
-
-                  {/* Wattage */}
-                  <td style={{ ...TD, textAlign:"center" as const }}>
-                    <div style={{ fontSize:13, fontWeight:600, color:"#374151" }}>{r.watts.toLocaleString()} W</div>
-                    <div style={{ fontSize:11, color:"#9ca3af" }}>{(r.watts/1000).toFixed(2)} kW</div>
                   </td>
 
                   {/* Status chip — click to toggle */}
