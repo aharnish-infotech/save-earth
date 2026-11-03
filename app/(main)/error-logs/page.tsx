@@ -275,18 +275,25 @@ export default function ErrorLogsPage() {
         </p>
 
         {/* ── Stats Row ─────────────────────────────────────────────────────── */}
-        <div style={{ display: "flex", gap: 20, paddingBottom: 20 }}>
+        <div style={{ display: "flex", gap: 14, paddingBottom: 20 }}>
           {[
-            { label: "Total Errors",  value: TOTAL,  color: "#374151", bg: "#f3f4f6", icon: "ri-bar-chart-line" },
-            { label: "New",           value: NEW_CT, color: "#b91c1c", bg: "#fee2e2", icon: "ri-error-warning-line" },
-            { label: "Acknowledged",  value: ACK_CT, color: "#92400e", bg: "#fef3c7", icon: "ri-time-line" },
-            { label: "Resolved",      value: RES_CT, color: "#14532d", bg: "#dcfce7", icon: "ri-checkbox-circle-line" },
+            { label: "Total Errors",  value: TOTAL,  accent: "#6366f1", iconBg: "#eef2ff", icon: "ri-bar-chart-grouped-line" },
+            { label: "New",           value: NEW_CT, accent: "#ef4444", iconBg: "#fee2e2", icon: "ri-error-warning-line"       },
+            { label: "Acknowledged",  value: ACK_CT, accent: "#f59e0b", iconBg: "#fef3c7", icon: "ri-time-line"                },
+            { label: "Resolved",      value: RES_CT, accent: "#22c55e", iconBg: "#dcfce7", icon: "ri-checkbox-circle-line"     },
           ].map(s => (
-            <div key={s.label} style={{ background: s.bg, borderRadius: 10, padding: "12px 20px", minWidth: 120, display: "flex", alignItems: "center", gap: 12 }}>
-              <i className={s.icon} style={{ fontSize: 22, color: s.color, flexShrink: 0 }} />
+            <div key={s.label} style={{
+              flex: 1, background: "#fff",
+              border: "1px solid #e5e7eb", borderLeft: `4px solid ${s.accent}`,
+              borderRadius: 10, padding: "16px 20px",
+              display: "flex", alignItems: "center", gap: 14,
+            }}>
+              <div style={{ width: 40, height: 40, borderRadius: 8, background: s.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <i className={s.icon} style={{ fontSize: 20, color: s.accent }} />
+              </div>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: s.color, lineHeight: 1.1 }}>{s.value}</div>
-                <div style={{ fontSize: 11.5, color: s.color, opacity: 0.8, marginTop: 1, fontWeight: 500 }}>{s.label}</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: "#111827", lineHeight: 1, letterSpacing: -0.5 }}>{s.value}</div>
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4, fontWeight: 500 }}>{s.label}</div>
               </div>
             </div>
           ))}
