@@ -89,7 +89,16 @@ function useIsMobile() {
 export default function Sidebar() {
   const pathname = usePathname();
   const isMobile = useIsMobile();
-  const [activeId, setActiveId] = useState<string>(() => getActiveSectionId(pathname));
+  // If current path matches a known section use that; otherwise default to the
+  // first section that has badged items so the user sees the notification immediately.
+  const [activeId, setActiveId] = useState<string>(() => {
+    const fromPath = getActiveSectionId(pathname);
+    if (fromPath !== "dashboard") return fromPath;
+    const badgedSection = RAIL_ITEMS.find(r =>
+      r.sections.flatMap(s => s.items).some(n => (n.badge ?? 0) > 0)
+    );
+    return badgedSection ? badgedSection.id : fromPath;
+  });
   const [panelOpen, setPanelOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -152,11 +161,28 @@ export default function Sidebar() {
         <nav className="zf-rail-nav" aria-label="Main navigation">
           {RAIL_ITEMS.map(item => {
             const isActive = item.href ? pathname === item.href : activeId === item.id && panelOpen;
+            const railBadge = item.sections.flatMap(s => s.items).reduce((sum, n) => sum + (n.badge ?? 0), 0);
+            const railIcon = (
+              <span className="zf-rail-icon" style={{ position: "relative" }}>
+                {SECTION_ICONS[item.id]}
+                {railBadge > 0 && (
+                  <span style={{
+                    position: "absolute", top: -4, right: -4,
+                    background: "#ef4444", color: "#fff",
+                    fontSize: 9, fontWeight: 800, lineHeight: "14px",
+                    minWidth: 14, height: 14, borderRadius: 7,
+                    padding: "0 3px", textAlign: "center",
+                    border: "1.5px solid #fff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>{railBadge}</span>
+                )}
+              </span>
+            );
             if (item.href) {
               return (
                 <Link key={item.id} href={item.href} className={`zf-rail-btn${isActive ? " active" : ""}`}
                   title={item.label} aria-label={item.label} style={{ textDecoration: "none" }}>
-                  <span className="zf-rail-icon">{SECTION_ICONS[item.id]}</span>
+                  {railIcon}
                   <span className="zf-rail-label">{item.label}</span>
                 </Link>
               );
@@ -164,7 +190,7 @@ export default function Sidebar() {
             return (
               <button key={item.id} className={`zf-rail-btn${isActive ? " active" : ""}`}
                 onClick={() => handleIconClick(item.id)} title={item.label} aria-label={item.label}>
-                <span className="zf-rail-icon">{SECTION_ICONS[item.id]}</span>
+                {railIcon}
                 <span className="zf-rail-label">{item.label}</span>
               </button>
             );
