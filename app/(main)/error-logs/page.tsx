@@ -262,127 +262,117 @@ export default function ErrorLogsPage() {
   const sc = selected ? statusColor(selected.status) : { fg: "", bg: "", dot: "" };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8f9fb", position: "relative" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div style={{ padding: "24px 32px 0", background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
-          <i className="ri-error-warning-line" style={{ fontSize: 22, color: "#ef4444" }} />
+      {/* ── Sticky page title bar ──────────────────────────────────────────────── */}
+      <div style={{ padding: "20px 32px 16px", background: "#fff", borderBottom: "1px solid #e5e7eb", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <i className="ri-error-warning-line" style={{ fontSize: 20, color: "#ef4444" }} />
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#111827", letterSpacing: -0.3 }}>Error Logs</h1>
         </div>
-        <p style={{ margin: "2px 0 16px", fontSize: 13.5, color: "#6b7280" }}>
+        <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280" }}>
           Mobile app sync errors reported by field auditors — review, acknowledge, and resolve.
         </p>
+      </div>
 
-        {/* ── Stats Row ─────────────────────────────────────────────────────── */}
-        <div style={{ display: "flex", gap: 14, paddingBottom: 20 }}>
-          {[
-            { label: "Total Errors",  value: TOTAL,  accent: "#6366f1", iconBg: "#eef2ff", icon: "ri-bar-chart-grouped-line" },
-            { label: "New",           value: NEW_CT, accent: "#ef4444", iconBg: "#fee2e2", icon: "ri-error-warning-line"       },
-            { label: "Acknowledged",  value: ACK_CT, accent: "#f59e0b", iconBg: "#fef3c7", icon: "ri-time-line"                },
-            { label: "Resolved",      value: RES_CT, accent: "#22c55e", iconBg: "#dcfce7", icon: "ri-checkbox-circle-line"     },
-          ].map(s => (
-            <div key={s.label} style={{
-              flex: 1, background: "#fff",
-              border: "1px solid #e5e7eb", borderLeft: `4px solid ${s.accent}`,
-              borderRadius: 10, padding: "16px 20px",
-              display: "flex", alignItems: "center", gap: 14,
-            }}>
-              <div style={{ width: 40, height: 40, borderRadius: 8, background: s.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <i className={s.icon} style={{ fontSize: 20, color: s.accent }} />
+      {/* ── Single scrollable body — cards + filters + table all share same padding ── */}
+      <div style={{ flex: 1, overflow: "auto", background: "#f0f2f5" }}>
+        <div style={{ padding: "24px 32px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* ── Stats Row ───────────────────────────────────────────────────────── */}
+          <div style={{ display: "flex", gap: 14 }}>
+            {[
+              { label: "Total Errors",  value: TOTAL,  accent: "#6366f1", iconBg: "#eef2ff", icon: "ri-bar-chart-grouped-line" },
+              { label: "New",           value: NEW_CT, accent: "#ef4444", iconBg: "#fee2e2", icon: "ri-error-warning-line"       },
+              { label: "Acknowledged",  value: ACK_CT, accent: "#f59e0b", iconBg: "#fef3c7", icon: "ri-time-line"                },
+              { label: "Resolved",      value: RES_CT, accent: "#22c55e", iconBg: "#dcfce7", icon: "ri-checkbox-circle-line"     },
+            ].map(s => (
+              <div key={s.label} style={{
+                flex: 1, background: "#fff",
+                border: "1px solid #e5e7eb", borderLeft: `4px solid ${s.accent}`,
+                borderRadius: 10, padding: "16px 20px",
+                display: "flex", alignItems: "center", gap: 14,
+              }}>
+                <div style={{ width: 40, height: 40, borderRadius: 8, background: s.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <i className={s.icon} style={{ fontSize: 20, color: s.accent }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#111827", lineHeight: 1, letterSpacing: -0.5 }}>{s.value}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4, fontWeight: 500 }}>{s.label}</div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: "#111827", lineHeight: 1, letterSpacing: -0.5 }}>{s.value}</div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4, fontWeight: 500 }}>{s.label}</div>
+            ))}
+          </div>
+
+          {/* ── Filter Bar ──────────────────────────────────────────────────────── */}
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px 20px", display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            {/* Date From */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>From</label>
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }} />
+            </div>
+            {/* Date To */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>To</label>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }} />
+            </div>
+            {/* User */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>User</label>
+              <select value={filterUser} onChange={e => setFilterUser(e.target.value)}
+                style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }}>
+                {USERS.map(u => <option key={u} value={u}>{u === "ALL" ? "All Users" : u}</option>)}
+              </select>
+            </div>
+            {/* Error Code */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>Error Code</label>
+              <select value={filterCode} onChange={e => setFilterCode(e.target.value)}
+                style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }}>
+                {ERROR_CODES.map(c => <option key={c} value={c}>{c === "ALL" ? "All Codes" : c}</option>)}
+              </select>
+            </div>
+            {/* Status */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>Status</label>
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+                style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }}>
+                <option value="ALL">All Status</option>
+                <option value="New">New</option>
+                <option value="Acknowledged">Acknowledged</option>
+                <option value="Resolved">Resolved</option>
+              </select>
+            </div>
+            {/* IFSC Search */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>IFSC Search</label>
+              <div style={{ position: "relative" }}>
+                <i className="ri-search-line" style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#9ca3af" }} />
+                <input type="text" value={filterIfsc} onChange={e => setFilterIfsc(e.target.value)} placeholder="e.g. SBIN0012661"
+                  style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px 6px 28px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34, width: 150 }} />
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Filter Bar ────────────────────────────────────────────────────────── */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "12px 32px", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-        {/* Date From */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>From</label>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }} />
-        </div>
-        {/* Date To */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>To</label>
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }} />
-        </div>
-        {/* User */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>User</label>
-          <select value={filterUser} onChange={e => setFilterUser(e.target.value)}
-            style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }}>
-            {USERS.map(u => <option key={u} value={u}>{u === "ALL" ? "All Users" : u}</option>)}
-          </select>
-        </div>
-        {/* Error Code */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>Error Code</label>
-          <select value={filterCode} onChange={e => setFilterCode(e.target.value)}
-            style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }}>
-            {ERROR_CODES.map(c => <option key={c} value={c}>{c === "ALL" ? "All Codes" : c}</option>)}
-          </select>
-        </div>
-        {/* Status */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>Status</label>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34 }}>
-            <option value="ALL">All Status</option>
-            <option value="New">New</option>
-            <option value="Acknowledged">Acknowledged</option>
-            <option value="Resolved">Resolved</option>
-          </select>
-        </div>
-        {/* IFSC Search */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <label style={{ fontSize: 10.5, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>IFSC Search</label>
-          <div style={{ position: "relative" }}>
-            <i className="ri-search-line" style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#9ca3af" }} />
-            <input type="text" value={filterIfsc} onChange={e => setFilterIfsc(e.target.value)} placeholder="e.g. SBIN0012661"
-              style={{ border: "1px solid #d1d5db", borderRadius: 7, padding: "6px 10px 6px 28px", fontSize: 13, color: "#111827", background: "#fff", outline: "none", height: 34, width: 150 }} />
+            {/* Spacer + Buttons pushed to right */}
+            <div style={{ flex: 1 }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={resetFilters}
+                style={{ height: 34, padding: "0 14px", background: "#f9fafb", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, color: "#374151", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
+                <i className="ri-refresh-line" style={{ fontSize: 13 }} />
+                Reset
+              </button>
+              <button onClick={exportCsv}
+                style={{ height: 34, padding: "0 14px", background: "#111827", border: "none", borderRadius: 7, fontSize: 13, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
+                <i className="ri-download-2-line" style={{ fontSize: 13 }} />
+                Export CSV
+              </button>
+            </div>
           </div>
-        </div>
-        {/* Buttons */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <label style={{ fontSize: 10.5, color: "transparent", fontWeight: 600, userSelect: "none" }}>X</label>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={resetFilters}
-              style={{ height: 34, padding: "0 14px", background: "#f9fafb", border: "1px solid #d1d5db", borderRadius: 7, fontSize: 13, color: "#374151", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
-              <i className="ri-refresh-line" style={{ fontSize: 13 }} />
-              Reset
-            </button>
-            <button onClick={exportCsv}
-              style={{ height: 34, padding: "0 14px", background: "#111827", border: "none", borderRadius: 7, fontSize: 13, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
-              <i className="ri-download-2-line" style={{ fontSize: 13 }} />
-              Export CSV
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* ── Table ─────────────────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflow: "auto", padding: "20px 32px" }}>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
-          {/* Table Header */}
-          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-            <colgroup>
-              <col style={{ width: 48 }} />
-              <col style={{ width: 190 }} />
-              <col style={{ width: 130 }} />
-              <col style={{ width: 145 }} />
-              <col style={{ width: 120 }} />
-              <col style={{ width: 170 }} />
-              <col style={{ width: 145 }} />
-              <col style={{ width: 120 }} />
-            </colgroup>
+          {/* ── Table ───────────────────────────────────────────────────────────── */}
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
             <thead>
               <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                 {["#", "Reference", "Time Reported", "User", "Audit IFSC", "Step", "Error Code", "Status"].map((h, i) => (
@@ -450,8 +440,10 @@ export default function ErrorLogsPage() {
               Showing <strong style={{ color: "#374151" }}>{filtered.length}</strong> of <strong style={{ color: "#374151" }}>{TOTAL}</strong> errors
             </span>
           </div>
-        </div>
-      </div>
+        </div>{/* end table card */}
+
+        </div>{/* end padding wrapper */}
+      </div>{/* end scrollable body */}
 
       {/* ── Slide-In Detail Panel ─────────────────────────────────────────────── */}
       {/* Backdrop */}
