@@ -231,6 +231,11 @@ export default function Sidebar() {
                       <Link key={nav.href} href={nav.href} className={`zf-nav-link${isNavActive ? " active" : ""}`}>
                         {nav.icon && <i className={`${nav.icon} zf-nav-link-icon`} />}
                         <span>{nav.label}</span>
+                        {nav.badge !== undefined && nav.badge > 0 && (
+                          <span style={{ marginLeft: "auto", background: "#ef4444", color: "#fff", borderRadius: 10, fontSize: 10, fontWeight: 700, padding: "1px 6px", lineHeight: "16px", minWidth: 18, textAlign: "center", flexShrink: 0 }}>
+                            {nav.badge}
+                          </span>
+                        )}
                       </Link>
                     );
                   })}

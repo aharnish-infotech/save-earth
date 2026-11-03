@@ -5,6 +5,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon?: string;
+  badge?: number;
 }
 
 export interface NavSection {
@@ -84,7 +85,8 @@ export const RAIL_ITEMS: RailItem[] = [
     sections: [{
       section: "SETTINGS",
       items: [
-        { label: "Settings", href: "/settings", icon: "ri-settings-3-line" },
+        { label: "Settings",   href: "/settings",    icon: "ri-settings-3-line"   },
+        { label: "Error Logs", href: "/error-logs",  icon: "ri-error-warning-line", badge: 3 },
       ],
     }],
   },
