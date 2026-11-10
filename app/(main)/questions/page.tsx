@@ -6,6 +6,7 @@ type QType            = "YES_NO_NA" | "OK_NOT_OK_NA";
 type RiskLevel        = "HIGH" | "MEDIUM" | "LOW";
 type QStatus          = "Active" | "Draft" | "Inactive";
 type PhotoRequirement = "none" | "always" | "if_yes" | "if_no" | "if_na";
+type ReportVisibility = "both" | "report_only" | "recommendation_only" | "not_applicable";
 
 // UUID v4 generator — replaces crypto.randomUUID() for mock/SSR safety
 const uuid = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
@@ -33,9 +34,11 @@ interface Question {
   multiPhoto:       boolean;
   numericValue: boolean;
   allowNA:      boolean;
-  recommendEn:  string;
-  recommendHi:  string;
-  section:      string;
+  recommendEn:      string;
+  recommendHi:      string;
+  reportVisibility: ReportVisibility;
+  showRecommendWhen: string[];  // "yes" | "no" | "na"
+  section:          string;
   status:       QStatus;
   usedIn:       number;
   createdOn:    string;
@@ -54,6 +57,8 @@ const mkQ = (
   mandatory: true, allowRemarks: true, photoRequirement: "none" as PhotoRequirement,
   remarkIfYes: "", remarkIfNo: "", remarkIfNA: "",
   multiPhoto: false, numericValue: false, allowNA: false,
+  reportVisibility: "both" as ReportVisibility,
+  showRecommendWhen: ["no"] as string[],
   status: "Active", usedIn: 0, createdOn: D,
 });
 
@@ -353,6 +358,8 @@ const EMPTY = {
   mandatory:true, allowRemarks:true, photoRequirement:"none" as PhotoRequirement,
   multiPhoto:false, numericValue:false, allowNA:false,
   remarkIfYes:"", remarkIfNo:"", remarkIfNA:"",
+  reportVisibility:"both" as ReportVisibility,
+  showRecommendWhen:["no"] as string[],
   status:"Active" as QStatus,
 };
 type FormData = typeof EMPTY;
@@ -475,6 +482,7 @@ export default function QuestionLibraryPage() {
       mandatory:q.mandatory, allowRemarks:q.allowRemarks, photoRequirement:q.photoRequirement,
       remarkIfYes:q.remarkIfYes, remarkIfNo:q.remarkIfNo, remarkIfNA:q.remarkIfNA,
       multiPhoto:q.multiPhoto, numericValue:q.numericValue, allowNA:q.allowNA,
+      reportVisibility:q.reportVisibility, showRecommendWhen:q.showRecommendWhen,
       status:q.status, category:q.category });
   };
 
@@ -716,32 +724,160 @@ export default function QuestionLibraryPage() {
                 </div>
               </div>
 
-              {/* Recommendation English */}
-              <div>
-                <label style={LBL}>Default Recommendation (English)</label>
-                <input value={form.recommendEn} onChange={e=>fp("recommendEn",e.target.value)}
-                  placeholder="COMPLIED" style={INP}/>
-              </div>
+              {/* ── Recommendation Settings ───────────────────────────────── */}
+              {(()=>{
+                const AL = getAnswerLabels(form.type);
+                const visibility = form.reportVisibility as ReportVisibility;
+                const showWhen   = form.showRecommendWhen as string[];
 
-              {/* Recommendation Hindi */}
-              <div>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
-                  <label style={{ ...LBL, marginBottom:0 }}>Default Recommendation (Hindi)</label>
-                  {form.recommendEn.trim() && (
-                    <button onClick={()=>translateToHindi(form.recommendEn,"recommendHi")} disabled={translating.recommendHi}
-                      style={{ fontSize:10, fontWeight:700, color:translating.recommendHi?"#9ca3af":"#2563eb", background:translating.recommendHi?"#f3f4f6":"#eff6ff", border:"none", borderRadius:5, padding:"3px 8px", cursor:translating.recommendHi?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:3 }}>
-                      <i className={translating.recommendHi?"ri-loader-4-line":"ri-translate-2"} style={{ fontSize:11 }}/>
-                      {translating.recommendHi ? "Translating…" : "↺ Re-translate"}
-                    </button>
-                  )}
-                </div>
-                <input value={translating.recommendHi ? "" : form.recommendHi}
-                  onChange={e=>fp("recommendHi",e.target.value)}
-                  onFocus={()=>onHindiFocus(form.recommendEn,"recommendHi",form.recommendHi)}
-                  disabled={translating.recommendHi}
-                  placeholder={translating.recommendHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
-                  style={{ ...INP, background:translating.recommendHi?"#f9fafb":"#fff", color:translating.recommendHi?"#9ca3af":"#374151", fontStyle:translating.recommendHi?"italic":"normal" }}/>
-              </div>
+                const toggleWhen = (val: string) => {
+                  const next = showWhen.includes(val)
+                    ? showWhen.filter(v => v !== val)
+                    : [...showWhen, val];
+                  fp("showRecommendWhen", next);
+                };
+
+                const VISIBILITY_OPTS: { value: ReportVisibility; label: string; desc: string; icon: string; accent: string; bg: string }[] = [
+                  { value:"both",               label:"Both Sections",       desc:"Main report questions and final recommendation section", icon:"ri-layout-column-line",   accent:"#2563eb", bg:"#eff6ff" },
+                  { value:"report_only",         label:"Report Only",         desc:"Appears in main report questions only — no recommendation entry", icon:"ri-file-text-line",        accent:"#0891b2", bg:"#ecfeff" },
+                  { value:"recommendation_only", label:"Recommendation Only", desc:"Skipped in main report — goes directly into recommendation section", icon:"ri-bookmark-3-line",       accent:"#7c3aed", bg:"#f5f3ff" },
+                  { value:"not_applicable",      label:"Not in Report",       desc:"Question is asked on-site but output is excluded from the report", icon:"ri-eye-off-line",          accent:"#6b7280", bg:"#f3f4f6" },
+                ];
+
+                const WHEN_OPTS = [
+                  { val:"yes", label:AL.yes, color:"#16a34a", bg:"#f0fdf4", border:"#86efac" },
+                  { val:"no",  label:AL.no,  color:"#dc2626", bg:"#fef2f2", border:"#fca5a5" },
+                  { val:"na",  label:AL.na,  color:"#7c3aed", bg:"#faf5ff", border:"#c4b5fd" },
+                ];
+
+                const showTextFields = visibility === "both" || visibility === "recommendation_only";
+                const showWhenFields = visibility !== "not_applicable";
+
+                return (
+                  <div style={{ border:"1px solid #e5e7eb", borderRadius:9 }}>
+                    {/* Section header */}
+                    <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6, borderRadius:"9px 9px 0 0" }}>
+                      <i className="ri-bookmark-3-line" style={{ fontSize:13, color:"#7c3aed" }}/>
+                      <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Recommendation Settings</span>
+                    </div>
+
+                    <div style={{ padding:"14px", background:"#f9fafb", display:"flex", flexDirection:"column" as const, gap:14, borderRadius:"0 0 9px 9px" }}>
+
+                      {/* ── A. Report Visibility ─────────────────────────── */}
+                      <div>
+                        <label style={{ ...LBL, marginBottom:8 }}>
+                          <i className="ri-layout-column-line" style={{ marginRight:4 }}/>
+                          Report Visibility
+                        </label>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:7 }}>
+                          {VISIBILITY_OPTS.map(opt => {
+                            const sel = visibility === opt.value;
+                            return (
+                              <button key={opt.value} onClick={()=>fp("reportVisibility", opt.value)}
+                                style={{
+                                  display:"flex", flexDirection:"column" as const, alignItems:"flex-start", gap:3,
+                                  padding:"10px 12px", borderRadius:8, cursor:"pointer", textAlign:"left" as const,
+                                  border:`1.5px solid ${sel ? opt.accent : "#e5e7eb"}`,
+                                  background: sel ? opt.bg : "#fff",
+                                  transition:"all 0.15s",
+                                }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                                  <i className={opt.icon} style={{ fontSize:13, color: sel ? opt.accent : "#9ca3af" }}/>
+                                  <span style={{ fontSize:11.5, fontWeight:700, color: sel ? opt.accent : "#374151" }}>{opt.label}</span>
+                                </div>
+                                <span style={{ fontSize:10, color: sel ? opt.accent : "#9ca3af", lineHeight:1.4, opacity: sel ? 0.85 : 1 }}>{opt.desc}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* ── B. Show Recommendation When ──────────────────── */}
+                      {showWhenFields && (
+                        <div style={{ borderTop:"1px solid #e5e7eb", paddingTop:12 }}>
+                          <label style={{ ...LBL, marginBottom:7 }}>
+                            <i className="ri-flashlight-line" style={{ marginRight:4 }}/>
+                            Show Recommendation When Answer Is
+                          </label>
+                          <div style={{ display:"flex", gap:8 }}>
+                            {WHEN_OPTS.map(o => {
+                              const on = showWhen.includes(o.val);
+                              return (
+                                <button key={o.val} onClick={()=>toggleWhen(o.val)}
+                                  style={{
+                                    flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:5,
+                                    padding:"8px 10px", borderRadius:8, cursor:"pointer",
+                                    border:`1.5px solid ${on ? o.border : "#e5e7eb"}`,
+                                    background: on ? o.bg : "#fff",
+                                    transition:"all 0.15s",
+                                  }}>
+                                  <div style={{
+                                    width:14, height:14, borderRadius:3, border:`2px solid ${on ? o.color : "#d1d5db"}`,
+                                    background: on ? o.color : "#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+                                  }}>
+                                    {on && <i className="ri-check-line" style={{ fontSize:9, color:"#fff" }}/>}
+                                  </div>
+                                  <span style={{ fontSize:12, fontWeight:700, color: on ? o.color : "#6b7280" }}>{o.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div style={{ marginTop:6, fontSize:10, color:"#9ca3af", display:"flex", alignItems:"center", gap:4 }}>
+                            <i className="ri-information-line" style={{ fontSize:11 }}/>
+                            Select all answer values that should trigger a recommendation entry in the report.
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── C. Default Recommendation Text ───────────────── */}
+                      {showTextFields && (
+                        <div style={{ borderTop:"1px solid #e5e7eb", paddingTop:12, display:"flex", flexDirection:"column" as const, gap:10 }}>
+                          <label style={{ ...LBL, marginBottom:0 }}>
+                            <i className="ri-translate-2" style={{ marginRight:4 }}/>
+                            Default Recommendation Text
+                          </label>
+                          {/* English */}
+                          <div>
+                            <label style={{ fontSize:10, fontWeight:600, color:"#374151", display:"block", marginBottom:4 }}>English</label>
+                            <input value={form.recommendEn} onChange={e=>fp("recommendEn",e.target.value)}
+                              placeholder="e.g. COMPLIED — maintained as per norms" style={{ ...INP, fontSize:12 }}/>
+                          </div>
+                          {/* Hindi */}
+                          <div>
+                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                              <label style={{ fontSize:10, fontWeight:600, color:"#374151" }}>Hindi</label>
+                              {form.recommendEn.trim() && (
+                                <button onClick={()=>translateToHindi(form.recommendEn,"recommendHi")} disabled={translating.recommendHi}
+                                  style={{ fontSize:10, fontWeight:700, color:translating.recommendHi?"#9ca3af":"#2563eb", background:translating.recommendHi?"#f3f4f6":"#eff6ff", border:"none", borderRadius:5, padding:"3px 8px", cursor:translating.recommendHi?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:3 }}>
+                                  <i className={translating.recommendHi?"ri-loader-4-line":"ri-translate-2"} style={{ fontSize:11 }}/>
+                                  {translating.recommendHi ? "Translating…" : "↺ Re-translate"}
+                                </button>
+                              )}
+                            </div>
+                            <input value={translating.recommendHi ? "" : form.recommendHi}
+                              onChange={e=>fp("recommendHi",e.target.value)}
+                              onFocus={()=>onHindiFocus(form.recommendEn,"recommendHi",form.recommendHi)}
+                              disabled={translating.recommendHi}
+                              placeholder={translating.recommendHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
+                              style={{ ...INP, fontSize:12, background:translating.recommendHi?"#f9fafb":"#fff", color:translating.recommendHi?"#9ca3af":"#374151", fontStyle:translating.recommendHi?"italic":"normal" }}/>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Info banner when Not in Report */}
+                      {visibility === "not_applicable" && (
+                        <div style={{ borderTop:"1px solid #e5e7eb", paddingTop:10, display:"flex", gap:8, alignItems:"flex-start" }}>
+                          <i className="ri-eye-off-line" style={{ fontSize:14, color:"#9ca3af", marginTop:1, flexShrink:0 }}/>
+                          <span style={{ fontSize:11, color:"#9ca3af", lineHeight:1.5 }}>
+                            This question will be asked during the audit but its answer and recommendation will <strong>not appear</strong> in any section of the generated report.
+                          </span>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                );
+              })()}
 
             </div>
 
