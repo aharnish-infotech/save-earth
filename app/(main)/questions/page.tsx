@@ -37,7 +37,7 @@ interface Question {
   recommendEn:      string;
   recommendHi:      string;
   reportVisibility: ReportVisibility;
-  showRecommendWhen: string[];  // "yes" | "no" | "na"
+  showRecommendWhen: string;    // "yes" | "no" | "na"
   section:          string;
   status:       QStatus;
   usedIn:       number;
@@ -58,7 +58,7 @@ const mkQ = (
   remarkIfYes: "", remarkIfNo: "", remarkIfNA: "",
   multiPhoto: false, numericValue: false, allowNA: false,
   reportVisibility: "both" as ReportVisibility,
-  showRecommendWhen: ["no"] as string[],
+  showRecommendWhen: "no",
   status: "Active", usedIn: 0, createdOn: D,
 });
 
@@ -359,7 +359,7 @@ const EMPTY = {
   multiPhoto:false, numericValue:false, allowNA:false,
   remarkIfYes:"", remarkIfNo:"", remarkIfNA:"",
   reportVisibility:"both" as ReportVisibility,
-  showRecommendWhen:["no"] as string[],
+  showRecommendWhen:"no",
   status:"Active" as QStatus,
 };
 type FormData = typeof EMPTY;
@@ -728,14 +728,7 @@ export default function QuestionLibraryPage() {
               {(()=>{
                 const AL = getAnswerLabels(form.type);
                 const visibility = form.reportVisibility as ReportVisibility;
-                const showWhen   = form.showRecommendWhen as string[];
-
-                const toggleWhen = (val: string) => {
-                  const next = showWhen.includes(val)
-                    ? showWhen.filter(v => v !== val)
-                    : [...showWhen, val];
-                  fp("showRecommendWhen", next);
-                };
+                const showWhen   = form.showRecommendWhen as string;
 
                 const VISIBILITY_OPTS: { value: ReportVisibility; label: string; desc: string; icon: string; accent: string; bg: string }[] = [
                   { value:"both",               label:"Both Sections",       desc:"Main report questions and final recommendation section", icon:"ri-layout-column-line",   accent:"#2563eb", bg:"#eff6ff" },
@@ -801,21 +794,23 @@ export default function QuestionLibraryPage() {
                           </label>
                           <div style={{ display:"flex", gap:8 }}>
                             {WHEN_OPTS.map(o => {
-                              const on = showWhen.includes(o.val);
+                              const on = showWhen === o.val;
                               return (
-                                <button key={o.val} onClick={()=>toggleWhen(o.val)}
+                                <button key={o.val} onClick={()=>fp("showRecommendWhen", o.val)}
                                   style={{
-                                    flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:5,
-                                    padding:"8px 10px", borderRadius:8, cursor:"pointer",
+                                    flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:7,
+                                    padding:"9px 10px", borderRadius:8, cursor:"pointer",
                                     border:`1.5px solid ${on ? o.border : "#e5e7eb"}`,
                                     background: on ? o.bg : "#fff",
                                     transition:"all 0.15s",
                                   }}>
+                                  {/* Radio dot */}
                                   <div style={{
-                                    width:14, height:14, borderRadius:3, border:`2px solid ${on ? o.color : "#d1d5db"}`,
-                                    background: on ? o.color : "#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+                                    width:14, height:14, borderRadius:"50%",
+                                    border:`2px solid ${on ? o.color : "#d1d5db"}`,
+                                    background:"#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
                                   }}>
-                                    {on && <i className="ri-check-line" style={{ fontSize:9, color:"#fff" }}/>}
+                                    {on && <div style={{ width:6, height:6, borderRadius:"50%", background:o.color }}/>}
                                   </div>
                                   <span style={{ fontSize:12, fontWeight:700, color: on ? o.color : "#6b7280" }}>{o.label}</span>
                                 </button>
