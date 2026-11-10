@@ -834,8 +834,9 @@ export default function QuestionLibraryPage() {
                           {/* English */}
                           <div>
                             <label style={{ fontSize:10, fontWeight:600, color:"#374151", display:"block", marginBottom:4 }}>English</label>
-                            <input value={form.recommendEn} onChange={e=>fp("recommendEn",e.target.value)}
-                              placeholder="e.g. COMPLIED — maintained as per norms" style={{ ...INP, fontSize:12 }}/>
+                            <textarea value={form.recommendEn} onChange={e=>fp("recommendEn",e.target.value)}
+                              rows={3} placeholder="e.g. The earthing pits must be maintained properly and all connections verified by a licensed electrician before the next audit cycle."
+                              style={{ ...INP, fontSize:12, resize:"vertical", lineHeight:1.55 }}/>
                           </div>
                           {/* Hindi */}
                           <div>
@@ -849,12 +850,12 @@ export default function QuestionLibraryPage() {
                                 </button>
                               )}
                             </div>
-                            <input value={translating.recommendHi ? "" : form.recommendHi}
+                            <textarea value={translating.recommendHi ? "" : form.recommendHi}
                               onChange={e=>fp("recommendHi",e.target.value)}
                               onFocus={()=>onHindiFocus(form.recommendEn,"recommendHi",form.recommendHi)}
                               disabled={translating.recommendHi}
-                              placeholder={translating.recommendHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
-                              style={{ ...INP, fontSize:12, background:translating.recommendHi?"#f9fafb":"#fff", color:translating.recommendHi?"#9ca3af":"#374151", fontStyle:translating.recommendHi?"italic":"normal" }}/>
+                              rows={3} placeholder={translating.recommendHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
+                              style={{ ...INP, fontSize:12, resize:"vertical", lineHeight:1.55, background:translating.recommendHi?"#f9fafb":"#fff", color:translating.recommendHi?"#9ca3af":"#374151", fontStyle:translating.recommendHi?"italic":"normal" }}/>
                           </div>
                         </div>
                       )}
