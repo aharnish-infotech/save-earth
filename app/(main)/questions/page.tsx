@@ -366,7 +366,7 @@ const EMPTY = {
   status:"Active" as QStatus,
 };
 type FormData = typeof EMPTY;
-type HindiField = "textHi" | "recommendHi";
+type HindiField = "textHi";
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
 const TH: React.CSSProperties = { padding:"10px 12px", fontSize:10, fontWeight:700, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.05em", background:"#f9fafb", borderBottom:"1px solid #e5e7eb", whiteSpace:"nowrap" as const, textAlign:"left" as const };
@@ -408,7 +408,7 @@ export default function QuestionLibraryPage() {
   const isEditMode = !!editRow;
 
   // Translation
-  const [translating, setTranslating] = useState<Record<HindiField,boolean>>({ textHi:false, recommendHi:false });
+  const [translating, setTranslating] = useState<Record<HindiField,boolean>>({ textHi:false });
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<Question | null>(null);
@@ -884,25 +884,6 @@ export default function QuestionLibraryPage() {
                               rows={3} placeholder="e.g. The earthing pits must be maintained properly and all connections verified by a licensed electrician before the next audit cycle."
                               style={{ ...INP, fontSize:12, resize:"vertical", lineHeight:1.55 }}/>
                           </div>
-                          {/* Hindi */}
-                          <div>
-                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
-                              <label style={{ fontSize:10, fontWeight:600, color:"#374151" }}>Hindi</label>
-                              {form.recommendEn.trim() && (
-                                <button onClick={()=>translateToHindi(form.recommendEn,"recommendHi")} disabled={translating.recommendHi}
-                                  style={{ fontSize:10, fontWeight:700, color:translating.recommendHi?"#9ca3af":"#2563eb", background:translating.recommendHi?"#f3f4f6":"#eff6ff", border:"none", borderRadius:5, padding:"3px 8px", cursor:translating.recommendHi?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:3 }}>
-                                  <i className={translating.recommendHi?"ri-loader-4-line":"ri-translate-2"} style={{ fontSize:11 }}/>
-                                  {translating.recommendHi ? "Translating…" : "↺ Re-translate"}
-                                </button>
-                              )}
-                            </div>
-                            <textarea value={translating.recommendHi ? "" : form.recommendHi}
-                              onChange={e=>fp("recommendHi",e.target.value)}
-                              onFocus={()=>onHindiFocus(form.recommendEn,"recommendHi",form.recommendHi)}
-                              disabled={translating.recommendHi}
-                              rows={3} placeholder={translating.recommendHi ? "Translating from English…" : "Click to auto-translate, or type manually"}
-                              style={{ ...INP, fontSize:12, resize:"vertical", lineHeight:1.55, background:translating.recommendHi?"#f9fafb":"#fff", color:translating.recommendHi?"#9ca3af":"#374151", fontStyle:translating.recommendHi?"italic":"normal" }}/>
-                          </div>
                         </div>
                       )}
 
@@ -982,7 +963,6 @@ export default function QuestionLibraryPage() {
                     remarkIfNo:       form.remarkIfNo  || "(empty)",
                     remarkIfNA:       form.remarkIfNA  || "(empty)",
                     recommendEn:      form.recommendEn,
-                    recommendHi:  form.recommendHi  || "(empty)",
                     status:       form.status,
                   }, null, 2);
                   navigator.clipboard.writeText(payload).then(() => {
@@ -1013,7 +993,6 @@ export default function QuestionLibraryPage() {
   remarkIfNo:       form.remarkIfNo  || "(empty)",
   remarkIfNA:       form.remarkIfNA  || "(empty)",
   recommendEn:      form.recommendEn,
-  recommendHi:  form.recommendHi  || "(empty)",
   status:       form.status,
 }, null, 2))}
             </pre>
@@ -1210,9 +1189,6 @@ enum QStatus   { ACTIVE  DRAFT  INACTIVE }`;
                         </td>
                         <td style={TD}>
                           <div style={{ fontSize:11, color:"#374151", fontWeight:600 }}>{q.recommendEn}</div>
-                          {q.recommendHi && (
-                            <div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>{q.recommendHi}</div>
-                          )}
                         </td>
                         <td style={{ ...TD, textAlign:"center" }}>
                           <button onClick={()=>handleToggle(q.id)}
