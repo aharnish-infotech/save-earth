@@ -682,11 +682,78 @@ function ComingSoonPanel({ label }: { label: string }) {
 }
 
 // ── Status Master Panel ───────────────────────────────────────────────────────
-const STATUS_MASTER = [
-  { status:"In Progress",     color:"#2563eb", bg:"#dbeafe", icon:"ri-loader-4-line",    description:"Auditor has opened the branch form and audit is actively in progress." },
-  { status:"Draft",           color:"#ca8a04", bg:"#fef9c3", icon:"ri-draft-line",       description:"Auditor has completed all entries but has not yet sent the report to the Branch Manager." },
-  { status:"Pending Approval",color:"#7c3aed", bg:"#f3e8ff", icon:"ri-time-line",        description:"Report copy sent to Branch Manager. Admin is verifying and generating the final report for physical submission." },
-  { status:"Delivered",       color:"#16a34a", bg:"#dcfce7", icon:"ri-send-plane-line",  description:"Admin has physically submitted the final audit report. Audit is closed." },
+interface AuditStatus {
+  code: string;
+  status: string;
+  color: string;
+  bg: string;
+  icon: string;
+  description: string;
+  access: string;
+  accessIcon: string;
+  writable: boolean;
+  transitionFrom: string;
+  stage: string;
+  special?: boolean;
+}
+
+const STATUS_MASTER: AuditStatus[] = [
+  {
+    code: "IN_PROGRESS",
+    status: "In Progress",
+    color: "#2563eb", bg: "#dbeafe", icon: "ri-loader-4-line",
+    description: "Steps 1–12. The field auditor is on site and working through the sheets.",
+    access: "Auditor — Flutter app",
+    accessIcon: "ri-smartphone-line",
+    writable: true,
+    transitionFrom: "— Initial state",
+    stage: "1 of 4",
+  },
+  {
+    code: "DRAFT",
+    status: "Draft",
+    color: "#ca8a04", bg: "#fef9c3", icon: "ri-draft-line",
+    description: "Step 13 submitted. The branch has its copy to review and the audit is still editable, so corrections land while the auditor is there.",
+    access: "Auditor — Flutter app",
+    accessIcon: "ri-smartphone-line",
+    writable: true,
+    transitionFrom: "IN_PROGRESS",
+    stage: "2 of 4",
+  },
+  {
+    code: "COMPLETED",
+    status: "Completed",
+    color: "#16a34a", bg: "#dcfce7", icon: "ri-checkbox-circle-line",
+    description: "Step 14 submitted. The manager has signed and sealed the attendance sheet and the auditor has photographed it. This is what complete means — no admin approval after it. Frozen.",
+    access: "Auditor — Flutter app",
+    accessIcon: "ri-smartphone-line",
+    writable: false,
+    transitionFrom: "DRAFT",
+    stage: "3 of 4",
+  },
+  {
+    code: "DELIVERED",
+    status: "Delivered",
+    color: "#0891b2", bg: "#e0f2fe", icon: "ri-send-plane-line",
+    description: "Report formally delivered to the branch/client. Set from the web application only. Cannot be set unless the audit is already Completed. Frozen.",
+    access: "Web app only",
+    accessIcon: "ri-global-line",
+    writable: false,
+    transitionFrom: "COMPLETED only",
+    stage: "4 of 4",
+  },
+  {
+    code: "CANCELLED",
+    status: "Cancelled",
+    color: "#dc2626", bg: "#fee2e2", icon: "ri-close-circle-line",
+    description: "Audit cancelled by admin. Applied when an audit is incomplete, invalid, or needs to be voided for any reason. Only an admin can set this status from the web app. Can be applied to any audit that is not yet Delivered.",
+    access: "Admin — Web app only",
+    accessIcon: "ri-shield-user-line",
+    writable: false,
+    transitionFrom: "Any (except Delivered)",
+    stage: "Special",
+    special: true,
+  },
 ];
 
 function StatusMasterPanel() {
@@ -699,13 +766,18 @@ function StatusMasterPanel() {
     padding:"14px 16px", verticalAlign:"middle", fontSize:13,
     color:"#374151", borderBottom:"1px solid #f3f4f6",
   };
+
+  const mainFlow = STATUS_MASTER.filter(s => !s.special);
+  const special  = STATUS_MASTER.filter(s => s.special);
+
   return (
     <div style={{ background:"var(--custom-white)", borderRadius:14, border:"1px solid var(--default-border)", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+
       {/* Header */}
       <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--default-border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div>
           <div style={{ fontSize:14, fontWeight:700, color:"var(--default-text-color)" }}>Audit Status Definitions</div>
-          <div style={{ fontSize:12, color:"var(--text-muted)", marginTop:2 }}>These statuses define the lifecycle of every audit in the system.</div>
+          <div style={{ fontSize:12, color:"var(--text-muted)", marginTop:2 }}>These statuses define the full lifecycle of every audit in the system.</div>
         </div>
         <span style={{ fontSize:11, fontWeight:600, color:"#6b7280", background:"#f3f4f6", borderRadius:6, padding:"4px 10px" }}>
           {STATUS_MASTER.length} Statuses
@@ -717,28 +789,72 @@ function StatusMasterPanel() {
         <table style={{ width:"100%", borderCollapse:"collapse" }}>
           <thead>
             <tr>
-              <th style={{ ...TH2, width:40 }}>#</th>
+              <th style={{ ...TH2, width:36 }}>#</th>
               <th style={TH2}>Status</th>
               <th style={TH2}>Description</th>
+              <th style={TH2}>Access / Set by</th>
+              <th style={{ ...TH2, textAlign:"center" }}>Writable</th>
+              <th style={TH2}>Transition From</th>
               <th style={{ ...TH2, textAlign:"center" }}>Stage</th>
             </tr>
           </thead>
           <tbody>
             {STATUS_MASTER.map((s, i) => (
-              <tr key={s.status}
+              <tr key={s.code}
                 onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                style={{ transition:"background 0.1s" }}>
+                onMouseLeave={e => (e.currentTarget.style.background = s.special ? "#fff9f9" : "transparent")}
+                style={{ transition:"background 0.1s", background: s.special ? "#fff9f9" : "transparent" }}>
+
                 <td style={{ ...TD2, color:"#d1d5db", fontSize:12 }}>{i + 1}</td>
+
+                {/* Status badge */}
                 <td style={TD2}>
-                  <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:12, fontWeight:600, color:s.color, background:s.bg, borderRadius:20, padding:"4px 12px", whiteSpace:"nowrap" }}>
-                    <i className={s.icon} style={{ fontSize:12 }}/>{s.status}
+                  <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                    <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:12, fontWeight:600, color:s.color, background:s.bg, borderRadius:20, padding:"4px 12px", whiteSpace:"nowrap", width:"fit-content" }}>
+                      <i className={s.icon} style={{ fontSize:12 }}/>{s.status}
+                    </span>
+                    <code style={{ fontSize:10, color:"#9ca3af", fontFamily:"monospace" }}>{s.code}</code>
+                  </div>
+                </td>
+
+                {/* Description */}
+                <td style={{ ...TD2, color:"#6b7280", fontSize:12, maxWidth:360, lineHeight:1.55 }}>{s.description}</td>
+
+                {/* Access */}
+                <td style={TD2}>
+                  <span style={{ display:"inline-flex", alignItems:"center", gap:5, fontSize:11, fontWeight:600,
+                    color: s.code === "CANCELLED" ? "#dc2626" : s.code === "DELIVERED" ? "#0891b2" : "#374151",
+                    background: s.code === "CANCELLED" ? "#fee2e2" : s.code === "DELIVERED" ? "#e0f2fe" : "#f3f4f6",
+                    borderRadius:6, padding:"4px 10px", whiteSpace:"nowrap" }}>
+                    <i className={s.accessIcon} style={{ fontSize:12 }}/>
+                    {s.access}
                   </span>
                 </td>
-                <td style={{ ...TD2, color:"#6b7280", fontSize:13, maxWidth:480 }}>{s.description}</td>
+
+                {/* Writable */}
                 <td style={{ ...TD2, textAlign:"center" }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:"#374151", background:"#f3f4f6", borderRadius:6, padding:"3px 10px" }}>
-                    Stage {i + 1} / {STATUS_MASTER.length}
+                  <span style={{ fontSize:11, fontWeight:700,
+                    color: s.writable ? "#16a34a" : "#9ca3af",
+                    background: s.writable ? "#dcfce7" : "#f3f4f6",
+                    borderRadius:6, padding:"3px 10px" }}>
+                    {s.writable ? "✓ Writable" : "✕ Frozen"}
+                  </span>
+                </td>
+
+                {/* Transition */}
+                <td style={{ ...TD2, fontSize:12 }}>
+                  <code style={{ background:"#f3f4f6", color:"#374151", padding:"2px 7px", borderRadius:5, fontSize:11, whiteSpace:"nowrap" }}>
+                    {s.transitionFrom}
+                  </code>
+                </td>
+
+                {/* Stage */}
+                <td style={{ ...TD2, textAlign:"center" }}>
+                  <span style={{ fontSize:11, fontWeight:700,
+                    color: s.special ? "#dc2626" : "#374151",
+                    background: s.special ? "#fee2e2" : "#f3f4f6",
+                    borderRadius:6, padding:"3px 10px" }}>
+                    {s.stage}
                   </span>
                 </td>
               </tr>
@@ -748,19 +864,45 @@ function StatusMasterPanel() {
       </div>
 
       {/* Flow diagram */}
-      <div style={{ padding:"16px 20px", borderTop:"1px solid var(--default-border)", background:"#fafafa" }}>
-        <div style={{ fontSize:11, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>Audit Lifecycle Flow</div>
-        <div style={{ display:"flex", alignItems:"center", gap:0, flexWrap:"wrap" }}>
-          {STATUS_MASTER.map((s, i) => (
-            <React.Fragment key={s.status}>
-              <div style={{ display:"flex", alignItems:"center", gap:6, background:s.bg, border:`1.5px solid ${s.color}20`, borderRadius:8, padding:"7px 14px" }}>
-                <i className={s.icon} style={{ fontSize:13, color:s.color }}/>
-                <span style={{ fontSize:12, fontWeight:600, color:s.color, whiteSpace:"nowrap" }}>{s.status}</span>
+      <div style={{ padding:"20px 20px", borderTop:"1px solid var(--default-border)", background:"#fafafa" }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:14 }}>Audit Lifecycle Flow</div>
+
+        {/* Main linear flow */}
+        <div style={{ display:"flex", alignItems:"center", gap:0, flexWrap:"wrap", marginBottom:14 }}>
+          {mainFlow.map((s, i) => (
+            <React.Fragment key={s.code}>
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:6, background:s.bg, border:`1.5px solid ${s.color}30`, borderRadius:8, padding:"8px 14px" }}>
+                  <i className={s.icon} style={{ fontSize:13, color:s.color }}/>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:s.color, whiteSpace:"nowrap" }}>{s.status}</div>
+                    <div style={{ fontSize:9, color:s.color + "99", whiteSpace:"nowrap" }}>{s.writable ? "Writable" : "Frozen"} · {s.stage}</div>
+                  </div>
+                </div>
               </div>
-              {i < STATUS_MASTER.length - 1 && (
-                <i className="ri-arrow-right-line" style={{ fontSize:16, color:"#d1d5db", margin:"0 4px" }}/>
+              {i < mainFlow.length - 1 && (
+                <i className="ri-arrow-right-line" style={{ fontSize:16, color:"#d1d5db", margin:"0 6px" }}/>
               )}
             </React.Fragment>
+          ))}
+        </div>
+
+        {/* Cancelled — special side exit */}
+        <div style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"10px 14px", background:"#fff5f5", border:"1px dashed #fca5a5", borderRadius:8 }}>
+          <i className="ri-corner-down-right-line" style={{ fontSize:14, color:"#dc2626", marginTop:2 }}/>
+          <div style={{ flex:1 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+              <span style={{ display:"inline-flex", alignItems:"center", gap:5, fontSize:12, fontWeight:600, color:"#dc2626", background:"#fee2e2", borderRadius:20, padding:"3px 10px" }}>
+                <i className="ri-close-circle-line" style={{ fontSize:12 }}/> Cancelled
+              </span>
+              <span style={{ fontSize:10, fontWeight:700, color:"#dc2626", background:"#fee2e2", borderRadius:4, padding:"1px 6px" }}>Admin only · Web app</span>
+            </div>
+            <div style={{ fontSize:11, color:"#b91c1c" }}>
+              Can be applied from <strong>IN_PROGRESS</strong>, <strong>DRAFT</strong>, or <strong>COMPLETED</strong>. Cannot cancel an audit that is already <strong>Delivered</strong>.
+            </div>
+          </div>
+          {special.map(s => (
+            <code key={s.code} style={{ fontSize:10, color:"#9ca3af" }}>{s.code}</code>
           ))}
         </div>
       </div>
