@@ -85,8 +85,9 @@ export const RAIL_ITEMS: RailItem[] = [
     sections: [{
       section: "SETTINGS",
       items: [
-        { label: "Settings",   href: "/settings",    icon: "ri-settings-3-line"   },
-        { label: "Error Logs", href: "/error-logs",  icon: "ri-error-warning-line", badge: 3 },
+        { label: "Settings",          href: "/settings",               icon: "ri-settings-3-line"      },
+        { label: "Auto Recommendations", href: "/settings/auto-recommendations", icon: "ri-flashlight-line"     },
+        { label: "Error Logs",        href: "/error-logs",             icon: "ri-error-warning-line", badge: 3 },
       ],
     }],
   },
