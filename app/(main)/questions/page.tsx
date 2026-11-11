@@ -36,9 +36,10 @@ interface Question {
   allowNA:      boolean;
   recommendEn:      string;
   recommendHi:      string;
-  reportVisibility: ReportVisibility;
-  showRecommendWhen: string;    // "yes" | "no" | "na"
-  section:          string;
+  reportVisibility:  ReportVisibility;
+  showRecommendWhen: string;        // "yes" | "no" | "na"
+  recommendRisk:     RiskLevel;     // LOW | MEDIUM | HIGH — severity of this recommendation in the report
+  section:           string;
   status:       QStatus;
   usedIn:       number;
   createdOn:    string;
@@ -59,6 +60,7 @@ const mkQ = (
   multiPhoto: false, numericValue: false, allowNA: false,
   reportVisibility: "both" as ReportVisibility,
   showRecommendWhen: "no",
+  recommendRisk: "HIGH" as RiskLevel,
   status: "Active", usedIn: 0, createdOn: D,
 });
 
@@ -360,6 +362,7 @@ const EMPTY = {
   remarkIfYes:"", remarkIfNo:"", remarkIfNA:"",
   reportVisibility:"both" as ReportVisibility,
   showRecommendWhen:"no",
+  recommendRisk:"HIGH" as RiskLevel,
   status:"Active" as QStatus,
 };
 type FormData = typeof EMPTY;
@@ -482,7 +485,7 @@ export default function QuestionLibraryPage() {
       mandatory:q.mandatory, allowRemarks:q.allowRemarks, photoRequirement:q.photoRequirement,
       remarkIfYes:q.remarkIfYes, remarkIfNo:q.remarkIfNo, remarkIfNA:q.remarkIfNA,
       multiPhoto:q.multiPhoto, numericValue:q.numericValue, allowNA:q.allowNA,
-      reportVisibility:q.reportVisibility, showRecommendWhen:q.showRecommendWhen,
+      reportVisibility:q.reportVisibility, showRecommendWhen:q.showRecommendWhen, recommendRisk:q.recommendRisk,
       status:q.status, category:q.category });
   };
 
@@ -744,14 +747,14 @@ export default function QuestionLibraryPage() {
                 ];
 
                 const showTextFields = visibility === "both" || visibility === "recommendation_only";
-                const showWhenFields = visibility !== "not_applicable";
+                const showWhenFields = visibility === "both" || visibility === "recommendation_only";
 
                 return (
                   <div style={{ border:"1px solid #e5e7eb", borderRadius:9 }}>
                     {/* Section header */}
                     <div style={{ padding:"8px 12px", background:"#f3f4f6", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", gap:6, borderRadius:"9px 9px 0 0" }}>
                       <i className="ri-bookmark-3-line" style={{ fontSize:13, color:"#7c3aed" }}/>
-                      <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Recommendation Settings</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:"#374151", textTransform:"uppercase" as const, letterSpacing:"0.05em" }}>Question &amp; Recommendation Visibility</span>
                     </div>
 
                     <div style={{ padding:"14px", background:"#f9fafb", display:"flex", flexDirection:"column" as const, gap:14, borderRadius:"0 0 9px 9px" }}>
@@ -824,9 +827,52 @@ export default function QuestionLibraryPage() {
                         </div>
                       )}
 
-                      {/* ── C. Default Recommendation Text ───────────────── */}
+                      {/* ── C. Recommendation Risk Rating + Default Text ─── */}
                       {showTextFields && (
-                        <div style={{ borderTop:"1px solid #e5e7eb", paddingTop:12, display:"flex", flexDirection:"column" as const, gap:10 }}>
+                        <div style={{ borderTop:"1px solid #e5e7eb", paddingTop:12, display:"flex", flexDirection:"column" as const, gap:12 }}>
+
+                          {/* Risk Rating */}
+                          <div>
+                            <label style={{ ...LBL, marginBottom:7 }}>
+                              <i className="ri-alarm-warning-line" style={{ marginRight:4 }}/>
+                              Recommendation Risk Rating
+                            </label>
+                            <div style={{ display:"flex", gap:8 }}>
+                              {([
+                                { val:"LOW",    label:"Low",    color:"#111827", border:"#d1d5db", bg:"#f9fafb", selBg:"#f3f4f6", selBorder:"#374151" },
+                                { val:"MEDIUM", label:"Medium", color:"#c2410c", border:"#fdba74", bg:"#fff7ed", selBg:"#ffedd5", selBorder:"#ea580c" },
+                                { val:"HIGH",   label:"High",   color:"#b91c1c", border:"#fca5a5", bg:"#fef2f2", selBg:"#fee2e2", selBorder:"#dc2626" },
+                              ] as { val:RiskLevel; label:string; color:string; border:string; bg:string; selBg:string; selBorder:string }[]).map(r => {
+                                const sel = (form.recommendRisk as RiskLevel) === r.val;
+                                return (
+                                  <button key={r.val} onClick={()=>fp("recommendRisk", r.val)}
+                                    style={{
+                                      flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:7,
+                                      padding:"9px 10px", borderRadius:8, cursor:"pointer",
+                                      border:`1.5px solid ${sel ? r.selBorder : r.border}`,
+                                      background: sel ? r.selBg : r.bg,
+                                      transition:"all 0.15s",
+                                    }}>
+                                    <div style={{
+                                      width:8, height:8, borderRadius:"50%",
+                                      background: sel ? r.color : r.border, flexShrink:0,
+                                    }}/>
+                                    <span style={{ fontSize:12, fontWeight:700, color: sel ? r.color : "#9ca3af" }}>{r.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {/* Color preview strip */}
+                            <div style={{ marginTop:6, padding:"5px 10px", borderRadius:6, background: (form.recommendRisk as RiskLevel) === "HIGH" ? "#fee2e2" : (form.recommendRisk as RiskLevel) === "MEDIUM" ? "#ffedd5" : "#f3f4f6", display:"flex", alignItems:"center", gap:6 }}>
+                              <i className="ri-information-line" style={{ fontSize:11, color: (form.recommendRisk as RiskLevel) === "HIGH" ? "#b91c1c" : (form.recommendRisk as RiskLevel) === "MEDIUM" ? "#c2410c" : "#6b7280" }}/>
+                              <span style={{ fontSize:10, fontWeight:600, color: (form.recommendRisk as RiskLevel) === "HIGH" ? "#b91c1c" : (form.recommendRisk as RiskLevel) === "MEDIUM" ? "#c2410c" : "#374151" }}>
+                                {(form.recommendRisk as RiskLevel) === "HIGH"   && "High risk — will appear in red in the report recommendation section"}
+                                {(form.recommendRisk as RiskLevel) === "MEDIUM" && "Medium risk — will appear in orange in the report recommendation section"}
+                                {(form.recommendRisk as RiskLevel) === "LOW"    && "Low risk — will appear in black in the report recommendation section"}
+                              </span>
+                            </div>
+                          </div>
+
                           <label style={{ ...LBL, marginBottom:0 }}>
                             <i className="ri-translate-2" style={{ marginRight:4 }}/>
                             Default Recommendation Text
