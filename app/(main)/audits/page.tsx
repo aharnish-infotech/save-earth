@@ -20,7 +20,7 @@ const SEL: React.CSSProperties = {
   cursor: "pointer", height: 34,
 };
 
-const ALL_STATUS: AuditStatus[] = ["In Progress", "Draft", "Pending Approval", "Delivered"];
+const ALL_STATUS: AuditStatus[] = ["In Progress", "Draft", "Completed", "Delivered", "Cancelled"];
 const PAGE_SIZE = 15;
 
 function exportCSV(data: typeof AUDITS) {
@@ -51,17 +51,52 @@ function exportXLS(data: typeof AUDITS) {
   URL.revokeObjectURL(url);
 }
 
+type ConfirmAction = "deliver" | "cancel";
+interface ConfirmState {
+  action: ConfirmAction;
+  id: string;
+  auditBranch: string;
+}
+
 export default function AllAuditsPage() {
+  const [auditList,   setAuditList]   = useState(() => [...AUDITS]);
   const [search,      setSearch]      = useState("");
   const [bankF,       setBankF]       = useState("All Banks");
   const [statusF,     setStatusF]     = useState("All Status");
   const [auditorF,    setAuditorF]    = useState("All Auditors");
   const [exportOpen,  setExportOpen]  = useState(false);
-  const [page,     setPage]     = useState(1);
+  const [page,        setPage]        = useState(1);
+  const [openMenuId,  setOpenMenuId]  = useState<string | null>(null);
+  const [confirm,     setConfirm]     = useState<ConfirmState | null>(null);
+  const [cancelNote,  setCancelNote]  = useState("");
+  const [toastMsg,    setToastMsg]    = useState<string | null>(null);
 
   const reset = () => setPage(1);
 
-  const filtered = AUDITS.filter(a => {
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  const applyStatusChange = (id: string, status: AuditStatus) => {
+    setAuditList(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  };
+
+  const handleConfirm = () => {
+    if (!confirm) return;
+    if (confirm.action === "deliver") {
+      applyStatusChange(confirm.id, "Delivered");
+      showToast(`${confirm.id} marked as Delivered`);
+    } else {
+      applyStatusChange(confirm.id, "Cancelled");
+      showToast(`${confirm.id} cancelled`);
+    }
+    setConfirm(null);
+    setCancelNote("");
+    setOpenMenuId(null);
+  };
+
+  const filtered = auditList.filter(a => {
     const q = search.toLowerCase();
     const mQ = !q
       || a.id.toLowerCase().includes(q)
@@ -84,7 +119,7 @@ export default function AllAuditsPage() {
     return n;
   };
 
-  const byStatus = (s: AuditStatus) => AUDITS.filter(a => a.status === s).length;
+  const byStatus = (s: AuditStatus) => auditList.filter(a => a.status === s).length;
   const hasFilter = bankF !== "All Banks" || statusF !== "All Status" || auditorF !== "All Auditors" || !!search;
   const clear = () => { setSearch(""); setBankF("All Banks"); setStatusF("All Status"); setAuditorF("All Auditors"); setPage(1); };
 
@@ -139,9 +174,9 @@ export default function AllAuditsPage() {
         </div>
 
         {/* Status stat cards */}
-        <div className="no-print" style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:12, marginBottom:20 }}>
+        <div className="no-print" style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10, marginBottom:20 }}>
           {([
-            { label:"Total",    value:AUDITS.length, color:"#7c3aed", bg:"#f5f3ff", icon:"ri-file-list-3-line" },
+            { label:"Total",    value:auditList.length, color:"#7c3aed", bg:"#f5f3ff", icon:"ri-file-list-3-line" },
             ...ALL_STATUS.map(s => ({ label:s, value:byStatus(s), color:STATUS_STYLE[s].color, bg:STATUS_STYLE[s].bg, icon:STATUS_STYLE[s].icon })),
           ] as {label:string;value:number;color:string;bg:string;icon:string}[]).map(c => (
             <div key={c.label}
@@ -313,25 +348,93 @@ export default function AllAuditsPage() {
                         </span>
                       </td>
 
-                      {/* Actions */}
+                      {/* Actions — 3-dot menu */}
                       <td className="no-print" style={{ ...TD, textAlign:"center" }}>
-                        <div style={{ display:"flex", gap:5, justifyContent:"center" }}>
-                          <button title="View"
-                            style={{ width:30, height:30, borderRadius:7, border:"1px solid #dcfce7", background:"#f0fdf4", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#16a34a" }}>
-                            <i className="ri-eye-line" style={{ fontSize:14 }}/>
+                        <div style={{ position:"relative", display:"inline-block" }}>
+                          <button
+                            onClick={() => setOpenMenuId(openMenuId === a.id ? null : a.id)}
+                            style={{ width:32, height:32, borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#6b7280", fontSize:18, fontWeight:700, letterSpacing:1 }}>
+                            ⋯
                           </button>
-                          <Link href="/audit-form" title="Edit"
-                            style={{ width:30, height:30, borderRadius:7, border:"1px solid #dbeafe", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#2563eb", textDecoration:"none" }}>
-                            <i className="ri-edit-line" style={{ fontSize:14 }}/>
-                          </Link>
-                          <Link href={`/report/${a.id}`} target="_blank" rel="noopener noreferrer" title="View / Print Report"
-                            style={{ width:30, height:30, borderRadius:7, border:"1px solid #fde68a", background:"#fffbeb", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#d97706", textDecoration:"none" }}>
-                            <i className="ri-printer-line" style={{ fontSize:14 }}/>
-                          </Link>
-                          <button title="Delete"
-                            style={{ width:30, height:30, borderRadius:7, border:"1px solid #fee2e2", background:"#fff5f5", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#dc2626" }}>
-                            <i className="ri-delete-bin-line" style={{ fontSize:14 }}/>
-                          </button>
+
+                          {openMenuId === a.id && (
+                            <div style={{ position:"absolute", top:"calc(100% + 4px)", right:0, background:"#fff", border:"1px solid #e5e7eb", borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:100, minWidth:200, overflow:"hidden" }}
+                              onMouseLeave={() => setOpenMenuId(null)}>
+
+                              {/* View */}
+                              <button style={{ display:"flex", alignItems:"center", gap:9, width:"100%", padding:"9px 14px", background:"none", border:"none", cursor:"pointer", fontSize:13, color:"#374151", fontWeight:500 }}
+                                onMouseEnter={e => (e.currentTarget.style.background="#f9fafb")}
+                                onMouseLeave={e => (e.currentTarget.style.background="none")}>
+                                <i className="ri-eye-line" style={{ fontSize:14, color:"#16a34a" }}/> View Audit
+                              </button>
+
+                              {/* Edit */}
+                              <Link href="/audit-form"
+                                style={{ display:"flex", alignItems:"center", gap:9, width:"100%", padding:"9px 14px", background:"none", textDecoration:"none", fontSize:13, color:"#374151", fontWeight:500 }}
+                                onMouseEnter={e => (e.currentTarget.style.background="#f9fafb")}
+                                onMouseLeave={e => (e.currentTarget.style.background="none")}>
+                                <i className="ri-edit-line" style={{ fontSize:14, color:"#2563eb" }}/> Edit Audit
+                              </Link>
+
+                              {/* Report */}
+                              <Link href={`/report/${a.id}`} target="_blank" rel="noopener noreferrer"
+                                style={{ display:"flex", alignItems:"center", gap:9, width:"100%", padding:"9px 14px", background:"none", textDecoration:"none", fontSize:13, color:"#374151", fontWeight:500 }}
+                                onMouseEnter={e => (e.currentTarget.style.background="#f9fafb")}
+                                onMouseLeave={e => (e.currentTarget.style.background="none")}>
+                                <i className="ri-printer-line" style={{ fontSize:14, color:"#d97706" }}/> View / Print Report
+                              </Link>
+
+                              {/* Divider */}
+                              <div style={{ height:1, background:"#f3f4f6", margin:"4px 0" }}/>
+
+                              {/* Mark as Delivered */}
+                              {(() => {
+                                const canDeliver = a.status === "Completed";
+                                return (
+                                  <button
+                                    disabled={!canDeliver}
+                                    onClick={() => canDeliver && setConfirm({ action:"deliver", id:a.id, auditBranch:a.branch })}
+                                    style={{ display:"flex", alignItems:"center", gap:9, width:"100%", padding:"9px 14px", background:"none", border:"none", cursor:canDeliver?"pointer":"not-allowed", fontSize:13, color:canDeliver?"#0891b2":"#d1d5db", fontWeight:500 }}
+                                    onMouseEnter={e => { if (canDeliver) e.currentTarget.style.background="#e0f2fe"; }}
+                                    onMouseLeave={e => (e.currentTarget.style.background="none")}
+                                    title={canDeliver ? "Mark as Delivered" : "Only Completed audits can be delivered"}>
+                                    <i className="ri-send-plane-line" style={{ fontSize:14, color:canDeliver?"#0891b2":"#d1d5db" }}/>
+                                    Mark as Delivered
+                                    {!canDeliver && <span style={{ fontSize:10, color:"#d1d5db", marginLeft:"auto" }}>Needs Completed</span>}
+                                  </button>
+                                );
+                              })()}
+
+                              {/* Mark as Cancelled */}
+                              {(() => {
+                                const canCancel = a.status !== "Delivered" && a.status !== "Cancelled";
+                                return (
+                                  <button
+                                    disabled={!canCancel}
+                                    onClick={() => canCancel && setConfirm({ action:"cancel", id:a.id, auditBranch:a.branch })}
+                                    style={{ display:"flex", alignItems:"center", gap:9, width:"100%", padding:"9px 14px", background:"none", border:"none", cursor:canCancel?"pointer":"not-allowed", fontSize:13, color:canCancel?"#dc2626":"#d1d5db", fontWeight:500 }}
+                                    onMouseEnter={e => { if (canCancel) e.currentTarget.style.background="#fff5f5"; }}
+                                    onMouseLeave={e => (e.currentTarget.style.background="none")}
+                                    title={!canCancel ? "Cannot cancel a Delivered or already Cancelled audit" : "Cancel this audit (admin only)"}>
+                                    <i className="ri-close-circle-line" style={{ fontSize:14, color:canCancel?"#dc2626":"#d1d5db" }}/>
+                                    Mark as Cancelled
+                                    {!canCancel && <span style={{ fontSize:10, color:"#d1d5db", marginLeft:"auto" }}>Not allowed</span>}
+                                  </button>
+                                );
+                              })()}
+
+                              {/* Divider */}
+                              <div style={{ height:1, background:"#f3f4f6", margin:"4px 0" }}/>
+
+                              {/* Delete */}
+                              <button
+                                style={{ display:"flex", alignItems:"center", gap:9, width:"100%", padding:"9px 14px", background:"none", border:"none", cursor:"pointer", fontSize:13, color:"#dc2626", fontWeight:500 }}
+                                onMouseEnter={e => (e.currentTarget.style.background="#fff5f5")}
+                                onMouseLeave={e => (e.currentTarget.style.background="none")}>
+                                <i className="ri-delete-bin-line" style={{ fontSize:14 }}/> Delete
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -360,6 +463,80 @@ export default function AllAuditsPage() {
         </div>
 
       </div>
+
+      {/* ── Toast ── */}
+      {toastMsg && (
+        <div style={{ position:"fixed", bottom:28, left:"50%", transform:"translateX(-50%)", background:"#111827", color:"#fff", fontSize:13, fontWeight:600, borderRadius:10, padding:"10px 20px", boxShadow:"0 8px 24px rgba(0,0,0,0.18)", zIndex:200, display:"flex", alignItems:"center", gap:8, whiteSpace:"nowrap" }}>
+          <i className="ri-checkbox-circle-fill" style={{ fontSize:16, color:"#4ade80" }}/>{toastMsg}
+        </div>
+      )}
+
+      {/* ── Confirm Modal ── */}
+      {confirm && (
+        <div style={{ position:"fixed", inset:0, zIndex:150, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          {/* Overlay */}
+          <div onClick={() => { setConfirm(null); setCancelNote(""); }}
+            style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.35)" }}/>
+
+          {/* Modal */}
+          <div style={{ position:"relative", background:"#fff", borderRadius:14, boxShadow:"0 24px 60px rgba(0,0,0,0.18)", width:420, maxWidth:"90vw", padding:0, overflow:"hidden" }}>
+
+            {/* Modal header */}
+            <div style={{ padding:"18px 20px 14px", borderBottom:"1px solid #f3f4f6", display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{ width:38, height:38, borderRadius:10, background: confirm.action === "deliver" ? "#e0f2fe" : "#fee2e2", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <i className={confirm.action === "deliver" ? "ri-send-plane-line" : "ri-close-circle-line"}
+                  style={{ fontSize:18, color: confirm.action === "deliver" ? "#0891b2" : "#dc2626" }}/>
+              </div>
+              <div>
+                <div style={{ fontSize:14, fontWeight:700, color:"#111827" }}>
+                  {confirm.action === "deliver" ? "Mark as Delivered" : "Mark as Cancelled"}
+                </div>
+                <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>{confirm.id} · {confirm.auditBranch}</div>
+              </div>
+            </div>
+
+            {/* Modal body */}
+            <div style={{ padding:"16px 20px" }}>
+              {confirm.action === "deliver" ? (
+                <p style={{ fontSize:13, color:"#374151", lineHeight:1.6, margin:0 }}>
+                  This will mark the audit as <strong>Delivered</strong>. The status will be frozen and cannot be changed back.
+                  This action is irreversible.
+                </p>
+              ) : (
+                <>
+                  <p style={{ fontSize:13, color:"#374151", lineHeight:1.6, margin:"0 0 12px" }}>
+                    This will permanently <strong style={{ color:"#dc2626" }}>cancel</strong> the audit. The audit will be frozen and excluded from active reports. This action is for <strong>admin use only</strong>.
+                  </p>
+                  <label style={{ fontSize:11, fontWeight:700, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.05em", display:"block", marginBottom:5 }}>
+                    Reason for cancellation <span style={{ color:"#dc2626" }}>*</span>
+                  </label>
+                  <textarea value={cancelNote} onChange={e => setCancelNote(e.target.value)}
+                    rows={3} placeholder="e.g. Branch closed, duplicate entry, audit voided by supervisor…"
+                    style={{ border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 10px", fontSize:12, color:"#374151", width:"100%", boxSizing:"border-box", outline:"none", resize:"vertical", lineHeight:1.55 }}/>
+                </>
+              )}
+            </div>
+
+            {/* Modal footer */}
+            <div style={{ padding:"12px 20px 16px", display:"flex", gap:10, justifyContent:"flex-end", borderTop:"1px solid #f3f4f6" }}>
+              <button onClick={() => { setConfirm(null); setCancelNote(""); }}
+                style={{ padding:"8px 20px", borderRadius:8, border:"1px solid #e5e7eb", background:"#fff", color:"#374151", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={confirm.action === "cancel" && !cancelNote.trim()}
+                style={{ padding:"8px 20px", borderRadius:8, border:"none",
+                  background: confirm.action === "deliver" ? "#0891b2" : (cancelNote.trim() ? "#dc2626" : "#fca5a5"),
+                  color:"#fff", fontSize:13, fontWeight:700,
+                  cursor: confirm.action === "cancel" && !cancelNote.trim() ? "not-allowed" : "pointer" }}>
+                {confirm.action === "deliver" ? "Yes, Mark Delivered" : "Confirm Cancellation"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }
